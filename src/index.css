@@ -1,0 +1,98 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --color-background: #FFFDF5;
+  --color-foreground: #0f3c65;
+  --color-card: #FFFDF5;
+  --color-card-foreground: #0f3c65;
+  --color-popover: #FFFDF5;
+  --color-popover-foreground: #0f3c65;
+  --color-primary: #0f3c65;
+  --color-primary-foreground: #FFFDF5;
+  --color-secondary: #f5e6b8;
+  --color-secondary-foreground: #0f3c65;
+  --color-muted: #f5e6b8;
+  --color-muted-foreground: #5a7a9a;
+  --color-accent: #e8d5a3;
+  --color-accent-foreground: #0f3c65;
+  --color-destructive: #b91c1c;
+  --color-destructive-foreground: #FFFDF5;
+  --color-border: #e8d5a3;
+  --color-input: #e8d5a3;
+  --color-ring: #0f3c65;
+  --radius: 0.5rem;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  overflow-y: scroll; /* Всегда показывать скролл */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Nav link hover underline */
+.nav-link {
+  position: relative;
+  cursor: pointer;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  height: 1px;
+  width: 0;
+  background-color: var(--color-foreground);
+  transition: width 0.3s ease, left 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  touch-action: none;
+  animation: fade-in 5s ease 1s forwards;
+}
+
+/* Скрытие скроллбара для ScrollControls */
+[data-scroll],
+.scroll-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+[data-scroll]::-webkit-scrollbar,
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
