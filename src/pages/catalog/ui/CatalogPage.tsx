@@ -1,10 +1,14 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { Checkbox } from "@/shared/ui/checkbox"
 import { ProductSkeleton } from "@/shared/ui/product-skeleton"
 import { Filter, X, Search, ChevronRight, DoorOpen, Home, Settings, PanelLeft, Square } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SEO } from "@/shared/ui/SEO"
+import { productsApi } from "@/shared/api/products"
+import type { Product } from "@/shared/api/products"
 
 // Категории каталога
 const catalogCategories = [
@@ -49,8 +53,10 @@ const catalogCategories = [
 ]
 
 export function CatalogPage() {
+  const navigate = useNavigate()
   const [showFilters, setShowFilters] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [products, setProducts] = useState<Product[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all')
@@ -67,6 +73,13 @@ export function CatalogPage() {
   })
   const itemsPerPage = 8
 
+  useEffect(() => {
+    productsApi.getProducts().then(data => {
+      setProducts(data)
+      setIsLoading(false)
+    })
+  }, [])
+
   const toggleFilters = () => setShowFilters(!showFilters)
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -75,21 +88,6 @@ export function CatalogPage() {
       [section]: !prev[section]
     }))
   }
-
-  const products = [
-    { id: 1, name: "Дверь Классик", image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400", category: "interior", subcategory: "pvh", material: "ПВХ", color: "Белый", price: 15900 },
-    { id: 2, name: "Дверь Модерн", image: "https://images.unsplash.com/photo-1484154218962-a1c002085d2f?w=400", category: "interior", subcategory: "emal", material: "Эмаль", color: "Серый", price: 18500 },
-    { id: 3, name: "Дверь Лофт", image: "https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=400", category: "interior", subcategory: "ecoshpon", material: "Экошпон", color: "Коричневый", price: 21000 },
-    { id: 4, name: "Дверь Сканди", image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400", category: "interior", subcategory: "massiv", material: "Массив", color: "Белый", price: 17200 },
-    { id: 5, name: "Дверь Неоклассика", image: "https://images.unsplash.com/photo-1506306465497-6a840848fcab?w=400", category: "interior", subcategory: "emal", material: "Эмаль", color: "Бежевый", price: 24900 },
-    { id: 6, name: "Дверь Хай-тек", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", category: "interior", subcategory: "pvh", material: "ПВХ", color: "Чёрный", price: 26500 },
-    { id: 7, name: "Дверь Прованс", image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400", category: "interior", subcategory: "massiv", material: "Натуральный шпон", color: "Бежевый", price: 19800 },
-    { id: 8, name: "Дверь Минимализм", image: "https://images.unsplash.com/photo-1484154218962-a1c002085d2f?w=400", category: "interior", subcategory: "ecoshpon", material: "Экошпон", color: "Серый", price: 22300 },
-    { id: 9, name: "Дверь Арт-деко", image: "https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=400", category: "interior", subcategory: "emal", material: "Эмаль", color: "Венге", price: 31500 },
-    { id: 10, name: "Дверь Эко", image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400", category: "interior", subcategory: "ecoshpon", material: "Экошпон", color: "Белый", price: 16700 },
-    { id: 11, name: "Дверь Стандарт", image: "https://images.unsplash.com/photo-1506306465497-6a840848fcab?w=400", category: "interior", subcategory: "pvh", material: "ПВХ", color: "Бежевый", price: 12900 },
-    { id: 12, name: "Дверь Люкс", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", category: "interior", subcategory: "massiv", material: "Массив дуба", color: "Венге", price: 45900 },
-  ]
 
   const materials = ["ПВХ", "Эмаль", "Экошпон", "Массив", "Натуральный шпон"]
   const colors = [
@@ -128,6 +126,9 @@ export function CatalogPage() {
     setSelectedMaterials([])
     setSelectedColors([])
     setPriceRange([0, 50000])
+    productsApi.getProducts().then(data => {
+      setProducts(data)
+    })
   }
 
   const selectedCount = selectedMaterials.length + selectedColors.length + (selectedCategory !== 'all' ? 1 : 0) + (selectedSubcategory !== 'all' ? 1 : 0)
@@ -137,13 +138,12 @@ export function CatalogPage() {
     return products.filter(product => {
       if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
       if (selectedCategory !== 'all' && product.category !== selectedCategory) return false
-      if (selectedSubcategory !== 'all' && product.subcategory !== selectedSubcategory) return false
       if (selectedMaterials.length > 0 && !selectedMaterials.includes(product.material)) return false
       if (selectedColors.length > 0 && !selectedColors.includes(product.color)) return false
       if (product.price < priceRange[0] || product.price > priceRange[1]) return false
       return true
     })
-  }, [searchQuery, selectedCategory, selectedSubcategory, selectedMaterials, selectedColors, priceRange])
+  }, [searchQuery, selectedCategory, selectedMaterials, selectedColors, priceRange])
 
   // Пагинация
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
@@ -152,14 +152,6 @@ export function CatalogPage() {
     currentPage * itemsPerPage
   )
 
-  // Имитация загрузки
-  useMemo(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [])
-
   // Сброс на первую страницу при изменении фильтров
   useMemo(() => {
     setCurrentPage(1)
@@ -167,6 +159,10 @@ export function CatalogPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <SEO
+        title="Каталог"
+        description="Каталог дверей: межкомнатные, входные, системы открывания. Более 500 моделей дверей по выгодным ценам в Нижнем Новгороде."
+      />
       <Header />
       <main className="flex-1 bg-background">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -188,14 +184,7 @@ export function CatalogPage() {
               />
             </div>
             <div className="flex items-center gap-4">
-              <motion.p 
-                className="text-sm text-muted-foreground whitespace-nowrap"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
-                Найдено: <span className="font-medium text-primary">{filteredProducts.length}</span>
-              </motion.p>
+
               <motion.button
                 onClick={toggleFilters}
                 initial={{ opacity: 0 }}
@@ -482,7 +471,8 @@ export function CatalogPage() {
               paginatedProducts.map((product) => (
                 <div
                   key={product.id}
-                  className={`group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 ${
+                  onClick={() => navigate(`/catalog/${product.slug}-${product.id}`)}
+                  className={`group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer ${
                     viewMode === 'list' ? 'flex' : ''
                   }`}
                 >

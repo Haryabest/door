@@ -1,52 +1,27 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { motion } from "framer-motion"
-
-const portfolioItems = [
-  {
-    id: 1,
-    image: "https://images.unsplash.com/photo-1768548273807-275b0e16fff3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaW5pc2hlZCUyMGhvbWUlMjBpbnRlcmlvciUyMHByb2plY3R8ZW58MXx8fHwxNzc0Mzc1Njc4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    title: "Квартира в современном стиле",
-    description: "Установка межкомнатных дверей с скрытым коробом",
-  },
-  {
-    id: 2,
-    image: "https://images.unsplash.com/photo-1722528078553-f6d3ae8c55e7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBhcGFydG1lbnQlMjBlbnRyYW5jZXxlbnwxfHx8fDE3NzQzNzU2Nzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    title: "Премиум входная группа",
-    description: "Входные двери с терморазрывом",
-  },
-  {
-    id: 3,
-    image: "https://images.unsplash.com/photo-1770677350521-d5fdcbd74367?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBpbnRlcmlvciUyMGhhbGx3YXklMjBkb29yfGVufDF8fHx8MTc3NDM3NTY3Nnww&ixlib=rb-4.1.0&q=80&w=1080",
-    title: "Коридор в классическом стиле",
-    description: "Двери из массива дуба",
-  },
-  {
-    id: 4,
-    image: "https://images.unsplash.com/photo-1762721373504-9504de3bc07c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbnRlcmlvciUyMGRlc2lnbiUyMGRvb3J3YXl8ZW58MXx8fHwxNzc0Mzc1Njc3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    title: "Минималистичный интерьер",
-    description: "Скрытые двери под покраску",
-  },
-  {
-    id: 5,
-    image: "https://images.unsplash.com/photo-1765766599489-fd53df7f8724?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB3aGl0ZSUyMGludGVyaW9yJTIwZG9vcnxlbnwxfHx8fDE3NzQzNzU2Nzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    title: "Современная квартира",
-    description: "Белые межкомнатные двери",
-  },
-  {
-    id: 6,
-    image: "https://images.unsplash.com/photo-1760385737098-0b555a75b2ba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVnYW50JTIwd29vZGVuJTIwZG9vciUyMGVudHJhbmNlfGVufDF8fHx8MTc3NDM3NTY3N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-    title: "Элегантная входная дверь",
-    description: "Деревянная входная дверь",
-  },
-]
+import { SEO } from "@/shared/ui/SEO"
+import { portfolioApi } from "@/shared/api/portfolio"
+import type { PortfolioItem } from "@/shared/api/portfolio"
 
 export function PortfolioPage() {
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
   const [selectedImage, setSelectedImage] = useState<number | null>(null)
+
+  useEffect(() => {
+    portfolioApi.getPortfolioItems().then(data => {
+      setPortfolioItems(data)
+    })
+  }, [])
 
   return (
     <div className="flex flex-col min-h-screen">
+      <SEO
+        title="Портфолио"
+        description="Наши работы - установленные двери в квартирах и домах. Реализованные проекты, фото готовых объектов."
+      />
       <Header />
       <main className="flex-1">
 

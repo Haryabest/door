@@ -2,10 +2,15 @@ import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { Award, Users, Clock, ThumbsUp, Star, Shield, Truck, Headphones } from "lucide-react"
 import { motion } from "framer-motion"
+import { SEO } from "@/shared/ui/SEO"
 
 export function AboutPage() {
   return (
     <div className="flex flex-col min-h-screen">
+      <SEO
+        title="О компании"
+        description="О компании От А до Я - 10 лет на рынке, более 5000 довольных клиентов. Профессиональная установка дверей в Нижнем Новгороде."
+      />
       <Header />
       <main className="flex-1">
         {/* About Content */}

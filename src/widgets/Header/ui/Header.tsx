@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Button } from "@/shared/ui/button"
+import { useState, useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { productsApi } from "@/shared/api/products"
 
 const navItems = [
   { label: 'Каталог', path: '/catalog' },
@@ -12,6 +12,21 @@ const navItems = [
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<{ id: number; name: string; price: number; image: string; slug: string }[]>([])
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      productsApi.searchProducts(searchQuery).then(results => {
+        setSearchResults(results.slice(0, 5))
+      })
+    } else {
+      setSearchResults([])
+    }
+  }, [searchQuery])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
@@ -28,12 +43,11 @@ export function Header() {
             <Link
               key={item.label}
               to={item.path}
-              className="nav-link text-base font-medium text-foreground"
-              style={{
-                background: "none",
-                border: "none",
-                padding: "8px 0",
-              }}
+              className={`nav-link text-base font-medium px-2 py-1 rounded transition-colors ${
+                location.pathname === item.path
+                  ? 'text-primary bg-secondary'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-primary'
+              }`}
             >
               {item.label}
             </Link>
@@ -42,7 +56,11 @@ export function Header() {
 
         {/* Поиск и телефон */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" aria-label="Поиск">
+          <button
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className="p-2 text-foreground hover:text-primary transition-colors"
+            aria-label="Поиск"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
@@ -57,7 +75,7 @@ export function Header() {
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.3-4.3" />
             </svg>
-          </Button>
+          </button>
           <a
             href="tel:+79991234567"
             className="hidden lg:flex items-center gap-2 text-base font-medium text-foreground hover:underline"
@@ -103,29 +121,83 @@ export function Header() {
         </div>
       </div>
 
+      {/* Поиск */}
+      <AnimatePresence>
+        {isSearchOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-background border-b overflow-hidden"
+          >
+            <div className="max-w-2xl mx-auto px-4 py-4">
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Поиск дверей..."
+                  className="w-full pl-10 pr-4 py-3 border-2 border-primary rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                  autoFocus
+                />
+              </div>
+              {searchResults.length > 0 && (
+                <div className="mt-2 bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+                  {searchResults.map(item => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        navigate(`/catalog/${item.slug}`)
+                        setIsSearchOpen(false)
+                        setSearchQuery('')
+                      }}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-secondary cursor-pointer"
+                    >
+                      <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded" />
+                      <div className="flex-1">
+                        <p className="font-medium text-primary">{item.name}</p>
+                        <p className="text-sm text-muted-foreground">{item.price.toLocaleString()} ₽</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Мобильное меню */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            className="absolute top-20 left-0 right-0 z-30 bg-background border-b shadow-lg lg:hidden"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <nav className="flex flex-col p-4 space-y-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.path}
-                  className="px-4 py-3 rounded-lg text-base font-medium text-foreground hover:bg-primary hover:text-background transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </motion.div>
+              className="absolute top-20 left-0 right-0 z-30 bg-background border-b shadow-lg lg:hidden"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <nav className="flex flex-col p-4 space-y-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.label}
+                    to={item.path}
+                    className={`px-4 py-3 rounded-lg text-base font-medium transition-colors ${
+                      location.pathname === item.path
+                        ? 'bg-primary text-background'
+                        : 'text-foreground hover:bg-primary hover:text-background'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </motion.div>
         )}
       </AnimatePresence>
     </header>

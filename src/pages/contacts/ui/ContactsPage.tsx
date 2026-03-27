@@ -3,6 +3,7 @@ import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { Phone, Mail, Clock, Send, User, MessageSquare, Calendar } from "lucide-react"
 import { motion } from "framer-motion"
+import { SEO } from "@/shared/ui/SEO"
 
 const locations = [
   {
@@ -67,6 +68,10 @@ export function ContactsPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <SEO
+        title="Контакты"
+        description="Контакты компании От А до Я. Адреса салонов, телефоны, email. Режим работы: ежедневно с 9:00 до 20:00."
+      />
       <Header />
       <main className="flex-1">
 
@@ -142,7 +147,7 @@ export function ContactsPage() {
 
                 <button
                   type="submit"
-                  className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 bg-primary text-background font-semibold rounded-lg opacity-0 translate-y-5 hover:opacity-90 transition-all duration-200"
+                  className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 bg-primary text-background font-semibold rounded-lg opacity-0 translate-y-5 hover:opacity-90 transition-all duration-200 cursor-pointer"
                   style={{
                     animation: 'fadeInUp 0.5s ease-out 0.5s forwards'
                   }}
