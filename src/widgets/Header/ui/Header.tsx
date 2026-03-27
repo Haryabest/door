@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from "@/shared/ui/button"
+import { motion, AnimatePresence } from 'framer-motion'
 
 const navItems = [
   { label: 'Каталог', path: '/catalog' },
@@ -9,6 +11,8 @@ const navItems = [
 ]
 
 export function Header() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="container mx-auto flex h-20 items-center justify-between px-4">
@@ -18,7 +22,7 @@ export function Header() {
           <span className="text-sm text-muted-foreground">Двери и Фурнитура</span>
         </Link>
 
-        {/* Навигация */}
+        {/* Навигация - десктоп */}
         <nav className="hidden md:flex items-center gap-8">
           {navItems.map((item) => (
             <Link
@@ -73,8 +77,57 @@ export function Header() {
             </svg>
             +7 (960) 166 30-30
           </a>
+
+          {/* Бургер меню для мобильных */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-2 text-foreground"
+            aria-label="Меню"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
         </div>
       </div>
+
+      {/* Мобильное меню */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            className="absolute top-20 left-0 right-0 z-30 bg-background border-b shadow-lg lg:hidden"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <nav className="flex flex-col p-4 space-y-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  className="px-4 py-3 rounded-lg text-base font-medium text-foreground hover:bg-primary hover:text-background transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   )
 }

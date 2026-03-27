@@ -3,24 +3,24 @@
 
 @theme inline {
   --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
-  --color-background: #FFFDF5;
+  --color-background: #ffffff;
   --color-foreground: #0f3c65;
-  --color-card: #FFFDF5;
+  --color-card: #ffffff;
   --color-card-foreground: #0f3c65;
-  --color-popover: #FFFDF5;
+  --color-popover: #ffffff;
   --color-popover-foreground: #0f3c65;
   --color-primary: #0f3c65;
-  --color-primary-foreground: #FFFDF5;
-  --color-secondary: #f5e6b8;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1f5f9;
   --color-secondary-foreground: #0f3c65;
-  --color-muted: #f5e6b8;
-  --color-muted-foreground: #5a7a9a;
-  --color-accent: #e8d5a3;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #e2e8f0;
   --color-accent-foreground: #0f3c65;
   --color-destructive: #b91c1c;
-  --color-destructive-foreground: #FFFDF5;
-  --color-border: #e8d5a3;
-  --color-input: #e8d5a3;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
   --color-ring: #0f3c65;
   --radius: 0.5rem;
 }
@@ -94,5 +94,16 @@ canvas {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

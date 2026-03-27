@@ -4,6 +4,7 @@ import { CatalogPage } from "@/pages/catalog"
 import { PortfolioPage } from "@/pages/portfolio"
 import { AboutPage } from "@/pages/about"
 import { ContactsPage } from "@/pages/contacts"
+import { ChatWidget } from "@/widgets/ChatWidget"
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contacts" element={<ContactsPage />} />
       </Routes>
+      <ChatWidget />
     </BrowserRouter>
   )
 }

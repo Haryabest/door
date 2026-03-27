@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
-import { MapPin, Phone, Mail, Clock, Send, User, MessageSquare, Calendar, Check } from "lucide-react"
+import { Phone, Mail, Clock, Send, User, MessageSquare, Calendar } from "lucide-react"
+import { motion } from "framer-motion"
 
 const locations = [
   {
@@ -72,62 +73,58 @@ export function ContactsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Form */}
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="text-2xl font-bold text-primary mb-6">
+            <motion.div 
+              className="bg-white rounded-lg shadow-md p-8"
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <motion.h2 
+                className="text-2xl font-bold text-primary mb-6"
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
                 Свяжитесь с нами
-              </h2>
+              </motion.h2>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm mb-2 flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    Ваше имя
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
-                    placeholder="Иван Иванов"
-                  />
-                </div>
+                {[
+                  { id: 'name', icon: User, label: 'Ваше имя', placeholder: 'Иван Иванов', type: 'text' },
+                  { id: 'phone', icon: Phone, label: 'Телефон', placeholder: '+7 (___) ___-__-__', type: 'tel' },
+                  { id: 'email', icon: Mail, label: 'Email', placeholder: 'email@example.com', type: 'email' },
+                ].map((field, index) => (
+                  <motion.div
+                    key={field.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.1 * index }}
+                  >
+                    <label htmlFor={field.id} className="block text-sm mb-2 flex items-center gap-2">
+                      <field.icon className="w-4 h-4" />
+                      {field.label}
+                    </label>
+                    <input
+                      type={field.type}
+                      id={field.id}
+                      name={field.id}
+                      value={formData[field.id as keyof typeof formData]}
+                      onChange={handleChange}
+                      required={field.id !== 'email'}
+                      className="w-full px-4 py-3 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                      placeholder={field.placeholder}
+                    />
+                  </motion.div>
+                ))}
 
-                <div>
-                  <label htmlFor="phone" className="block text-sm mb-2 flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    Телефон
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
-                    placeholder="+7 (___) ___-__-__"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm mb-2 flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
-                    placeholder="email@example.com"
-                  />
-                </div>
-
-                <div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
                   <label htmlFor="message" className="block text-sm mb-2 flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" />
                     Сообщение
@@ -141,47 +138,76 @@ export function ContactsPage() {
                     className="w-full px-4 py-3 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground resize-none"
                     placeholder="Расскажите, что вас интересует..."
                   />
-                </div>
+                </motion.div>
 
                 <button
                   type="submit"
-                  className="w-full py-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                  className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 bg-primary text-background font-semibold rounded-lg opacity-0 translate-y-5 hover:opacity-90 transition-all duration-200"
+                  style={{
+                    animation: 'fadeInUp 0.5s ease-out 0.5s forwards'
+                  }}
                 >
                   <Send className="w-5 h-5" />
                   Отправить заявку
                 </button>
               </form>
-            </div>
+            </motion.div>
 
             {/* Contact Information */}
-            <div className="space-y-6">
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
               {/* General Contact */}
-              <div className="bg-white rounded-lg shadow-md p-8">
-                <h2 className="text-2xl font-bold text-primary mb-6">
+              <motion.div 
+                className="bg-white rounded-lg shadow-md p-8"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <motion.h2 
+                  className="text-2xl font-bold text-primary mb-6"
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                >
                   Общая информация
-                </h2>
+                </motion.h2>
                 <div className="space-y-4">
-                  <div className="flex items-start space-x-4">
-                    <Phone className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                    <div>
-                      <div className="font-semibold mb-1">Телефон</div>
-                      <a href="tel:+79601663030" className="text-primary hover:underline">
-                        +7 (960) 166 30-30
-                      </a>
-                    </div>
-                  </div>
+                  {[
+                    { icon: Phone, title: 'Телефон', content: '+7 (960) 166 30-30', href: 'tel:+79601663030' },
+                    { icon: Mail, title: 'Email', content: 'otadoya.m@mail.ru', href: 'mailto:otadoya.m@mail.ru' },
+                  ].map((item, index) => (
+                    <motion.div 
+                      key={item.title}
+                      className="flex items-start space-x-4"
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
+                    >
+                      <item.icon className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                      <div>
+                        <div className="font-semibold mb-1">{item.title}</div>
+                        <a href={item.href} className="text-primary hover:underline">
+                          {item.content}
+                        </a>
+                      </div>
+                    </motion.div>
+                  ))}
 
-                  <div className="flex items-start space-x-4">
-                    <Mail className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                    <div>
-                      <div className="font-semibold mb-1">Email</div>
-                      <a href="mailto:otadoya.m@mail.ru" className="text-primary hover:underline">
-                        otadoya.m@mail.ru
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
+                  <motion.div 
+                    className="flex items-start space-x-4"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.6 }}
+                  >
                     <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                     <div>
                       <div className="font-semibold mb-1 flex items-center gap-2">
@@ -192,52 +218,51 @@ export function ContactsPage() {
                         Ежедневно с 9:00 до 20:00
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Locations List */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-primary mb-3">Наши салоны</h3>
-                {locations.map((location) => (
-                  <button
-                    key={location.id}
-                    onClick={() => setSelectedLocation(location.id)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                      selectedLocation === location.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border bg-white hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <MapPin className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
-                        selectedLocation === location.id ? 'text-primary' : 'text-muted-foreground'
-                      }`} />
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-primary mb-1">{location.name}</h4>
-                        <p className="text-sm text-muted-foreground">{location.address}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{location.hours}</p>
-                      </div>
-                      {selectedLocation === location.id && (
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+              <motion.div 
+                className="space-y-3"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+
+              </motion.div>
+            </motion.div>
           </div>
         </div>
 
         {/* Map Section */}
-        <div className="bg-white border-t border-border py-16">
+        <motion.div 
+          className="bg-white border-t border-border py-16"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-bold text-primary mb-8 text-center">
+            <motion.h2 
+              className="text-3xl font-bold text-primary mb-8 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
               Наши магазины на карте
-            </h2>
+            </motion.h2>
             
             {/* Карта с кнопками навигации */}
-            <div className="relative">
+            <motion.div 
+              className="relative"
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
               {/* Кнопка влево */}
               <button
                 onClick={handlePrevLocation}
@@ -269,34 +294,52 @@ export function ContactsPage() {
                   <path d="m9 18 6-6-6-6"/>
                 </svg>
               </button>
-            </div>
+            </motion.div>
 
             {/* Название текущего магазина */}
-            <div className="text-center mt-6">
+            <motion.div 
+              className="text-center mt-6"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
               <p className="text-lg font-semibold text-primary">{currentLocation?.name}</p>
               <p className="text-sm text-muted-foreground">{currentLocation?.address}</p>
-            </div>
+            </motion.div>
 
             {/* Адреса под картой */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              {locations.map((location) => (
-                <button
-                  key={location.id}
-                  onClick={() => setSelectedLocation(location.id)}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    selectedLocation === location.id
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-white hover:border-primary/50'
-                  }`}
-                >
-                  <h4 className="font-semibold text-primary mb-2">{location.name}</h4>
-                  <p className="text-sm text-muted-foreground mb-1">{location.address}</p>
-                  <p className="text-xs text-muted-foreground">{location.hours}</p>
-                </button>
-              ))}
-            </div>
+            <motion.div 
+              className="mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="flex gap-4 overflow-x-auto pb-4 snap-x justify-start md:justify-center">
+                {locations.map((location, index) => (
+                  <motion.button
+                    key={location.id}
+                    onClick={() => setSelectedLocation(location.id)}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className={`flex-shrink-0 w-72 p-4 rounded-xl border-2 text-left transition-all snap-start ${
+                      selectedLocation === location.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-white hover:border-primary/50'
+                    }`}
+                  >
+                    <h4 className="font-semibold text-primary mb-2">{location.name}</h4>
+                    <p className="text-sm text-muted-foreground mb-1">{location.address}</p>
+                    <p className="text-xs text-muted-foreground">{location.hours}</p>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </main>
       <Footer />
     </div>

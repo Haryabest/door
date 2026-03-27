@@ -3,7 +3,7 @@ import { DoorOpen, Shield, Award } from 'lucide-react'
 
 export function Features() {
   return (
-    <section className="py-20 bg-background">
+    <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
@@ -21,7 +21,7 @@ export function Features() {
             viewport={{ once: true }}
             whileHover={{ y: -8, boxShadow: '0 20px 25px -5px rgb(15 60 101 / 0.1)' }}
             transition={{ duration: 0.3 }}
-            className="text-center p-8 rounded-lg bg-[#FDF8E8] hover:bg-[#F9F3D9] transition-colors"
+            className="text-center p-8 rounded-lg bg-secondary hover:bg-accent transition-colors"
           >
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <DoorOpen className="w-8 h-8 text-primary" />
@@ -38,7 +38,7 @@ export function Features() {
             viewport={{ once: true }}
             whileHover={{ y: -8, boxShadow: '0 20px 25px -5px rgb(15 60 101 / 0.1)' }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="text-center p-8 rounded-lg bg-[#FDF8E8] hover:bg-[#F9F3D9] transition-colors"
+            className="text-center p-8 rounded-lg bg-secondary hover:bg-accent transition-colors"
           >
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Shield className="w-8 h-8 text-primary" />
@@ -55,7 +55,7 @@ export function Features() {
             viewport={{ once: true }}
             whileHover={{ y: -8, boxShadow: '0 20px 25px -5px rgb(15 60 101 / 0.1)' }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="text-center p-8 rounded-lg bg-[#FDF8E8] hover:bg-[#F9F3D9] transition-colors"
+            className="text-center p-8 rounded-lg bg-secondary hover:bg-accent transition-colors"
           >
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Award className="w-8 h-8 text-primary" />

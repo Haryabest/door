@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react'
 
 export function Categories() {
   return (
-    <section className="py-20 bg-[#F9F5D9]">
+    <section className="py-20 bg-secondary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">

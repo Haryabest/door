@@ -6,9 +6,9 @@ import { easing } from 'maath'
 import { motion } from 'framer-motion'
 
 export const Carousel3D = () => (
-  <div className="w-full h-full" style={{ background: '#fcf8d4' }}>
-    <Canvas camera={{ position: [0, 0, 100], fov: 15 }} style={{ background: '#fcf8d4' }}>
-      <fog attach="fog" args={['#fcf8d4', 8.5, 12]} />
+  <div className="w-full h-full" style={{ background: '#fafafa' }}>
+    <Canvas camera={{ position: [0, 0, 100], fov: 15 }} style={{ background: '#fafafa' }}>
+      <fog attach="fog" args={['#fafafa', 8.5, 12]} />
       <ScrollControls pages={3} style={{ scrollbarWidth: 'none' as any, msOverflowStyle: 'none' as any }}>
         <Rig rotation={[0, 0, 0.15]}>
           <Carousel />
