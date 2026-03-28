@@ -262,14 +262,14 @@ export function CatalogPage() {
                     <h2 className="text-xl font-bold text-primary">Фильтры</h2>
                     <div className="flex items-center gap-2">
                       {selectedCount > 0 && (
-                        <button 
+                        <button
                           onClick={resetFilters}
-                          className="text-sm text-primary hover:underline"
+                          className="text-sm text-primary hover:underline cursor-pointer"
                         >
                           Сбросить
                         </button>
                       )}
-                      <button onClick={() => setShowFilters(false)} className="text-primary p-2">
+                      <button onClick={() => setShowFilters(false)} className="text-primary p-2 cursor-pointer">
                         <X className="w-6 h-6" />
                       </button>
                     </div>
@@ -280,7 +280,7 @@ export function CatalogPage() {
                     <div className="border border-border rounded-lg overflow-hidden">
                       <button
                         onClick={() => toggleSection('catalog')}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors"
+                        className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors cursor-pointer"
                       >
                         <span className="font-medium text-primary">Каталог</span>
                         <ChevronRight className={`w-5 h-5 text-primary transition-transform ${
@@ -355,7 +355,7 @@ export function CatalogPage() {
                     <div className="border border-border rounded-lg overflow-hidden">
                       <button
                         onClick={() => toggleSection('material')}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors"
+                        className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors cursor-pointer"
                       >
                         <span className="font-medium text-primary">Материал</span>
                         <ChevronRight className={`w-5 h-5 text-primary transition-transform ${
@@ -391,7 +391,7 @@ export function CatalogPage() {
                     <div className="border border-border rounded-lg overflow-hidden">
                       <button
                         onClick={() => toggleSection('color')}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors"
+                        className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors cursor-pointer"
                       >
                         <span className="font-medium text-primary">Цвет</span>
                         <ChevronRight className={`w-5 h-5 text-primary transition-transform ${
@@ -506,7 +506,7 @@ export function CatalogPage() {
                   <p className="text-xl text-muted-foreground mb-4">Товары не найдены</p>
                   <button 
                     onClick={resetFilters}
-                    className="px-6 py-2 bg-primary text-background rounded-lg hover:opacity-90 transition-opacity"
+                    className="px-6 py-2 bg-primary text-background rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
                   >
                     Сбросить фильтры
                   </button>

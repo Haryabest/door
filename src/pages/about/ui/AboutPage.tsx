@@ -1,10 +1,13 @@
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
-import { Award, Users, Clock, ThumbsUp, Star, Shield, Truck, Headphones } from "lucide-react"
+import { Award, Users, Clock, ThumbsUp, Star, Shield, Truck, Headphones, Lock } from "lucide-react"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
+import { useNavigate } from 'react-router-dom'
 
 export function AboutPage() {
+  const navigate = useNavigate()
+
   return (
     <div className="flex flex-col min-h-screen">
       <SEO
@@ -150,17 +153,28 @@ export function AboutPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="group p-4 rounded-xl border-2 border-border hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+                  className="group p-3 sm:p-4 rounded-xl border-2 border-border hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
                 >
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
-                    <advantage.icon className="w-6 h-6 text-primary" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-2 sm:mb-3 group-hover:bg-primary/20 transition-colors">
+                    <advantage.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </div>
-                  <h3 className="font-semibold text-base mb-2 text-primary">{advantage.title}</h3>
-                  <p className="text-muted-foreground text-xs leading-relaxed">{advantage.description}</p>
+                  <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2 text-primary leading-tight">{advantage.title}</h3>
+                  <p className="text-muted-foreground text-xs leading-relaxed line-clamp-3">{advantage.description}</p>
                 </motion.div>
               ))}
             </div>
           </motion.div>
+        </div>
+
+        {/* Скрытая кнопка админки */}
+        <div className="fixed bottom-4 right-4 opacity-0 hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => navigate('/admin-login')}
+            className="p-3 bg-gray-800 text-white rounded-full shadow-lg hover:bg-gray-700 transition-colors"
+            title="Админ-панель"
+          >
+            <Lock className="w-5 h-5" />
+          </button>
         </div>
       </main>
       <Footer />

@@ -1,44 +1,40 @@
+// API для работы с товарами (заглушки для БД)
+
 export interface Product {
   id: number
   name: string
   price: number
-  oldPrice: number | null
-  image: string
-  category: string
-  material: string
-  color: string
+  oldPrice?: number | null
   description?: string
   features?: string[]
+  material: string
+  color: string
+  image: string
+  category: string
   slug: string
 }
 
-const API_BASE = '/api'
-
 export const productsApi = {
-  getProducts: async (): Promise<Product[]> => {
-    const response = await fetch(`${API_BASE}/products`)
-    if (!response.ok) {
-      console.warn('API request to /products failed - running in demo mode')
-      return []
-    }
-    return response.json()
-  },
+  getProducts: () => Promise.resolve([]),
+  searchProducts: (_query: string) => Promise.resolve([]),
+}
 
-  searchProducts: async (query: string): Promise<Product[]> => {
-    const response = await fetch(`${API_BASE}/products/search?q=${encodeURIComponent(query)}`)
-    if (!response.ok) {
-      console.warn('API request to /products/search failed - running in demo mode')
-      return []
-    }
-    return response.json()
-  },
+export async function createProduct(product: Omit<Product, 'id'>): Promise<Product | null> {
+  console.log('POST /api/products', product)
+  return null
+}
 
-  getProductById: async (id: number): Promise<Product | null> => {
-    const response = await fetch(`${API_BASE}/products/${id}`)
-    if (!response.ok) {
-      console.warn(`API request to /products/${id} failed - running in demo mode`)
-      return null
-    }
-    return response.json()
-  }
+export async function updateProduct(id: number, product: Partial<Product>): Promise<Product | null> {
+  console.log('PUT /api/products', id, product)
+  return null
+}
+
+export async function deleteProduct(id: number): Promise<boolean> {
+  console.log('DELETE /api/products', id)
+  return true
+}
+
+export async function uploadImage(file: File): Promise<string | null> {
+  console.log('POST /api/upload', file)
+  return null
 }

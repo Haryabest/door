@@ -5,6 +5,8 @@ import { PortfolioPage } from "@/pages/portfolio"
 import { AboutPage } from "@/pages/about"
 import { ContactsPage } from "@/pages/contacts"
 import { ProductPage } from "@/pages/product"
+import { AdminLoginPage } from "@/pages/admin-login"
+import { AdminPage } from "@/pages/admin"
 import { ChatWidget } from "@/widgets/ChatWidget"
 
 function App() {
@@ -17,6 +19,8 @@ function App() {
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contacts" element={<ContactsPage />} />
+        <Route path="/admin-login" element={<AdminLoginPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
       <ChatWidget />
     </BrowserRouter>

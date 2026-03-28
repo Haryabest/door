@@ -20,8 +20,8 @@ export function ProductPage() {
 
   useEffect(() => {
     setIsLoading(true)
-    productsApi.getProducts().then(products => {
-      setProduct(products.find(p => p.id === productId) || null)
+    productsApi.getProducts().then((products: any[]) => {
+      setProduct(products.find((p: any) => p.id === productId) || null)
       setIsLoading(false)
     })
   }, [productId])

@@ -58,7 +58,7 @@ export function Header() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className="p-2 text-foreground hover:text-primary transition-colors"
+            className="p-2 text-foreground hover:bg-secondary hover:text-primary rounded-lg transition-all cursor-pointer"
             aria-label="Поиск"
           >
             <svg
