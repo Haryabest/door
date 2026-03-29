@@ -1,1 +1,1 @@
-export { Carousel3D, ScrollIndicator } from "./ui/Carousel"
+export { HeroSection } from "./ui/Carousel"
