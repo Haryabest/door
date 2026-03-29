@@ -7,6 +7,7 @@ import { ContactsPage } from "@/pages/contacts"
 import { ProductPage } from "@/pages/product"
 import { AdminLoginPage } from "@/pages/admin-login"
 import { AdminPage } from "@/pages/admin"
+import { NotFoundPage } from "@/pages/not-found"
 import { ChatWidget } from "@/widgets/ChatWidget"
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Route path="/contacts" element={<ContactsPage />} />
         <Route path="/admin-login" element={<AdminLoginPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <ChatWidget />
     </BrowserRouter>
