@@ -11,7 +11,7 @@ interface Message {
 }
 
 export function ChatWidget() {
-  const { isFiltersOpen } = useContext(FiltersContext)
+  const { isFiltersOpen, isChatWidgetHidden } = useContext(FiltersContext)
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([
@@ -62,11 +62,17 @@ export function ChatWidget() {
     return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
   }
 
+  useEffect(() => {
+    if (isChatWidgetHidden && isOpen) {
+      setIsOpen(false)
+    }
+  }, [isChatWidgetHidden, isOpen])
+
   return (
     <>
       {/* Кнопка открытия чата */}
       <AnimatePresence>
-        {!isFiltersOpen && (
+        {!isFiltersOpen && !isChatWidgetHidden && (
           <motion.button
             onClick={() => setIsOpen(!isOpen)}
             initial={{ scale: 0 }}
@@ -88,7 +94,7 @@ export function ChatWidget() {
 
       {/* Окно чата */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && !isChatWidgetHidden && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

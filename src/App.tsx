@@ -11,16 +11,24 @@ import { NotFoundPage } from "@/pages/not-found"
 import { ChatWidget } from "@/widgets/ChatWidget"
 import { createContext, useState } from 'react'
 
-const FiltersContext = createContext<{ isFiltersOpen: boolean; setIsFiltersOpen: (open: boolean) => void }>({
+const FiltersContext = createContext<{
+  isFiltersOpen: boolean
+  setIsFiltersOpen: (open: boolean) => void
+  isChatWidgetHidden: boolean
+  setIsChatWidgetHidden: (hidden: boolean) => void
+}>({
   isFiltersOpen: false,
   setIsFiltersOpen: () => {},
+  isChatWidgetHidden: false,
+  setIsChatWidgetHidden: () => {},
 })
 
 export function App() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+  const [isChatWidgetHidden, setIsChatWidgetHidden] = useState(false)
 
   return (
-    <FiltersContext.Provider value={{ isFiltersOpen, setIsFiltersOpen }}>
+    <FiltersContext.Provider value={{ isFiltersOpen, setIsFiltersOpen, isChatWidgetHidden, setIsChatWidgetHidden }}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />

@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
 import { getPortfolioPage, type PortfolioPageData } from "@/shared/api/portfolio"
+import { FiltersContext } from "@/App"
 
 export function PortfolioPage() {
+  const { setIsChatWidgetHidden } = useContext(FiltersContext)
   const [pageData, setPageData] = useState<PortfolioPageData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState<number | null>(null)
@@ -13,6 +15,23 @@ export function PortfolioPage() {
   useEffect(() => {
     loadPageData()
   }, [])
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+
+    if (selectedImage) {
+      document.body.style.overflow = 'hidden'
+      setIsChatWidgetHidden(true)
+    } else {
+      document.body.style.overflow = previousOverflow
+      setIsChatWidgetHidden(false)
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      setIsChatWidgetHidden(false)
+    }
+  }, [selectedImage, setIsChatWidgetHidden])
 
   const loadPageData = async () => {
     setIsLoading(true)
@@ -93,14 +112,14 @@ export function PortfolioPage() {
         {/* Modal для просмотра */}
         {selectedImage && (
           <motion.div 
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center p-4 cursor-pointer"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelectedImage(null)}
           >
             <motion.div 
-              className="relative bg-white rounded-2xl overflow-hidden max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+              className="relative bg-white rounded-2xl overflow-hidden max-w-5xl w-full h-[85vh] max-h-[760px] cursor-default"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
@@ -108,30 +127,34 @@ export function PortfolioPage() {
             >
               <button
                 onClick={() => setSelectedImage(null)}
-                className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-primary transition-all shadow-lg"
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-primary transition-all shadow-lg cursor-pointer"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                 </svg>
               </button>
-              <img
-                src={pageData.items.find(i => i.id === selectedImage)?.image}
-                alt="Portfolio"
-                className="w-full h-auto"
-              />
-              <motion.div 
-                className="p-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-              >
-                <h3 className="text-2xl font-bold text-primary mb-3">
-                  {pageData.items.find(i => i.id === selectedImage)?.title}
-                </h3>
-                <p className="text-muted-foreground text-base leading-relaxed">
-                  {pageData.items.find(i => i.id === selectedImage)?.description}
-                </p>
-              </motion.div>
+              <div className="h-full grid grid-cols-1 md:grid-cols-[1.2fr_1fr]">
+                <div className="bg-black/5 flex items-center justify-center p-4 md:p-6 min-h-[280px]">
+                  <img
+                    src={pageData.items.find(i => i.id === selectedImage)?.image}
+                    alt="Portfolio"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <motion.div 
+                  className="p-6 md:p-8 overflow-y-auto border-t md:border-t-0 md:border-l border-border"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                >
+                  <h3 className="text-2xl font-bold text-primary mb-3">
+                    {pageData.items.find(i => i.id === selectedImage)?.title}
+                  </h3>
+                  <p className="text-muted-foreground text-base leading-relaxed">
+                    {pageData.items.find(i => i.id === selectedImage)?.description}
+                  </p>
+                </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         )}
