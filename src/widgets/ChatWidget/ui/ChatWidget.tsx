@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useContext } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, X, MessageCircle } from 'lucide-react'
+import { FiltersContext } from '@/App'
 
 interface Message {
   id: number
@@ -10,6 +11,7 @@ interface Message {
 }
 
 export function ChatWidget() {
+  const { isFiltersOpen } = useContext(FiltersContext)
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([
@@ -63,21 +65,26 @@ export function ChatWidget() {
   return (
     <>
       {/* Кнопка открытия чата */}
-      <motion.button
-        onClick={() => setIsOpen(!isOpen)}
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center z-50 hover:bg-primary/90 transition-colors"
-        aria-label="Открыть чат"
-      >
-        {isOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
-          <MessageCircle className="w-6 h-6" />
+      <AnimatePresence>
+        {!isFiltersOpen && (
+          <motion.button
+            onClick={() => setIsOpen(!isOpen)}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center z-50 hover:bg-primary/90 transition-colors"
+            aria-label="Открыть чат"
+          >
+            {isOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <MessageCircle className="w-6 h-6" />
+            )}
+          </motion.button>
         )}
-      </motion.button>
+      </AnimatePresence>
 
       {/* Окно чата */}
       <AnimatePresence>

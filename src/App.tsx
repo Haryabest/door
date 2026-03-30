@@ -9,24 +9,34 @@ import { AdminLoginPage } from "@/pages/admin-login"
 import { AdminPage } from "@/pages/admin"
 import { NotFoundPage } from "@/pages/not-found"
 import { ChatWidget } from "@/widgets/ChatWidget"
+import { createContext, useState } from 'react'
 
-function App() {
+const FiltersContext = createContext<{ isFiltersOpen: boolean; setIsFiltersOpen: (open: boolean) => void }>({
+  isFiltersOpen: false,
+  setIsFiltersOpen: () => {},
+})
+
+export function App() {
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/catalog" element={<CatalogPage />} />
-        <Route path="/catalog/:slug" element={<ProductPage />} />
-        <Route path="/portfolio" element={<PortfolioPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contacts" element={<ContactsPage />} />
-        <Route path="/admin-login" element={<AdminLoginPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-      <ChatWidget />
-    </BrowserRouter>
+    <FiltersContext.Provider value={{ isFiltersOpen, setIsFiltersOpen }}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="/catalog/:slug" element={<ProductPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
+          <Route path="/admin-login" element={<AdminLoginPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+        <ChatWidget />
+      </BrowserRouter>
+    </FiltersContext.Provider>
   )
 }
 
-export default App
+export { FiltersContext }

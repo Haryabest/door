@@ -1,0 +1,8 @@
+export { HomePageEditor } from './HomePageEditor'
+export { CatalogPageEditor } from './CatalogPageEditor'
+export { PortfolioPageEditor } from './PortfolioPageEditor'
+export { AboutPageEditor } from './AboutPageEditor'
+export { ContactsPageEditor } from './ContactsPageEditor'
+export { HeaderPageEditor } from './HeaderPageEditor'
+export { ProductsEditor } from './ProductsEditor'
+export { MessengerEditor } from './MessengerEditor'

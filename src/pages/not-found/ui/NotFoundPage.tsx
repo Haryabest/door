@@ -5,16 +5,6 @@ import { Home, ArrowLeft, DoorOpen } from 'lucide-react'
 export function NotFoundPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link to="/" className="flex flex-col">
-            <span className="text-2xl font-bold text-primary">От А до Я</span>
-            <span className="text-sm text-muted-foreground">Двери и Фурнитура</span>
-          </Link>
-        </div>
-      </header>
-
       {/* Контент */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="text-center max-w-2xl mx-auto">

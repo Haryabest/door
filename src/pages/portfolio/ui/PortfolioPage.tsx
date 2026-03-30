@@ -3,18 +3,54 @@ import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
-import { portfolioApi } from "@/shared/api/portfolio"
-import type { PortfolioItem } from "@/shared/api/portfolio"
+import { getPortfolioPage, type PortfolioPageData } from "@/shared/api/portfolio"
 
 export function PortfolioPage() {
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
+  const [pageData, setPageData] = useState<PortfolioPageData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState<number | null>(null)
 
   useEffect(() => {
-    portfolioApi.getPortfolioItems().then(data => {
-      setPortfolioItems(data)
-    })
+    loadPageData()
   }, [])
+
+  const loadPageData = async () => {
+    setIsLoading(true)
+    const data = await getPortfolioPage()
+    if (data) {
+      setPageData(data)
+    }
+    setIsLoading(false)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-primary mb-4">Загрузка...</h1>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (!pageData) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-primary mb-4">Ошибка загрузки</h1>
+            <button onClick={loadPageData} className="text-primary hover:underline">Попробовать снова</button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -24,24 +60,17 @@ export function PortfolioPage() {
       />
       <Header />
       <main className="flex-1">
-
         {/* Portfolio Grid - Masonry layout */}
-        <motion.div 
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-            {portfolioItems.map((item, index) => (
+            {pageData.items.map((item, index) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group relative overflow-hidden rounded-xl shadow-md hover:shadow-xl transition-all duration-300 bg-white cursor-pointer break-inside-avoid"
+                className="group relative overflow-hidden rounded-xl shadow-md hover:shadow-xl transition-all duration-300 bg-white break-inside-avoid cursor-pointer"
                 onClick={() => setSelectedImage(item.id)}
               >
                 <div className="relative overflow-hidden">
@@ -59,7 +88,7 @@ export function PortfolioPage() {
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Modal для просмотра */}
         {selectedImage && (
@@ -77,7 +106,6 @@ export function PortfolioPage() {
               transition={{ duration: 0.3 }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Кнопка закрытия */}
               <button
                 onClick={() => setSelectedImage(null)}
                 className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-primary transition-all shadow-lg"
@@ -86,46 +114,30 @@ export function PortfolioPage() {
                   <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                 </svg>
               </button>
-
-              {/* Контент модального окна */}
-              <div className="flex flex-col md:flex-row">
-                {/* Картинка */}
-                <div className="md:w-2/3">
-                  <img
-                    src={portfolioItems.find(i => i.id === selectedImage)?.image}
-                    alt="Portfolio"
-                    className="w-full h-auto object-cover md:rounded-l-2xl"
-                  />
-                </div>
-
-                {/* Описание */}
-                <div className="md:w-1/3 p-6 md:p-8 flex flex-col justify-center">
-                  <h3 className="text-2xl font-bold text-primary mb-4">
-                    {portfolioItems.find(i => i.id === selectedImage)?.title}
-                  </h3>
-                  <p className="text-muted-foreground text-base leading-relaxed mb-6">
-                    {portfolioItems.find(i => i.id === selectedImage)?.description}
-                  </p>
-                  <a
-                    href="/contacts"
-                    className="inline-block px-6 py-3 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity text-center cursor-pointer"
-                  >
-                    Узнать цену
-                  </a>
-                </div>
-              </div>
+              <img
+                src={pageData.items.find(i => i.id === selectedImage)?.image}
+                alt="Portfolio"
+                className="w-full h-auto"
+              />
+              <motion.div 
+                className="p-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+              >
+                <h3 className="text-2xl font-bold text-primary mb-3">
+                  {pageData.items.find(i => i.id === selectedImage)?.title}
+                </h3>
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  {pageData.items.find(i => i.id === selectedImage)?.description}
+                </p>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
 
         {/* CTA */}
-        <motion.div 
-          className="bg-white border-t border-border py-16"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
+        <div className="bg-white border-t border-border py-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <motion.h2 
               className="text-3xl font-bold text-primary mb-4"
@@ -152,11 +164,13 @@ export function PortfolioPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               Связаться с нами
             </motion.a>
           </div>
-        </motion.div>
+        </div>
       </main>
       <Footer />
     </div>

@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { FiltersContext } from '@/App'
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { Checkbox } from "@/shared/ui/checkbox"
@@ -9,6 +10,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { SEO } from "@/shared/ui/SEO"
 import { productsApi } from "@/shared/api/products"
 import type { Product } from "@/shared/api/products"
+import { getCatalogPage, type CatalogPageData } from "@/shared/api/catalog"
+import { generateProductSlug } from "@/shared/lib/slug"
+
+const iconMap: Record<string, any> = {
+  'DoorOpen': DoorOpen,
+  'Home': Home,
+  'Settings': Settings,
+  'PanelLeft': PanelLeft,
+  'Square': Square,
+}
 
 // Категории каталога
 const catalogCategories = [
@@ -54,8 +65,10 @@ const catalogCategories = [
 
 export function CatalogPage() {
   const navigate = useNavigate()
+  const { setIsFiltersOpen } = useContext(FiltersContext)
   const [showFilters, setShowFilters] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [catalogData, setCatalogData] = useState<CatalogPageData | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -74,13 +87,50 @@ export function CatalogPage() {
   const itemsPerPage = 8
 
   useEffect(() => {
-    productsApi.getProducts().then(data => {
-      setProducts(data)
-      setIsLoading(false)
-    })
+    loadCatalogData()
+    loadProducts()
   }, [])
 
-  const toggleFilters = () => setShowFilters(!showFilters)
+  const loadCatalogData = async () => {
+    const data = await getCatalogPage()
+    if (data) {
+      setCatalogData(data)
+    }
+  }
+
+  const loadProducts = async () => {
+    setIsLoading(true)
+    const data = await productsApi.getProducts()
+    if (data && data.length > 0) {
+      setProducts(data.map((product: any) => ({
+        ...product,
+        slug: generateProductSlug(product.name, product.material, product.color, product.id)
+      })))
+    } else {
+      // Тестовые данные
+      setProducts([
+        { id: 1, slug: 'dver-klassik-pvh-belyy-1', name: "Дверь Классик", price: 15900, oldPrice: 18900, image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400", category: "interior", material: "ПВХ", color: "Белый" },
+        { id: 2, slug: 'dver-modern-emal-seryy-2', name: "Дверь Модерн", price: 18500, oldPrice: 22000, image: "https://images.unsplash.com/photo-1484154218962-a1c002085d2f?w=400", category: "interior", material: "Эмаль", color: "Серый" },
+        { id: 3, slug: 'dver-loft-ekoshpon-korichnevyy-3', name: "Дверь Лофт", price: 21000, oldPrice: null, image: "https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=400", category: "interior", material: "Экошпон", color: "Коричневый" },
+        { id: 4, slug: 'dver-skandi-massiv-belyy-4', name: "Дверь Сканди", price: 17200, oldPrice: 19500, image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400", category: "interior", material: "Массив", color: "Белый" },
+        { id: 5, slug: 'dver-neoklassika-emal-bezhevyy-5', name: "Дверь Неоклассика", price: 24900, oldPrice: 29900, image: "https://images.unsplash.com/photo-1506306465497-6a840848fcab?w=400", category: "interior", material: "Эмаль", color: "Бежевый" },
+        { id: 6, slug: 'dver-khay-tek-pvh-chernyy-6', name: "Дверь Хай-тек", price: 26500, oldPrice: null, image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", category: "interior", material: "ПВХ", color: "Чёрный" },
+        { id: 7, slug: 'dver-provans-naturalnyy-shpon-bezhevyy-7', name: "Дверь Прованс", price: 19800, oldPrice: 23000, image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400", category: "interior", material: "Натуральный шпон", color: "Бежевый" },
+        { id: 8, slug: 'dver-minimalizm-ekoshpon-seryy-8', name: "Дверь Минимализм", price: 22300, oldPrice: null, image: "https://images.unsplash.com/photo-1484154218962-a1c002085d2f?w=400", category: "interior", material: "Экошпон", color: "Серый" },
+        { id: 9, slug: 'dver-art-deko-emal-venge-9', name: "Дверь Арт-деко", price: 31500, oldPrice: 38000, image: "https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=400", category: "interior", material: "Эмаль", color: "Венге" },
+        { id: 10, slug: 'dver-eko-ekoshpon-belyy-10', name: "Дверь Эко", price: 16700, oldPrice: 18900, image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400", category: "interior", material: "Экошпон", color: "Белый" },
+        { id: 11, slug: 'dver-standart-pvh-bezhevyy-11', name: "Дверь Стандарт", price: 12900, oldPrice: null, image: "https://images.unsplash.com/photo-1506306465497-6a840848fcab?w=400", category: "interior", material: "ПВХ", color: "Бежевый" },
+        { id: 12, slug: 'dver-lyuks-massiv-duba-venge-12', name: "Дверь Люкс", price: 45900, oldPrice: 55000, image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", category: "interior", material: "Массив дуба", color: "Венге" },
+      ])
+    }
+    setIsLoading(false)
+  }
+
+  const toggleFilters = () => {
+    const newState = !showFilters
+    setShowFilters(newState)
+    setIsFiltersOpen(newState)
+  }
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -89,8 +139,8 @@ export function CatalogPage() {
     }))
   }
 
-  const materials = ["ПВХ", "Эмаль", "Экошпон", "Массив", "Натуральный шпон"]
-  const colors = [
+  const materials = catalogData?.materials || ["ПВХ", "Эмаль", "Экошпон", "Массив", "Натуральный шпон"]
+  const colors = catalogData?.colors || [
     { name: "Белый", color: "#FFFFFF", border: "#E5E5E5" },
     { name: "Серый", color: "#9CA3AF", border: "#6B7280" },
     { name: "Бежевый", color: "#F5E6D3", border: "#D4C4B0" },
@@ -269,7 +319,13 @@ export function CatalogPage() {
                           Сбросить
                         </button>
                       )}
-                      <button onClick={() => setShowFilters(false)} className="text-primary p-2 cursor-pointer">
+                      <button 
+                        onClick={() => {
+                          setShowFilters(false)
+                          setIsFiltersOpen(false)
+                        }} 
+                        className="text-primary p-2 cursor-pointer"
+                      >
                         <X className="w-6 h-6" />
                       </button>
                     </div>
@@ -297,7 +353,7 @@ export function CatalogPage() {
                             className="overflow-hidden"
                           >
                             <div className="p-3 space-y-1 bg-background">
-                              {catalogCategories.map((cat) => (
+                              {(catalogData?.categories || catalogCategories).map((cat: any) => (
                                 <div key={cat.id}>
                                   <button
                                     onClick={() => toggleCategory(cat.id)}
@@ -308,7 +364,10 @@ export function CatalogPage() {
                                     }`}
                                   >
                                     <div className="flex items-center gap-2">
-                                      <cat.icon className="w-4 h-4" />
+                                      {(() => {
+                                        const IconComponent = iconMap[cat.icon] || cat.icon
+                                        return typeof IconComponent === 'string' ? null : <IconComponent className="w-4 h-4" />
+                                      })()}
                                       {cat.name}
                                     </div>
                                     {cat.subcategories.length > 0 && (
@@ -317,7 +376,7 @@ export function CatalogPage() {
                                       }`} />
                                     )}
                                   </button>
-                                  
+
                                   {/* Подкатегории */}
                                   {cat.subcategories.length > 0 && selectedCategory === cat.id && (
                                     <motion.div
@@ -327,7 +386,7 @@ export function CatalogPage() {
                                       className="overflow-hidden"
                                     >
                                       <div className="ml-6 mt-2 space-y-1">
-                                        {cat.subcategories.map((subcat) => (
+                                        {cat.subcategories.map((subcat: any) => (
                                           <button
                                             key={subcat.id}
                                             onClick={() => toggleSubcategory(subcat.id)}
