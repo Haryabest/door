@@ -1,27 +1,37 @@
 import type { RequestHandler } from 'express'
+import { getSessionFromRequest, verifySessionToken } from '../lib/adminSession.js'
 
 /**
- * Если задан ADMIN_API_TOKEN — требует заголовок Authorization: Bearer <token>.
- * Если не задан — пропускает (удобно для локальной разработки).
+ * Доступ к мутациям:
+ * - Bearer === ADMIN_API_TOKEN (если задан), или
+ * - валидная сессия (cookie после POST /api/auth/admin/login), или
+ * - dev без токена: пропуск (удобно для локальной разработки; в production задайте ADMIN_API_TOKEN и/или сессию).
  */
 export const requireAdminToken: RequestHandler = (req, res, next) => {
-  const expected = process.env.ADMIN_API_TOKEN?.trim()
-  if (!expected) {
+  const bearerExpected = process.env.ADMIN_API_TOKEN?.trim()
+  const devOpen = !bearerExpected && process.env.NODE_ENV !== 'production'
+
+  if (bearerExpected) {
+    const auth = req.headers.authorization
+    if (auth?.startsWith('Bearer ')) {
+      const token = auth.slice(7).trim()
+      if (token === bearerExpected) {
+        next()
+        return
+      }
+    }
+  }
+
+  const raw = getSessionFromRequest(req.headers.cookie)
+  if (raw && verifySessionToken(raw)) {
     next()
     return
   }
 
-  const auth = req.headers.authorization
-  if (!auth?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Требуется авторизация', code: 'unauthorized' })
+  if (devOpen) {
+    next()
     return
   }
 
-  const token = auth.slice(7).trim()
-  if (token !== expected) {
-    res.status(403).json({ error: 'Недостаточно прав', code: 'forbidden' })
-    return
-  }
-
-  next()
+  res.status(401).json({ error: 'Требуется авторизация', code: 'unauthorized' })
 }

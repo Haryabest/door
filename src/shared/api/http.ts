@@ -1,8 +1,8 @@
-/** Базовый fetch к API: VITE_API_URL, Bearer из env или из localStorage (поле на странице входа в админку). */
+/** Базовый fetch к API: VITE_API_URL, Bearer из env или localStorage (опционально), cookie-сессия с credentials. */
 
 const ORIGIN = import.meta.env.VITE_API_URL ?? ''
 
-/** Ключ localStorage — тот же секрет, что ADMIN_API_TOKEN на сервере */
+/** Ключ localStorage — только для опционального Bearer (скрипты, без входа по паролю) */
 export const ADMIN_API_TOKEN_STORAGE_KEY = 'doors_admin_api_token'
 
 function getAdminBearerToken(): string {
@@ -25,5 +25,9 @@ export function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   if (token) {
     headers.set('Authorization', `Bearer ${token}`)
   }
-  return fetch(apiUrl(path), { ...init, headers })
+  return fetch(apiUrl(path), {
+    ...init,
+    headers,
+    credentials: 'include',
+  })
 }

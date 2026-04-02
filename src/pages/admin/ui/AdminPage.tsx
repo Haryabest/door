@@ -12,11 +12,11 @@ import { getPortfolioPage, updatePortfolioPage, type PortfolioPageData, type Por
 import { getHomePage, updateHomePage, type HomePageData, type CategoryItem } from '@/shared/api/home'
 import { getCatalogPage, updateCatalogPage, type CatalogPageData, type CatalogCategory, type CatalogColor } from '@/shared/api/catalog'
 import { defaultHeaderData, getHeader, updateHeader, type HeaderData, type HeaderNavItem } from '@/shared/api/header'
-import { ADMIN_API_TOKEN_STORAGE_KEY } from '@/shared/api/http'
+import { adminLogout, adminMe } from '@/shared/api/auth'
 import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor } from './editors'
 
 const SAVE_FAILED_HINT =
-  'Ошибка сохранения. Если на сервере задан ADMIN_API_TOKEN — введите тот же секрет при входе в поле «Токен API» или задайте VITE_ADMIN_API_TOKEN при сборке.'
+  'Ошибка сохранения. Выйдите и войдите снова (сессия). Для API-скриптов нужен Bearer (ADMIN_API_TOKEN) или VITE_ADMIN_API_TOKEN при сборке.'
 
 // Типы
 export interface ProductLocal {
@@ -86,6 +86,7 @@ interface HeaderPageState {
 
 export function AdminPage() {
   const navigate = useNavigate()
+  const [authChecked, setAuthChecked] = useState(false)
   const [activeTab, setActiveTab] = useState<'products' | 'pages' | 'messages'>('products')
   const [activePage, setActivePage] = useState<'home' | 'catalog' | 'portfolio' | 'about' | 'contacts' | 'header'>('home')
   const [products, setProducts] = useState<ProductLocal[]>([])
@@ -144,8 +145,25 @@ export function AdminPage() {
     image: ''
   })
 
-  // Загрузка данных из БД
   useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const ok = await adminMe()
+      if (cancelled) return
+      if (!ok) {
+        navigate('/admin-login', { replace: true })
+        return
+      }
+      setAuthChecked(true)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [navigate])
+
+  // Загрузка данных из БД после проверки сессии
+  useEffect(() => {
+    if (!authChecked) return
     loadProducts()
     loadChats()
     loadAboutPage()
@@ -154,7 +172,7 @@ export function AdminPage() {
     loadHomePage()
     loadCatalogPage()
     loadHeaderPage()
-  }, [])
+  }, [authChecked])
 
   const loadProducts = async () => {
     const list = await productsApi.getProducts()
@@ -685,10 +703,17 @@ export function AdminPage() {
   )
 
   // Выход
-  const handleLogout = () => {
-    localStorage.removeItem('isAdmin')
-    localStorage.removeItem(ADMIN_API_TOKEN_STORAGE_KEY)
+  const handleLogout = async () => {
+    await adminLogout()
     navigate('/')
+  }
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-muted-foreground">
+        Проверка сессии…
+      </div>
+    )
   }
 
   return (

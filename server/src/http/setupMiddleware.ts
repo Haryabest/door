@@ -4,7 +4,7 @@ import compression from 'compression'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import { pinoHttp } from 'pino-http'
-import { corsOrigins } from '../lib/corsConfig.js'
+import { corsMiddlewareOptions } from '../lib/corsConfig.js'
 import { logger } from '../lib/logger.js'
 import { correlationId } from '../middleware/correlationId.js'
 
@@ -35,7 +35,7 @@ export function setupMiddleware(app: Express) {
     )
   }
 
-  app.use(cors({ origin: corsOrigins() }))
+  app.use(cors(corsMiddlewareOptions()))
 
   const apiLimiter = rateLimit({
     windowMs: Number(process.env.API_RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000),

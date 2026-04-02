@@ -2,31 +2,29 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Lock, Eye, EyeOff } from 'lucide-react'
-import { ADMIN_API_TOKEN_STORAGE_KEY } from '@/shared/api/http'
+import { adminLogin } from '@/shared/api/auth'
 
 export function AdminLoginPage() {
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
-  const [apiToken, setApiToken] = useState(() =>
-    typeof localStorage !== 'undefined' ? localStorage.getItem(ADMIN_API_TOKEN_STORAGE_KEY) ?? '' : ''
-  )
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password !== 'admin123') {
-      setError('Неверный пароль')
-      return
+    setError('')
+    setPending(true)
+    try {
+      const ok = await adminLogin(password)
+      if (!ok) {
+        setError('Неверный пароль или сервер не принял вход')
+        return
+      }
+      navigate('/admin', { replace: true })
+    } finally {
+      setPending(false)
     }
-    localStorage.setItem('isAdmin', 'true')
-    const t = apiToken.trim()
-    if (t) {
-      localStorage.setItem(ADMIN_API_TOKEN_STORAGE_KEY, t)
-    } else {
-      localStorage.removeItem(ADMIN_API_TOKEN_STORAGE_KEY)
-    }
-    navigate('/admin')
   }
 
   return (
@@ -43,7 +41,7 @@ export function AdminLoginPage() {
               <Lock className="w-8 h-8 text-background" />
             </div>
             <h1 className="text-2xl font-bold text-primary mb-2">Админ-панель</h1>
-            <p className="text-muted-foreground">Введите пароль для входа</p>
+            <p className="text-muted-foreground">Пароль из базы (после миграции по умолчанию — admin123, смените)</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -58,6 +56,8 @@ export function AdminLoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 pr-12 border-2 border-border rounded-lg focus:outline-none focus:border-primary transition-colors"
                   placeholder="••••••••"
+                  disabled={pending}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -72,30 +72,19 @@ export function AdminLoginPage() {
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Токен API (как ADMIN_API_TOKEN на сервере)
-              </label>
-              <input
-                type="password"
-                value={apiToken}
-                onChange={(e) => setApiToken(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-primary transition-colors font-mono text-sm"
-                placeholder="Без токена сохранение на сервер не сработает, если задан ADMIN_API_TOKEN"
-                autoComplete="off"
-              />
-              <p className="mt-2 text-xs text-muted-foreground">
-                Один раз вставьте тот же секрет, что в <code className="text-xs">server/.env</code>. Хранится только в браузере.
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Хранится в PostgreSQL (<code className="text-xs">admin_credential</code>). Смена:{' '}
+              <code className="text-xs">cd server && npm run set-admin-password -- '…'</code>
+            </p>
 
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-3 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
+              disabled={pending}
+              whileHover={{ scale: pending ? 1 : 1.02 }}
+              whileTap={{ scale: pending ? 1 : 0.98 }}
+              className="w-full py-3 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              Войти
+              {pending ? 'Вход…' : 'Войти'}
             </motion.button>
           </form>
 
