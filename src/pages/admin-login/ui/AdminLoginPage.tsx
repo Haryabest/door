@@ -2,22 +2,31 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Lock, Eye, EyeOff } from 'lucide-react'
+import { ADMIN_API_TOKEN_STORAGE_KEY } from '@/shared/api/http'
 
 export function AdminLoginPage() {
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
+  const [apiToken, setApiToken] = useState(() =>
+    typeof localStorage !== 'undefined' ? localStorage.getItem(ADMIN_API_TOKEN_STORAGE_KEY) ?? '' : ''
+  )
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Простая проверка пароля (в реальности нужен бэкенд)
-    if (password === 'admin123') {
-      localStorage.setItem('isAdmin', 'true')
-      navigate('/admin')
-    } else {
+    if (password !== 'admin123') {
       setError('Неверный пароль')
+      return
     }
+    localStorage.setItem('isAdmin', 'true')
+    const t = apiToken.trim()
+    if (t) {
+      localStorage.setItem(ADMIN_API_TOKEN_STORAGE_KEY, t)
+    } else {
+      localStorage.removeItem(ADMIN_API_TOKEN_STORAGE_KEY)
+    }
+    navigate('/admin')
   }
 
   return (
@@ -29,7 +38,6 @@ export function AdminLoginPage() {
         className="w-full max-w-md"
       >
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Логотип */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
               <Lock className="w-8 h-8 text-background" />
@@ -38,7 +46,6 @@ export function AdminLoginPage() {
             <p className="text-muted-foreground">Введите пароль для входа</p>
           </div>
 
-          {/* Форма */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
@@ -65,6 +72,23 @@ export function AdminLoginPage() {
               )}
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Токен API (как ADMIN_API_TOKEN на сервере)
+              </label>
+              <input
+                type="password"
+                value={apiToken}
+                onChange={(e) => setApiToken(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-primary transition-colors font-mono text-sm"
+                placeholder="Без токена сохранение на сервер не сработает, если задан ADMIN_API_TOKEN"
+                autoComplete="off"
+              />
+              <p className="mt-2 text-xs text-muted-foreground">
+                Один раз вставьте тот же секрет, что в <code className="text-xs">server/.env</code>. Хранится только в браузере.
+              </p>
+            </div>
+
             <motion.button
               type="submit"
               whileHover={{ scale: 1.02 }}
@@ -75,7 +99,6 @@ export function AdminLoginPage() {
             </motion.button>
           </form>
 
-          {/* Ссылка на сайт */}
           <div className="mt-6 text-center">
             <a
               href="/"

@@ -1,5 +1,7 @@
 // API для работы со страницей "Контакты" (заглушки для БД)
 
+import { apiFetch } from './http'
+
 export interface ContactsPageData {
   phone: string
   email: string
@@ -16,8 +18,6 @@ export interface LocationItem {
   hours: string
   coords: [number, number]
 }
-
-const API_URL = '/api'
 
 // Данные по умолчанию (если API не доступен)
 const defaultContactsData: ContactsPageData = {
@@ -59,7 +59,7 @@ const defaultContactsData: ContactsPageData = {
  */
 export async function getContactsPage(): Promise<ContactsPageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/contacts`)
+    const response = await apiFetch('/api/pages/contacts')
     if (!response.ok) throw new Error('Failed to fetch contacts page')
     return await response.json()
   } catch (error) {
@@ -75,7 +75,7 @@ export async function getContactsPage(): Promise<ContactsPageData | null> {
  */
 export async function updateContactsPage(data: ContactsPageData): Promise<ContactsPageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/contacts`, {
+    const response = await apiFetch('/api/pages/contacts', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export async function updateContactsPage(data: ContactsPageData): Promise<Contac
  */
 export async function addLocation(location: Omit<LocationItem, 'id'>): Promise<LocationItem | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/contacts/locations`, {
+    const response = await apiFetch('/api/pages/contacts/locations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -117,7 +117,7 @@ export async function addLocation(location: Omit<LocationItem, 'id'>): Promise<L
  */
 export async function deleteLocation(id: number): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/pages/contacts/locations/${id}`, {
+    const response = await apiFetch(`/api/pages/contacts/locations/${id}`, {
       method: 'DELETE',
     })
     if (!response.ok) throw new Error('Failed to delete location')
@@ -134,7 +134,7 @@ export async function deleteLocation(id: number): Promise<boolean> {
  */
 export async function updateLocation(id: number, location: Partial<LocationItem>): Promise<LocationItem | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/contacts/locations/${id}`, {
+    const response = await apiFetch(`/api/pages/contacts/locations/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

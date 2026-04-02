@@ -1,5 +1,7 @@
 // API для работы с Главной страницей (заглушки для БД)
 
+import { apiFetch } from './http'
+
 export interface HomePageData {
   hero: HeroSection
   features: FeatureItem[]
@@ -27,8 +29,6 @@ export interface CategoryItem {
   category: string
 }
 
-const API_URL = '/api'
-
 // Данные по умолчанию (если API не доступен)
 const defaultHomePageData: HomePageData = {
   hero: {
@@ -55,7 +55,7 @@ const defaultHomePageData: HomePageData = {
  */
 export async function getHomePage(): Promise<HomePageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/home`)
+    const response = await apiFetch('/api/pages/home')
     if (!response.ok) throw new Error('Failed to fetch home page')
     return await response.json()
   } catch (error) {
@@ -70,7 +70,7 @@ export async function getHomePage(): Promise<HomePageData | null> {
  */
 export async function updateHomePage(data: HomePageData): Promise<HomePageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/home`, {
+    const response = await apiFetch('/api/pages/home', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

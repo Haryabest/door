@@ -4,15 +4,19 @@ import {
   Package, MessageSquare, LogOut, Plus, Trash2, Edit, Save, X,
   Search, Send, ChevronLeft, Home, Image as ImageIcon, FileText, Settings, MapPin, PanelTop
 } from 'lucide-react'
-import { updateProduct, deleteProduct } from '@/shared/api/products'
-import { sendMessage } from '@/shared/api/chats'
+import { updateProduct, deleteProduct, productsApi } from '@/shared/api/products'
+import { sendMessage, getChats } from '@/shared/api/chats'
 import { getAboutPage, updateAboutPage, type AboutPageData, type StatItem, type AdvantageItem } from '@/shared/api/about'
 import { getContactsPage, updateContactsPage, type ContactsPageData, type LocationItem } from '@/shared/api/contacts'
 import { getPortfolioPage, updatePortfolioPage, type PortfolioPageData, type PortfolioItem } from '@/shared/api/portfolio'
 import { getHomePage, updateHomePage, type HomePageData, type CategoryItem } from '@/shared/api/home'
 import { getCatalogPage, updateCatalogPage, type CatalogPageData, type CatalogCategory, type CatalogColor } from '@/shared/api/catalog'
 import { defaultHeaderData, getHeader, updateHeader, type HeaderData, type HeaderNavItem } from '@/shared/api/header'
+import { ADMIN_API_TOKEN_STORAGE_KEY } from '@/shared/api/http'
 import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor } from './editors'
+
+const SAVE_FAILED_HINT =
+  'Ошибка сохранения. Если на сервере задан ADMIN_API_TOKEN — введите тот же секрет при входе в поле «Токен API» или задайте VITE_ADMIN_API_TOKEN при сборке.'
 
 // Типы
 export interface ProductLocal {
@@ -153,46 +157,21 @@ export function AdminPage() {
   }, [])
 
   const loadProducts = async () => {
-    // Реальный запрос к БД
-    console.log('GET /api/products')
-    // Тестовые данные
-    setProducts([
-      { id: 1, name: "Дверь Классик", material: "ПВХ", color: "Белый", image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400" },
-      { id: 2, name: "Дверь Модерн", material: "Эмаль", color: "Серый", image: "https://images.unsplash.com/photo-1484154218962-a1c002085d2f?w=400" },
-    ])
+    const list = await productsApi.getProducts()
+    setProducts(
+      list.map((p) => ({
+        id: p.id,
+        name: p.name,
+        material: p.material,
+        color: p.color,
+        image: p.image,
+      }))
+    )
   }
 
   const loadChats = async () => {
-    // Реальный запрос к БД
-    console.log('GET /api/chats')
-    // Тестовые данные
-    setChats([
-      {
-        id: 1,
-        userName: "Иван Петров",
-        lastMessage: "Спасибо за ответ!",
-        unread: 0,
-        messages: [
-          { id: 1, text: "Здравствуйте! Интересует дверь Классик", isUser: true, timestamp: new Date(Date.now() - 3600000) },
-          { id: 2, text: "Добрый день! Да, эта модель есть в наличии.", isUser: false, timestamp: new Date(Date.now() - 3500000) },
-          { id: 3, text: "Подскажите, есть в наличии?", isUser: true, timestamp: new Date(Date.now() - 3400000) },
-          { id: 4, text: "Да, в наличии 3 штуки. Стоимость 15 900 ₽", isUser: false, timestamp: new Date(Date.now() - 3300000) },
-          { id: 5, text: "Сколько стоит доставка?", isUser: true, timestamp: new Date(Date.now() - 3200000) },
-          { id: 6, text: "Доставка по городу 500 ₽, в область от 1000 ₽", isUser: false, timestamp: new Date(Date.now() - 3000000) },
-        ]
-      },
-      {
-        id: 2,
-        userName: "Анна Смирнова",
-        lastMessage: "Когда можно посмотреть?",
-        unread: 1,
-        messages: [
-          { id: 1, text: "Добрый день! Хочу заказать установку", isUser: true, timestamp: new Date(Date.now() - 7200000) },
-          { id: 2, text: "Здравствуйте! Конечно, можем установить в любой день.", isUser: false, timestamp: new Date(Date.now() - 7000000) },
-          { id: 3, text: "Когда можно посмотреть?", isUser: true, timestamp: new Date(Date.now() - 6800000) },
-        ]
-      },
-    ])
+    const list = await getChats()
+    setChats(list)
   }
 
   const loadAboutPage = async () => {
@@ -213,7 +192,7 @@ export function AdminPage() {
       alert('Страница "О нас" сохранена!')
     } else {
       setAboutPage({ ...aboutPage, isSaving: false })
-      alert('Ошибка сохранения (запрос в воздух)')
+      alert(SAVE_FAILED_HINT)
     }
   }
 
@@ -314,7 +293,7 @@ export function AdminPage() {
       alert('Страница "Контакты" сохранена!')
     } else {
       setContactsPage({ ...contactsPage, isSaving: false })
-      alert('Ошибка сохранения (запрос в воздух)')
+      alert(SAVE_FAILED_HINT)
     }
   }
 
@@ -366,7 +345,7 @@ export function AdminPage() {
       alert('Страница "Портфолио" сохранена!')
     } else {
       setPortfolioPage({ ...portfolioPage, isSaving: false })
-      alert('Ошибка сохранения (запрос в воздух)')
+      alert(SAVE_FAILED_HINT)
     }
   }
 
@@ -424,7 +403,7 @@ export function AdminPage() {
       alert('Главная страница сохранена!')
     } else {
       setHomePage({ ...homePage, isSaving: false })
-      alert('Ошибка сохранения (запрос в воздух)')
+      alert(SAVE_FAILED_HINT)
     }
   }
 
@@ -446,7 +425,7 @@ export function AdminPage() {
       alert('Страница "Каталог" сохранена!')
     } else {
       setCatalogPage({ ...catalogPage, isSaving: false })
-      alert('Ошибка сохранения (запрос в воздух)')
+      alert(SAVE_FAILED_HINT)
     }
   }
 
@@ -466,7 +445,7 @@ export function AdminPage() {
       alert('Шапка сохранена!')
     } else {
       setHeaderPage((prev) => ({ ...prev, isSaving: false }))
-      alert('Ошибка сохранения (запрос в воздух)')
+      alert(SAVE_FAILED_HINT)
     }
   }
 
@@ -708,6 +687,7 @@ export function AdminPage() {
   // Выход
   const handleLogout = () => {
     localStorage.removeItem('isAdmin')
+    localStorage.removeItem(ADMIN_API_TOKEN_STORAGE_KEY)
     navigate('/')
   }
 

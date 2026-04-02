@@ -1,5 +1,7 @@
 // API для работы со страницей "О нас" (заглушки для БД)
 
+import { apiFetch } from './http'
+
 export interface AboutPageData {
   aboutTitle: string
   aboutDescription: string
@@ -20,8 +22,6 @@ export interface AdvantageItem {
   title: string
   description: string
 }
-
-const API_URL = '/api'
 
 // Данные по умолчанию (если API не доступен)
 const defaultAboutData: AboutPageData = {
@@ -49,7 +49,7 @@ const defaultAboutData: AboutPageData = {
  */
 export async function getAboutPage(): Promise<AboutPageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/about`)
+    const response = await apiFetch('/api/pages/about')
     if (!response.ok) throw new Error('Failed to fetch about page')
     return await response.json()
   } catch (error) {
@@ -65,7 +65,7 @@ export async function getAboutPage(): Promise<AboutPageData | null> {
  */
 export async function updateAboutPage(data: AboutPageData): Promise<AboutPageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/about`, {
+    const response = await apiFetch('/api/pages/about', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ export async function updateAboutPage(data: AboutPageData): Promise<AboutPageDat
  */
 export async function addStat(stat: Omit<StatItem, 'id'>): Promise<StatItem | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/about/stats`, {
+    const response = await apiFetch('/api/pages/about/stats', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ export async function addStat(stat: Omit<StatItem, 'id'>): Promise<StatItem | nu
  */
 export async function deleteStat(id: number): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/pages/about/stats/${id}`, {
+    const response = await apiFetch(`/api/pages/about/stats/${id}`, {
       method: 'DELETE',
     })
     if (!response.ok) throw new Error('Failed to delete stat')
@@ -124,7 +124,7 @@ export async function deleteStat(id: number): Promise<boolean> {
  */
 export async function updateStat(id: number, stat: Partial<StatItem>): Promise<StatItem | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/about/stats/${id}`, {
+    const response = await apiFetch(`/api/pages/about/stats/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ export async function updateStat(id: number, stat: Partial<StatItem>): Promise<S
  */
 export async function addAdvantage(advantage: Omit<AdvantageItem, 'id'>): Promise<AdvantageItem | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/about/advantages`, {
+    const response = await apiFetch('/api/pages/about/advantages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -166,7 +166,7 @@ export async function addAdvantage(advantage: Omit<AdvantageItem, 'id'>): Promis
  */
 export async function deleteAdvantage(id: number): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/pages/about/advantages/${id}`, {
+    const response = await apiFetch(`/api/pages/about/advantages/${id}`, {
       method: 'DELETE',
     })
     if (!response.ok) throw new Error('Failed to delete advantage')
@@ -183,7 +183,7 @@ export async function deleteAdvantage(id: number): Promise<boolean> {
  */
 export async function updateAdvantage(id: number, advantage: Partial<AdvantageItem>): Promise<AdvantageItem | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/about/advantages/${id}`, {
+    const response = await apiFetch(`/api/pages/about/advantages/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

@@ -1,5 +1,7 @@
 // API для работы со страницей "Портфолио" (заглушки для БД)
 
+import { apiFetch } from './http'
+
 export interface PortfolioPageData {
   items: PortfolioItem[]
 }
@@ -10,8 +12,6 @@ export interface PortfolioItem {
   title: string
   description: string
 }
-
-const API_URL = '/api'
 
 // Данные по умолчанию (если API не доступен)
 const defaultPortfolioData: PortfolioPageData = {
@@ -61,7 +61,7 @@ const defaultPortfolioData: PortfolioPageData = {
  */
 export async function getPortfolioPage(): Promise<PortfolioPageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/portfolio`)
+    const response = await apiFetch('/api/pages/portfolio')
     if (!response.ok) throw new Error('Failed to fetch portfolio page')
     return await response.json()
   } catch (error) {
@@ -77,7 +77,7 @@ export async function getPortfolioPage(): Promise<PortfolioPageData | null> {
  */
 export async function updatePortfolioPage(data: PortfolioPageData): Promise<PortfolioPageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/portfolio`, {
+    const response = await apiFetch('/api/pages/portfolio', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export async function updatePortfolioPage(data: PortfolioPageData): Promise<Port
  */
 export async function addPortfolioItem(item: Omit<PortfolioItem, 'id'>): Promise<PortfolioItem | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/portfolio/items`, {
+    const response = await apiFetch('/api/pages/portfolio/items', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ export async function addPortfolioItem(item: Omit<PortfolioItem, 'id'>): Promise
  */
 export async function deletePortfolioItem(id: number): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/pages/portfolio/items/${id}`, {
+    const response = await apiFetch(`/api/pages/portfolio/items/${id}`, {
       method: 'DELETE',
     })
     if (!response.ok) throw new Error('Failed to delete portfolio item')
@@ -136,7 +136,7 @@ export async function deletePortfolioItem(id: number): Promise<boolean> {
  */
 export async function updatePortfolioItem(id: number, item: Partial<PortfolioItem>): Promise<PortfolioItem | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/portfolio/items/${id}`, {
+    const response = await apiFetch(`/api/pages/portfolio/items/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

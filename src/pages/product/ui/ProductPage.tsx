@@ -5,7 +5,7 @@ import { Footer } from "@/widgets/Footer"
 import { SEO } from "@/shared/ui/SEO"
 import { ChevronLeft, Share2, Truck, Shield, Award, Copy } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { productsApi } from "@/shared/api/products"
+import { getProductById } from "@/shared/api/products"
 import type { Product } from "@/shared/api/products"
 import { extractIdFromSlug } from "@/shared/lib/slug"
 
@@ -15,24 +15,42 @@ export function ProductPage() {
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [product, setProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
   const productId = extractIdFromSlug(slug || '')
 
   useEffect(() => {
     setIsLoading(true)
-    productsApi.getProducts().then((products: any[]) => {
-      setProduct(products.find((p: any) => p.id === productId) || null)
+    setNotFound(false)
+    getProductById(productId).then((p) => {
+      setProduct(p)
+      setNotFound(!p)
       setIsLoading(false)
     })
   }, [productId])
 
-  if (isLoading || !product) {
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-primary mb-4">Загрузка...</h1>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (notFound || !product) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-primary mb-4">Товар не найден</h1>
+            <Link to="/catalog" className="text-primary underline">В каталог</Link>
           </div>
         </main>
         <Footer />

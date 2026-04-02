@@ -1,5 +1,7 @@
 // API для работы со страницей "Каталог" (заглушки для БД)
 
+import { apiFetch } from './http'
+
 export interface CatalogPageData {
   categories: CatalogCategory[]
   materials: string[]
@@ -24,8 +26,6 @@ export interface CatalogColor {
   color: string
   border: string
 }
-
-const API_URL = '/api'
 
 // Данные по умолчанию (если API не доступен)
 const defaultCatalogData: CatalogPageData = {
@@ -86,7 +86,7 @@ const defaultCatalogData: CatalogPageData = {
  */
 export async function getCatalogPage(): Promise<CatalogPageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/catalog`)
+    const response = await apiFetch('/api/pages/catalog')
     if (!response.ok) throw new Error('Failed to fetch catalog page')
     return await response.json()
   } catch (error) {
@@ -101,7 +101,7 @@ export async function getCatalogPage(): Promise<CatalogPageData | null> {
  */
 export async function updateCatalogPage(data: CatalogPageData): Promise<CatalogPageData | null> {
   try {
-    const response = await fetch(`${API_URL}/pages/catalog`, {
+    const response = await apiFetch('/api/pages/catalog', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

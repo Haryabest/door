@@ -1,5 +1,7 @@
 // API для работы с шапкой сайта (заглушки для БД)
 
+import { apiFetch } from './http'
+
 export interface HeaderNavItem {
   label: string
   path: string
@@ -12,8 +14,6 @@ export interface HeaderData {
   phoneHref: string
   navItems: HeaderNavItem[]
 }
-
-const API_URL = '/api'
 
 export const defaultHeaderData: HeaderData = {
   logoTitle: 'От А до Я',
@@ -36,7 +36,7 @@ export const defaultHeaderData: HeaderData = {
  */
 export async function getHeader(): Promise<HeaderData | null> {
   try {
-    const response = await fetch(`${API_URL}/widgets/header`)
+    const response = await apiFetch('/api/widgets/header')
     if (!response.ok) throw new Error('Failed to fetch header')
     const data = (await response.json()) as HeaderData | null
     if (!data) return null
@@ -53,7 +53,7 @@ export async function getHeader(): Promise<HeaderData | null> {
  */
 export async function updateHeader(data: HeaderData): Promise<HeaderData | null> {
   try {
-    const response = await fetch(`${API_URL}/widgets/header`, {
+    const response = await apiFetch('/api/widgets/header', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
