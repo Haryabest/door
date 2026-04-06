@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useContext } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, X, MessageCircle } from 'lucide-react'
 import { FiltersContext } from '@/App'
+import { sanitizeInput, validateRequired } from '@/shared/lib/validation'
 
 interface Message {
   id: number
@@ -36,10 +37,12 @@ export function ChatWidget() {
     e.preventDefault()
     if (!message.trim()) return
 
-    // Добавляем сообщение пользователя
+    const sanitizedMessage = sanitizeInput(message)
+    if (!validateRequired(sanitizedMessage)) return
+
     const userMessage: Message = {
       id: Date.now(),
-      text: message,
+      text: sanitizedMessage,
       isBot: false,
       timestamp: new Date(),
     }

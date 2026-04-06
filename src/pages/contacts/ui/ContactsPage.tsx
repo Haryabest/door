@@ -4,6 +4,7 @@ import { Footer } from "@/widgets/Footer"
 import { Phone, Mail, Clock, Send, User, MessageSquare, Calendar } from "lucide-react"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
+import { sanitizeInput, validateRequired, validateEmail, validatePhone, validateLength } from "@/shared/lib/validation"
 
 const locations = [
   {
@@ -55,15 +56,60 @@ export function ContactsPage() {
     email: "",
     message: ""
   })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+    
+    if (!validateRequired(formData.name)) {
+      newErrors.name = 'Введите имя'
+    } else if (!validateLength(formData.name, 2, 100)) {
+      newErrors.name = 'Имя должно быть от 2 до 100 символов'
+    }
+    
+    if (!validateRequired(formData.phone)) {
+      newErrors.phone = 'Введите телефон'
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Введите корректный номер телефона'
+    }
+    
+    if (formData.email && !validateEmail(formData.email)) {
+      newErrors.email = 'Введите корректный email'
+    }
+    
+    if (!validateRequired(formData.message)) {
+      newErrors.message = 'Введите сообщение'
+    } else if (!validateLength(formData.message, 2, 1000)) {
+      newErrors.message = 'Сообщение должно быть от 2 до 1000 символов'
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    
+    const sanitizedData = {
+      name: sanitizeInput(formData.name),
+      phone: sanitizeInput(formData.phone),
+      email: sanitizeInput(formData.email),
+      message: sanitizeInput(formData.message)
+    }
+    
+    setFormData(sanitizedData)
+    
+    if (!validateForm()) return
+    
     alert("Спасибо! Мы свяжемся с вами в ближайшее время.")
     setFormData({ name: "", phone: "", email: "", message: "" })
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: '' })
+    }
   }
 
   return (
@@ -118,9 +164,12 @@ export function ContactsPage() {
                       value={formData[field.id as keyof typeof formData]}
                       onChange={handleChange}
                       required={field.id !== 'email'}
-                      className="w-full px-4 py-3 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                      className={`w-full px-4 py-3 bg-background border rounded-lg focus:outline-none focus:ring-2 text-foreground ${errors[field.id] ? 'border-red-500 focus:ring-red-500' : 'border-primary/30 focus:ring-primary'}`}
                       placeholder={field.placeholder}
                     />
+                    {errors[field.id] && (
+                      <p className="mt-1 text-sm text-red-500">{errors[field.id]}</p>
+                    )}
                   </motion.div>
                 ))}
 
@@ -140,9 +189,12 @@ export function ContactsPage() {
                     value={formData.message}
                     onChange={handleChange}
                     rows={4}
-                    className="w-full px-4 py-3 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground resize-none"
+                    className={`w-full px-4 py-3 bg-background border rounded-lg focus:outline-none focus:ring-2 text-foreground resize-none ${errors.message ? 'border-red-500 focus:ring-red-500' : 'border-primary/30 focus:ring-primary'}`}
                     placeholder="Расскажите, что вас интересует..."
                   />
+                  {errors.message && (
+                    <p className="mt-1 text-sm text-red-500">{errors.message}</p>
+                  )}
                 </motion.div>
 
                 <button
