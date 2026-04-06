@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { SEO } from "@/shared/ui/SEO"
+import { Image } from "@/shared/ui/Image"
 import { ChevronLeft, Share2, Truck, Shield, Award, Copy } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProductById } from "@/shared/api/products"
@@ -143,7 +144,7 @@ export function ProductPage() {
               transition={{ duration: 0.5 }}
             >
               <div className="relative aspect-square overflow-hidden rounded-2xl bg-gray-100">
-                <img
+                <Image
                   src={product.image}
                   alt={product.name}
                   className="w-full h-full object-cover"

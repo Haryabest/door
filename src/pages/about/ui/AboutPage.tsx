@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
+import { Image } from "@/shared/ui/Image"
 import { Award, Users, Clock, ThumbsUp, Star, Shield, Truck, Headphones, Lock } from "lucide-react"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
@@ -165,7 +166,7 @@ export function AboutPage() {
               transition={{ duration: 0.6 }}
               className="relative"
             >
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1770677350521-d5fdcbd74367?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBpbnRlcmlvciUyMGhhbGx3YXklMjBkb29yfGVufDF8fHx8MTc3NDM3NTY3Nnww&ixlib=rb-4.1.0&q=80&w=1080"
                 alt="About company"
                 className="w-full h-auto rounded-lg shadow-xl"

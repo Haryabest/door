@@ -3,6 +3,7 @@ import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
+import { Image } from "@/shared/ui/Image"
 import { getHomePage, type HomePageData } from "@/shared/api/home"
 
 const iconMap: Record<string, any> = {
@@ -258,7 +259,7 @@ export function HomePage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <img
+                  <Image
                     src={category.image}
                     alt={category.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"

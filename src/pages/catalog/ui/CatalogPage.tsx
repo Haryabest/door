@@ -5,6 +5,7 @@ import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { Checkbox } from "@/shared/ui/checkbox"
 import { ProductSkeleton } from "@/shared/ui/product-skeleton"
+import { Image } from "@/shared/ui/Image"
 import { Filter, X, Search, ChevronRight, DoorOpen, Home, Settings, PanelLeft, Square } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SEO } from "@/shared/ui/SEO"
@@ -538,7 +539,7 @@ export function CatalogPage() {
                   <div className={`relative overflow-hidden bg-gray-100 ${
                     viewMode === 'list' ? 'w-64 flex-shrink-0' : 'aspect-[3/4]'
                   }`}>
-                    <img
+                    <Image
                       src={product.image}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
