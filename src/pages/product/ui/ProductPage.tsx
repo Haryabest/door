@@ -33,9 +33,55 @@ export function ProductPage() {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-primary mb-4">Загрузка...</h1>
+        <main className="flex-1 bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+              <div className="h-4 w-16 skeleton rounded" />
+              <div className="h-4 w-4 skeleton rounded" />
+              <div className="h-4 w-20 skeleton rounded" />
+              <div className="h-4 w-4 skeleton rounded" />
+              <div className="h-4 w-32 skeleton rounded" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="aspect-square skeleton rounded-2xl" />
+              <div className="space-y-6">
+                <div>
+                  <div className="h-8 w-3/4 skeleton rounded-lg mb-2" />
+                  <div className="h-5 w-full skeleton rounded" />
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="p-3 sm:p-4 bg-secondary rounded-lg">
+                    <div className="h-4 w-16 skeleton rounded mb-2" />
+                    <div className="h-5 w-24 skeleton rounded" />
+                  </div>
+                  <div className="p-3 sm:p-4 bg-secondary rounded-lg">
+                    <div className="h-4 w-12 skeleton rounded mb-2" />
+                    <div className="h-5 w-20 skeleton rounded" />
+                  </div>
+                </div>
+                <div>
+                  <div className="h-5 w-32 skeleton rounded mb-2 sm:mb-3" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-full skeleton rounded" />
+                    <div className="h-4 w-5/6 skeleton rounded" />
+                    <div className="h-4 w-4/5 skeleton rounded" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="h-5 w-24 skeleton rounded" />
+                  <div className="flex items-center border-2 border-border rounded-lg">
+                    <div className="h-10 w-10 skeleton rounded-lg" />
+                    <div className="h-10 w-10 skeleton rounded-lg" />
+                    <div className="h-10 w-10 skeleton rounded-lg" />
+                  </div>
+                </div>
+                <div className="flex gap-3 sm:gap-4">
+                  <div className="h-12 flex-1 skeleton rounded-lg" />
+                  <div className="h-12 w-12 skeleton rounded-lg" />
+                </div>
+              </div>
+            </div>
           </div>
         </main>
         <Footer />

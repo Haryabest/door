@@ -32,10 +32,51 @@ export function HomePage() {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-primary mb-4">Загрузка...</h1>
+        <main className="flex-1">
+          <div className="relative h-[100vh] w-full skeleton">
+            <div className="relative h-full flex flex-col items-center justify-center px-4">
+              <div className="text-center text-white max-w-4xl mx-auto">
+                <div className="h-16 sm:h-20 md:h-24 lg:h-32 w-96 sm:w-[500px] lg:w-[600px] bg-white/20 rounded-lg mx-auto mb-4" />
+                <div className="h-10 sm:h-12 md:h-14 lg:h-16 w-64 sm:w-80 md:w-96 lg:w-[500px] bg-white/10 rounded-lg mx-auto mb-4" />
+                <div className="h-8 w-40 bg-white/10 rounded-lg mx-auto mb-12" />
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <div className="h-14 w-48 bg-white/20 rounded-lg" />
+                  <div className="h-14 w-36 bg-white/10 rounded-lg" />
+                </div>
+              </div>
+            </div>
           </div>
+
+          <section className="py-20 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-16">
+                <div className="h-10 w-64 skeleton rounded-lg mx-auto mb-4" />
+                <div className="h-6 w-96 skeleton rounded-lg mx-auto" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="text-center p-8 rounded-lg bg-gray-50">
+                    <div className="w-16 h-16 skeleton rounded-full mx-auto mb-4" />
+                    <div className="h-6 w-32 skeleton rounded-lg mx-auto mb-3" />
+                    <div className="h-4 w-48 skeleton rounded-lg mx-auto" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="py-20 bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-16">
+                <div className="h-10 w-56 skeleton rounded-lg mx-auto" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="relative overflow-hidden rounded-lg aspect-[4/3] skeleton" />
+                ))}
+              </div>
+            </div>
+          </section>
         </main>
         <Footer />
       </div>
@@ -115,10 +156,10 @@ export function HomePage() {
                   href="/catalog"
                   className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-background font-semibold rounded-lg hover:bg-primary/90 transition-colors cursor-pointer text-base sm:text-lg"
                 >
+                  Каталог продукции
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m9 18 6-6-6-6"/>
                   </svg>
-                  Каталог продукции
                 </a>
                 <a
                   href="tel:+79601663030"

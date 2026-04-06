@@ -46,9 +46,19 @@ export function PortfolioPage() {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-primary mb-4">Загрузка...</h1>
+        <main className="flex-1">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="relative overflow-hidden rounded-xl shadow-md bg-white break-inside-avoid">
+                  <div className="aspect-[3/4] skeleton" />
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <div className="h-5 w-3/4 skeleton rounded mb-2" />
+                    <div className="h-4 w-1/2 skeleton rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </main>
         <Footer />

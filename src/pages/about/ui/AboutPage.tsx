@@ -60,9 +60,42 @@ export function AboutPage() {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-primary mb-4">Загрузка...</h1>
+        <main className="flex-1">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
+              <div>
+                <div className="h-10 w-3/4 skeleton rounded-lg mb-6" />
+                <div className="space-y-4">
+                  <div className="h-4 w-full skeleton rounded" />
+                  <div className="h-4 w-full skeleton rounded" />
+                  <div className="h-4 w-2/3 skeleton rounded" />
+                </div>
+              </div>
+              <div className="aspect-[4/3] skeleton rounded-lg" />
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white p-6 rounded-lg shadow-md text-center">
+                  <div className="w-10 h-10 skeleton rounded-full mx-auto mb-3" />
+                  <div className="h-8 w-16 skeleton rounded mx-auto mb-1" />
+                  <div className="h-4 w-24 skeleton rounded mx-auto" />
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md p-8 lg:p-12">
+              <div className="h-10 w-64 skeleton rounded-lg mx-auto mb-8" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="text-center">
+                    <div className="w-16 h-16 skeleton rounded-full mx-auto mb-4" />
+                    <div className="h-6 w-40 skeleton rounded mx-auto mb-2" />
+                    <div className="h-4 w-full skeleton rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </main>
         <Footer />
