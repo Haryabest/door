@@ -86,6 +86,16 @@ export function PortfolioPage() {
       <SEO
         title="Портфолио"
         description="Наши работы - установленные двери в квартирах и домах. Реализованные проекты, фото готовых объектов."
+        canonicalUrl="/portfolio"
+        image="/logo.png"
+        keywords="портфолио дверей, установка дверей фото, выполненные работы двери, примеры дверей Нижний Новгород"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Портфолио От А до Я',
+          url: 'https://otadoya.ru/portfolio',
+          description: 'Примеры установленных дверей и выполненных проектов компании От А до Я',
+        }}
       />
       <Header />
       <main className="flex-1">

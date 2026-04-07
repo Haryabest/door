@@ -1,5 +1,13 @@
-import { Save, Plus, Trash2 } from 'lucide-react'
+import { Save, Plus, Trash2, DoorOpen, Home, Settings, PanelLeft, Square, type LucideIcon } from 'lucide-react'
 import type { CatalogPageData, CatalogCategory, CatalogColor } from '@/shared/api/catalog'
+
+const categoryIconOptions: Array<{ value: CatalogCategory['icon']; Icon: LucideIcon }> = [
+  { value: 'DoorOpen', Icon: DoorOpen },
+  { value: 'Home', Icon: Home },
+  { value: 'Settings', Icon: Settings },
+  { value: 'PanelLeft', Icon: PanelLeft },
+  { value: 'Square', Icon: Square },
+]
 
 interface CatalogPageEditorProps {
   data: CatalogPageData
@@ -76,17 +84,23 @@ export function CatalogPageEditor({
                   onChange={(e) => onUpdateCategory(category.id, 'name', e.target.value)}
                   className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
                 />
-                <select
-                  value={category.icon}
-                  onChange={(e) => onUpdateCategory(category.id, 'icon', e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
-                >
-                  <option value="DoorOpen">DoorOpen</option>
-                  <option value="Home">Home</option>
-                  <option value="Settings">Settings</option>
-                  <option value="PanelLeft">PanelLeft</option>
-                  <option value="Square">Square</option>
-                </select>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {categoryIconOptions.map(({ value, Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      title={value}
+                      onClick={() => onUpdateCategory(category.id, 'icon', value)}
+                      className={`flex items-center justify-center px-3 py-2 border-2 rounded-lg transition-colors ${
+                        category.icon === value
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </button>
+                  ))}
+                </div>
               </div>
               <button
                 onClick={() => onDeleteCategory(category.id)}

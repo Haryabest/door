@@ -1,5 +1,21 @@
-import { Save, Plus, Trash2 } from 'lucide-react'
+import { Save, Plus, Trash2, Clock, Users, Award, ThumbsUp, Star, Shield, Headphones, Truck, type LucideIcon } from 'lucide-react'
 import type { AboutPageData, StatItem, AdvantageItem } from '@/shared/api/about'
+
+const statIconOptions: Array<{ value: StatItem['icon']; Icon: LucideIcon }> = [
+  { value: 'Clock', Icon: Clock },
+  { value: 'Users', Icon: Users },
+  { value: 'Award', Icon: Award },
+  { value: 'ThumbsUp', Icon: ThumbsUp },
+]
+
+const advantageIconOptions: Array<{ value: AdvantageItem['icon']; Icon: LucideIcon }> = [
+  { value: 'Star', Icon: Star },
+  { value: 'Shield', Icon: Shield },
+  { value: 'Headphones', Icon: Headphones },
+  { value: 'Award', Icon: Award },
+  { value: 'Users', Icon: Users },
+  { value: 'Truck', Icon: Truck },
+]
 
 interface AboutPageEditorProps {
   data: AboutPageData
@@ -104,16 +120,23 @@ export function AboutPageEditor({
                     placeholder="Описание"
                   />
                 </div>
-                <select
-                  value={stat.icon}
-                  onChange={(e) => onUpdateStat(stat.id, 'icon', e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
-                >
-                  <option value="Clock">Clock</option>
-                  <option value="Users">Users</option>
-                  <option value="Award">Award</option>
-                  <option value="ThumbsUp">ThumbsUp</option>
-                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  {statIconOptions.map(({ value, Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      title={value}
+                      onClick={() => onUpdateStat(stat.id, 'icon', value)}
+                      className={`flex items-center justify-center px-3 py-2 border-2 rounded-lg transition-colors ${
+                        stat.icon === value
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </button>
+                  ))}
+                </div>
               </div>
               <button
                 onClick={() => onDeleteStat(stat.id)}
@@ -156,18 +179,23 @@ export function AboutPageEditor({
                   rows={2}
                   placeholder="Описание"
                 />
-                <select
-                  value={advantage.icon}
-                  onChange={(e) => onUpdateAdvantage(advantage.id, 'icon', e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
-                >
-                  <option value="Star">Star</option>
-                  <option value="Shield">Shield</option>
-                  <option value="Headphones">Headphones</option>
-                  <option value="Award">Award</option>
-                  <option value="Users">Users</option>
-                  <option value="Truck">Truck</option>
-                </select>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {advantageIconOptions.map(({ value, Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      title={value}
+                      onClick={() => onUpdateAdvantage(advantage.id, 'icon', value)}
+                      className={`flex items-center justify-center px-3 py-2 border-2 rounded-lg transition-colors ${
+                        advantage.icon === value
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </button>
+                  ))}
+                </div>
               </div>
               <button
                 onClick={() => onDeleteAdvantage(advantage.id)}

@@ -124,6 +124,16 @@ export function AboutPage() {
       <SEO
         title="О компании"
         description="О компании От А до Я - 10 лет на рынке, более 5000 довольных клиентов. Профессиональная установка дверей в Нижнем Новгороде."
+        canonicalUrl="/about"
+        image="/logo.png"
+        keywords="о компании двери, магазин дверей Нижний Новгород, установка дверей, межкомнатные двери компания"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'AboutPage',
+          name: 'О компании От А до Я',
+          url: 'https://otadoya.ru/about',
+          description: 'Информация о компании От А до Я, опыте работы и преимуществах',
+        }}
       />
       <Header />
       <main className="flex-1">

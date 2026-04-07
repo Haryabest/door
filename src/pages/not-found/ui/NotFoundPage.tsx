@@ -1,10 +1,16 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Home, ArrowLeft, DoorOpen } from 'lucide-react'
+import { SEO } from '@/shared/ui/SEO'
 
 export function NotFoundPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEO
+        title="Страница не найдена"
+        description="Запрашиваемая страница не найдена. Перейдите в каталог, на главную или в другие разделы сайта."
+        noIndex
+      />
       {/* Контент */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="text-center max-w-2xl mx-auto">

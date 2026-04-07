@@ -102,8 +102,27 @@ export function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <SEO
-        title="Главная"
-        description="От А до Я - двери и фурнитура в Нижнем Новгороде. Широкий ассортимент межкомнатных и входных дверей, профессиональная консультация, гарантия качества."
+        title="Купить двери в Нижнем Новгороде"
+        description="От А до Я — магазин межкомнатных и входных дверей в Нижнем Новгороде. Большой выбор дверей и фурнитуры, консультация, замер, доставка и установка."
+        canonicalUrl="/"
+        image="/logo.png"
+        keywords="купить двери Нижний Новгород, межкомнатные двери, входные двери, двери и фурнитура, установка дверей, магазин дверей"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'LocalBusiness',
+          name: 'От А до Я',
+          url: 'https://otadoya.ru/',
+          image: 'https://otadoya.ru/logo.png',
+          telephone: '+7 (960) 166-30-30',
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: 'Нижний Новгород',
+            streetAddress: 'СЦ Бекетов, ул. Бекетова, д. 13а',
+            addressCountry: 'RU',
+          },
+          areaServed: 'Нижний Новгород',
+          sameAs: [],
+        }}
       />
       <Header />
       <main>

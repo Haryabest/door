@@ -85,6 +85,11 @@ export function ProductPage() {
   if (notFound || !product) {
     return (
       <div className="flex flex-col min-h-screen">
+        <SEO
+          title="Товар не найден"
+          description="Запрашиваемый товар не найден. Перейдите в каталог, чтобы выбрать другую дверь."
+          noIndex
+        />
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -117,6 +122,29 @@ export function ProductPage() {
       <SEO
         title={product.name}
         description={`${product.name} - ${product.description} Цена: ${product.price.toLocaleString()} ₽`}
+        canonicalUrl={`/catalog/${slug || ''}`}
+        image={product.image}
+        keywords={`${product.name}, ${product.material}, ${product.color}, купить дверь, двери Нижний Новгород`}
+        type="product"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: product.name,
+          image: product.image,
+          description: product.description,
+          sku: String(product.id),
+          brand: {
+            '@type': 'Brand',
+            name: 'От А до Я',
+          },
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'RUB',
+            price: product.price,
+            availability: 'https://schema.org/InStock',
+            url: `https://otadoya.ru/catalog/${slug || ''}`,
+          },
+        }}
       />
       <Header />
       <main className="flex-1 bg-background">

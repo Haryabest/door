@@ -120,6 +120,16 @@ export function ContactsPage() {
       <SEO
         title="Контакты"
         description="Контакты компании От А до Я. Адреса салонов, телефоны, email. Режим работы: ежедневно с 9:00 до 20:00."
+        canonicalUrl="/contacts"
+        image="/logo.png"
+        keywords="контакты двери Нижний Новгород, адрес магазина дверей, телефоны двери, салон дверей контакты"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'ContactPage',
+          name: 'Контакты От А до Я',
+          url: 'https://otadoya.ru/contacts',
+          description: 'Контакты, адреса салонов и телефоны компании От А до Я',
+        }}
       />
       <Header />
       <main className="flex-1">

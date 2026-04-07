@@ -210,8 +210,18 @@ export function CatalogPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <SEO
-        title="Каталог"
-        description="Каталог дверей: межкомнатные, входные, системы открывания. Более 500 моделей дверей по выгодным ценам в Нижнем Новгороде."
+        title="Каталог дверей"
+        description="Каталог межкомнатных и входных дверей в Нижнем Новгороде. Подберите двери по материалу, цвету, категории и системам открывания."
+        canonicalUrl="/catalog"
+        image="/logo.png"
+        keywords="каталог дверей, межкомнатные двери каталог, входные двери каталог, двери Нижний Новгород, купить двери каталог"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Каталог дверей',
+          url: 'https://otadoya.ru/catalog',
+          description: 'Каталог межкомнатных и входных дверей в Нижнем Новгороде',
+        }}
       />
       <Header />
       <main className="flex-1 bg-background">
