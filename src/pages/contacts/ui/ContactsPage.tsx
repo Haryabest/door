@@ -4,7 +4,7 @@ import { Footer } from "@/widgets/Footer"
 import { Phone, Mail, Clock, Send, User, MessageSquare, Calendar } from "lucide-react"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
-import { sanitizeInput, validateRequired, validateEmail, validatePhone, validateLength } from "@/shared/lib/validation"
+import { sanitizeInput, validateRequired, validateEmail, validatePhone, validateLength, formatPhoneInput } from "@/shared/lib/validation"
 
 const locations = [
   {
@@ -106,7 +106,10 @@ export function ContactsPage() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    const nextValue = name === 'phone' ? formatPhoneInput(value) : value
+
+    setFormData({ ...formData, [name]: nextValue })
     if (errors[e.target.name]) {
       setErrors({ ...errors, [e.target.name]: '' })
     }
@@ -164,6 +167,9 @@ export function ContactsPage() {
                       value={formData[field.id as keyof typeof formData]}
                       onChange={handleChange}
                       required={field.id !== 'email'}
+                      maxLength={field.id === 'phone' ? 18 : undefined}
+                      inputMode={field.id === 'phone' ? 'tel' : undefined}
+                      autoComplete={field.id === 'phone' ? 'tel' : undefined}
                       className={`w-full px-4 py-3 bg-background border rounded-lg focus:outline-none focus:ring-2 text-foreground ${errors[field.id] ? 'border-red-500 focus:ring-red-500' : 'border-primary/30 focus:ring-primary'}`}
                       placeholder={field.placeholder}
                     />
@@ -238,10 +244,12 @@ export function ContactsPage() {
                 <div className="space-y-4">
                   {[
                     { icon: Phone, title: 'Телефон', content: '+7 (960) 166 30-30', href: 'tel:+79601663030' },
+                    { icon: Phone, title: 'Телефон', content: '+7 (831) 200-00-02', href: 'tel:+78312000002' },
+                    { icon: Phone, title: 'Телефон', content: '+7 (831) 200-00-03', href: 'tel:+78312000003' },
                     { icon: Mail, title: 'Email', content: 'otadoya.m@mail.ru', href: 'mailto:otadoya.m@mail.ru' },
                   ].map((item, index) => (
                     <motion.div 
-                      key={item.title}
+                      key={`${item.title}-${item.content}`}
                       className="flex items-start space-x-4"
                       initial={{ opacity: 0, x: -20 }}
                       whileInView={{ opacity: 1, x: 0 }}

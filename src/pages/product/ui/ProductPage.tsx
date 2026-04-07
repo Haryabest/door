@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { SEO } from "@/shared/ui/SEO"
@@ -12,7 +12,7 @@ import { extractIdFromSlug } from "@/shared/lib/slug"
 
 export function ProductPage() {
   const { slug } = useParams<{ slug: string }>()
-  const [quantity, setQuantity] = useState(1)
+  const navigate = useNavigate()
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [product, setProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -67,14 +67,6 @@ export function ProductPage() {
                     <div className="h-4 w-full skeleton rounded" />
                     <div className="h-4 w-5/6 skeleton rounded" />
                     <div className="h-4 w-4/5 skeleton rounded" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="h-5 w-24 skeleton rounded" />
-                  <div className="flex items-center border-2 border-border rounded-lg">
-                    <div className="h-10 w-10 skeleton rounded-lg" />
-                    <div className="h-10 w-10 skeleton rounded-lg" />
-                    <div className="h-10 w-10 skeleton rounded-lg" />
                   </div>
                 </div>
                 <div className="flex gap-3 sm:gap-4">
@@ -186,28 +178,12 @@ export function ProductPage() {
                 </ul>
               </div>
 
-              <div className="flex items-center gap-3 sm:gap-4">
-                <span className="text-xs sm:text-sm font-medium text-foreground">Количество:</span>
-                <div className="flex items-center border-2 border-border rounded-lg">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 sm:px-4 py-2 hover:bg-secondary transition-colors"
-                  >
-                    −
-                  </button>
-                  <span className="px-3 sm:px-4 py-2 font-medium text-sm sm:text-base">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 sm:px-4 py-2 hover:bg-secondary transition-colors"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
               <div className="relative">
                 <div className="flex gap-3 sm:gap-4">
-                  <button className="flex-1 py-3 sm:py-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer text-sm sm:text-base">
+                  <button
+                    onClick={() => navigate(`?chatMessage=${encodeURIComponent(`Меня заинтересовала дверь «${product.name}»`)}`)}
+                    className="flex-1 py-3 sm:py-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer text-sm sm:text-base"
+                  >
                     Узнать цену
                   </button>
                   <div className="relative">
@@ -237,7 +213,7 @@ export function ProductPage() {
                               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors text-left"
                             >
                               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/>
+                                <path d="M3.07 8.72c.1 4.92 2.57 7.88 6.9 7.88h.26v-2.82c1.59.16 2.8 1.33 3.28 2.82h2.25c-.61-2.22-2.22-3.45-3.23-3.92 1.01-.58 2.42-1.98 2.76-3.96h-2.05c-.44 1.61-1.75 3.01-3.01 3.15V8.72H7.17v5.52c-1.28-.32-2.9-1.83-2.97-5.52H3.07z"/>
                               </svg>
                               <span className="text-sm font-medium">ВКонтакте</span>
                             </button>

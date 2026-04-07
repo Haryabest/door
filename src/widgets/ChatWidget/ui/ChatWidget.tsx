@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useContext } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, X, MessageCircle } from 'lucide-react'
 import { FiltersContext } from '@/App'
@@ -13,6 +14,8 @@ interface Message {
 
 export function ChatWidget() {
   const { isFiltersOpen, isChatWidgetHidden } = useContext(FiltersContext)
+  const location = useLocation()
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([
@@ -70,6 +73,56 @@ export function ChatWidget() {
       setIsOpen(false)
     }
   }, [isChatWidgetHidden, isOpen])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const chatMessage = params.get('chatMessage')
+
+    if (!chatMessage) {
+      return
+    }
+
+    const sanitizedMessage = sanitizeInput(chatMessage)
+    if (!validateRequired(sanitizedMessage)) {
+      params.delete('chatMessage')
+      navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
+      return
+    }
+
+    setIsOpen(true)
+    let shouldSendAutoReply = false
+    setMessages((prev) => {
+      if (prev.some((msg) => !msg.isBot && msg.text === sanitizedMessage)) {
+        return prev
+      }
+
+      shouldSendAutoReply = true
+      const userMessage: Message = {
+        id: Date.now(),
+        text: sanitizedMessage,
+        isBot: false,
+        timestamp: new Date(),
+      }
+
+      return [...prev, userMessage]
+    })
+
+    if (shouldSendAutoReply) {
+      setTimeout(() => {
+        const botMessage: Message = {
+          id: Date.now() + 1,
+          text: 'Спасибо за ваш вопрос! Наш менеджер скоро ответит вам. 🕐',
+          isBot: true,
+          timestamp: new Date(),
+        }
+
+        setMessages((prev) => [...prev, botMessage])
+      }, 300)
+    }
+
+    params.delete('chatMessage')
+    navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
+  }, [location.pathname, location.search, navigate])
 
   return (
     <>

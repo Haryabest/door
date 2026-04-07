@@ -177,9 +177,8 @@ export function CatalogPage() {
     setSelectedMaterials([])
     setSelectedColors([])
     setPriceRange([0, 50000])
-    productsApi.getProducts().then(data => {
-      setProducts(data)
-    })
+    setCurrentPage(1)
+    loadProducts()
   }
 
   const selectedCount = selectedMaterials.length + selectedColors.length + (selectedCategory !== 'all' ? 1 : 0) + (selectedSubcategory !== 'all' ? 1 : 0)
@@ -194,7 +193,7 @@ export function CatalogPage() {
       if (product.price < priceRange[0] || product.price > priceRange[1]) return false
       return true
     })
-  }, [searchQuery, selectedCategory, selectedMaterials, selectedColors, priceRange])
+  }, [products, searchQuery, selectedCategory, selectedMaterials, selectedColors, priceRange])
 
   // Пагинация
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
@@ -204,7 +203,7 @@ export function CatalogPage() {
   )
 
   // Сброс на первую страницу при изменении фильтров
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1)
   }, [searchQuery, selectedCategory, selectedSubcategory, selectedMaterials, selectedColors])
 
@@ -554,7 +553,13 @@ export function CatalogPage() {
                     <p className="text-sm text-muted-foreground mb-4">
                       {product.material}
                     </p>
-                    <button className="w-full py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate(`?chatMessage=${encodeURIComponent(`Меня заинтересовала дверь «${product.name}»`)}`)
+                      }}
+                      className="w-full py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+                    >
                       Узнать цену
                     </button>
                   </div>
