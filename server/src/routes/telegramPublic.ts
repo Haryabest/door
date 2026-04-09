@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { validateBody } from '../middleware/validateBody.js'
 import { z } from 'zod'
 import { sendTelegramChatNotification } from '../lib/telegram.js'
+import { logger } from '../lib/logger.js'
 
 const str = (max: number) => z.string().max(max).trim()
 
@@ -19,6 +20,7 @@ export const telegramPublicRouter = Router()
 telegramPublicRouter.post('/telegram/contact', validateBody(telegramContactSchema), async (req, res) => {
   const b = req.body as z.infer<typeof telegramContactSchema>
 
+  logger.info({ hasUserName: Boolean(b.userName), textLength: b.text.length }, 'Incoming site contact message')
   await sendTelegramChatNotification({
     chatId: 0,
     userName: b.userName ?? 'Сайт',

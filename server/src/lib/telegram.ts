@@ -145,7 +145,10 @@ export async function sendTelegramChatNotification(params: {
   text: string
 }): Promise<void> {
   const cfg = getTelegramConfig()
-  if (!cfg) return
+  if (!cfg) {
+    logger.warn('Telegram is not configured: TELEGRAM_BOT_TOKEN is missing')
+    return
+  }
 
   try {
     await syncTelegramSubscribersFromUpdates()
@@ -155,7 +158,13 @@ export async function sendTelegramChatNotification(params: {
   }
 
   const recipients = getNotificationRecipients(cfg.defaultChatId)
-  if (!recipients.length) return
+  if (!recipients.length) {
+    logger.warn(
+      { hasDefaultChatId: Boolean(cfg.defaultChatId) },
+      'No Telegram recipients: set TELEGRAM_CHAT_ID or send /start to the bot'
+    )
+    return
+  }
 
   const messageLines = [
     '💬 Новое сообщение в чате',
@@ -166,6 +175,7 @@ export async function sendTelegramChatNotification(params: {
   ]
 
   const messageText = messageLines.join('\n')
+  logger.info({ recipientsCount: recipients.length }, 'Sending Telegram notification')
   const sendResults = await Promise.allSettled(
     recipients.map((recipientChatId) => sendTelegramMessage(cfg.token, recipientChatId, messageText))
   )
@@ -174,6 +184,8 @@ export async function sendTelegramChatNotification(params: {
   if (failedCount > 0) {
     throw new Error(`Telegram notifications failed for ${failedCount} recipient(s)`)
   }
+
+  logger.info({ recipientsCount: recipients.length }, 'Telegram notification sent')
 }
 
 export async function notifyTelegramAboutChatMessage(params: {
