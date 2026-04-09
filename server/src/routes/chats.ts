@@ -3,6 +3,7 @@ import { pool } from '../db.js'
 import { mapMessage } from '../mapRow.js'
 import { requireAdminToken } from '../middleware/authMutations.js'
 import { validateBody } from '../middleware/validateBody.js'
+import { notifyTelegramAboutChatMessage } from '../lib/telegram.js'
 import { chatMessageSchema } from '../validation/schemas.js'
 
 export const chatsRouter = Router()
@@ -38,7 +39,13 @@ chatsRouter.post('/chats', requireAdminToken, validateBody(chatMessageSchema), a
     `INSERT INTO chat_messages (chat_id, text, is_user) VALUES ($1, $2, false) RETURNING *`,
     [b.chatId, b.text]
   )
+  const { rows: chatRows } = await pool.query(`SELECT user_name FROM chats WHERE id = $1`, [b.chatId])
   await pool.query(`UPDATE chats SET unread_count = 0 WHERE id = $1`, [b.chatId])
+  await notifyTelegramAboutChatMessage({
+    chatId: b.chatId,
+    userName: (chatRows[0]?.user_name as string | null | undefined) ?? null,
+    text: b.text,
+  })
   const m = mapMessage(rows[0])
   res.status(201).json(m)
 })

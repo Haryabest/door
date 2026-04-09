@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, X, MessageCircle } from 'lucide-react'
 import { FiltersContext } from '@/App'
 import { sanitizeInput, validateRequired } from '@/shared/lib/validation'
+import { apiFetch } from '@/shared/api/http'
 
 interface Message {
   id: number
@@ -18,6 +19,7 @@ export function ChatWidget() {
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
+  const [isSending, setIsSending] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -36,9 +38,9 @@ export function ChatWidget() {
     scrollToBottom()
   }, [messages])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!message.trim()) return
+    if (!message.trim() || isSending) return
 
     const sanitizedMessage = sanitizeInput(message)
     if (!validateRequired(sanitizedMessage)) return
@@ -52,16 +54,36 @@ export function ChatWidget() {
     setMessages(prev => [...prev, userMessage])
     setMessage('')
 
-    // Имитация ответа бота
-    setTimeout(() => {
+    setIsSending(true)
+    try {
+      const response = await apiFetch('/api/telegram/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: sanitizedMessage }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to send: ${response.status}`)
+      }
+
       const botMessage: Message = {
         id: Date.now() + 1,
-        text: 'Спасибо за ваш вопрос! Наш менеджер скоро ответит вам. 🕐',
+        text: 'Спасибо! Сообщение отправлено менеджеру. 🕐',
         isBot: true,
         timestamp: new Date(),
       }
       setMessages(prev => [...prev, botMessage])
-    }, 1000)
+    } catch {
+      const botMessage: Message = {
+        id: Date.now() + 1,
+        text: 'Не удалось отправить сообщение. Попробуйте позже.',
+        isBot: true,
+        timestamp: new Date(),
+      }
+      setMessages(prev => [...prev, botMessage])
+    } finally {
+      setIsSending(false)
+    }
   }
 
   const formatTime = (date: Date) => {
@@ -236,7 +258,7 @@ export function ChatWidget() {
                   type="submit"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  disabled={!message.trim()}
+                  disabled={!message.trim() || isSending}
                   className="p-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Отправить"
                 >

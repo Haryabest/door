@@ -8,6 +8,7 @@ import { healthRouter } from './routes/health.js'
 import { pagesRouter } from './routes/pages.js'
 import { portfolioRouter } from './routes/portfolio.js'
 import { productsRouter } from './routes/products.js'
+import { telegramPublicRouter } from './routes/telegramPublic.js'
 import { uploadRouter } from './routes/upload.js'
 
 export function createApp() {
@@ -24,6 +25,7 @@ export function createApp() {
   app.use('/api', portfolioRouter)
   app.use('/api', pagesRouter)
   app.use('/api', chatsRouter)
+  app.use('/api', telegramPublicRouter)
 
   app.use(notFoundApi)
   app.use(errorHandler)
