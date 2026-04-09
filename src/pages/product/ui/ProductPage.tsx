@@ -102,15 +102,12 @@ export function ProductPage() {
     )
   }
 
-  const handleShare = (platform?: 'vk' | 'telegram') => {
+  const handleShare = (platform?: 'vk') => {
     const url = window.location.href
     const title = product.name
-    const text = `Смотри: ${product.name} за ${product.price.toLocaleString()} ₽`
 
     if (platform === 'vk') {
       window.open(`https://vk.com/share.php?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank')
-    } else if (platform === 'telegram') {
-      window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank')
     } else {
       navigator.clipboard.writeText(url)
     }
@@ -244,15 +241,6 @@ export function ProductPage() {
                                 <path d="M3.07 8.72c.1 4.92 2.57 7.88 6.9 7.88h.26v-2.82c1.59.16 2.8 1.33 3.28 2.82h2.25c-.61-2.22-2.22-3.45-3.23-3.92 1.01-.58 2.42-1.98 2.76-3.96h-2.05c-.44 1.61-1.75 3.01-3.01 3.15V8.72H7.17v5.52c-1.28-.32-2.9-1.83-2.97-5.52H3.07z"/>
                               </svg>
                               <span className="text-sm font-medium">ВКонтакте</span>
-                            </button>
-                            <button
-                              onClick={() => handleShare('telegram')}
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors text-left border-t border-border"
-                            >
-                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#24A1DE">
-                                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                              </svg>
-                              <span className="text-sm font-medium">Telegram</span>
                             </button>
                             <button
                               onClick={() => handleShare()}

@@ -56,7 +56,7 @@ export function ChatWidget() {
 
     setIsSending(true)
     try {
-      const response = await apiFetch('/api/telegram/contact', {
+      const response = await apiFetch('/api/vk/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: sanitizedMessage }),

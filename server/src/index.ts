@@ -3,16 +3,14 @@ import 'express-async-errors'
 import { createApp } from './app.js'
 import { assertDatabaseConfigured, closePool } from './db.js'
 import { logger } from './lib/logger.js'
-import { startTelegramUpdatesPolling } from './lib/telegram.js'
-
-startTelegramUpdatesPolling()
+import { startVkBotLongPoll } from './lib/vkBot.js'
 
 const hasDb = Boolean(process.env.DATABASE_URL?.trim())
 if (hasDb) {
   assertDatabaseConfigured()
 } else {
   logger.warn(
-    'DATABASE_URL is not set; starting without database. API endpoints that use DB will fail, but Telegram polling can run.'
+    'DATABASE_URL is not set; starting without database. API endpoints that use DB will fail.'
   )
 }
 
@@ -20,6 +18,10 @@ const port = Number(process.env.PORT) || 3001
 const app = createApp()
 const server = app.listen(port, () => {
   logger.info({ port }, 'Doors API listening')
+})
+
+void startVkBotLongPoll().catch((error) => {
+  logger.error({ err: error }, 'VK bot crashed')
 })
 
 async function shutdown(signal: string) {
