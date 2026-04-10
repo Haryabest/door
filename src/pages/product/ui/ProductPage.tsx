@@ -102,14 +102,40 @@ export function ProductPage() {
     )
   }
 
-  const handleShare = (platform?: 'vk') => {
+  const copyToClipboard = async (text: string) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+      return
+    }
+
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    textArea.style.position = 'fixed'
+    textArea.style.left = '-9999px'
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+
+    const isCopied = document.execCommand('copy')
+    document.body.removeChild(textArea)
+
+    if (!isCopied) {
+      throw new Error('Failed to copy text')
+    }
+  }
+
+  const handleShare = async (platform?: 'vk') => {
     const url = window.location.href
     const title = product.name
 
     if (platform === 'vk') {
       window.open(`https://vk.com/share.php?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank')
     } else {
-      navigator.clipboard.writeText(url)
+      try {
+        await copyToClipboard(url)
+      } catch {
+        window.prompt('Скопируйте ссылку вручную:', url)
+      }
     }
     setShowShareMenu(false)
   }

@@ -38,6 +38,16 @@ export function ChatWidget() {
     scrollToBottom()
   }, [messages])
 
+  const sendMessageToManager = async (text: string): Promise<boolean> => {
+    const response = await apiFetch('/api/vk/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+
+    return response.ok
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!message.trim() || isSending) return
@@ -56,14 +66,9 @@ export function ChatWidget() {
 
     setIsSending(true)
     try {
-      const response = await apiFetch('/api/vk/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: sanitizedMessage }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to send: ${response.status}`)
+      const isSent = await sendMessageToManager(sanitizedMessage)
+      if (!isSent) {
+        throw new Error('Failed to send message')
       }
 
       const botMessage: Message = {
@@ -112,13 +117,8 @@ export function ChatWidget() {
     }
 
     setIsOpen(true)
-    let shouldSendAutoReply = false
-    setMessages((prev) => {
-      if (prev.some((msg) => !msg.isBot && msg.text === sanitizedMessage)) {
-        return prev
-      }
-
-      shouldSendAutoReply = true
+    const isDuplicate = messages.some((msg) => !msg.isBot && msg.text === sanitizedMessage)
+    if (!isDuplicate) {
       const userMessage: Message = {
         id: Date.now(),
         text: sanitizedMessage,
@@ -126,25 +126,38 @@ export function ChatWidget() {
         timestamp: new Date(),
       }
 
-      return [...prev, userMessage]
-    })
+      setMessages((prev) => [...prev, userMessage])
+      setIsSending(true)
 
-    if (shouldSendAutoReply) {
-      setTimeout(() => {
-        const botMessage: Message = {
-          id: Date.now() + 1,
-          text: 'Спасибо за ваш вопрос! Наш менеджер скоро ответит вам. 🕐',
-          isBot: true,
-          timestamp: new Date(),
-        }
-
-        setMessages((prev) => [...prev, botMessage])
-      }, 300)
+      sendMessageToManager(sanitizedMessage)
+        .then((isSent) => {
+          const botMessage: Message = {
+            id: Date.now() + 1,
+            text: isSent
+              ? 'Спасибо! Сообщение отправлено менеджеру. 🕐'
+              : 'Не удалось отправить сообщение. Попробуйте позже.',
+            isBot: true,
+            timestamp: new Date(),
+          }
+          setMessages((prev) => [...prev, botMessage])
+        })
+        .catch(() => {
+          const botMessage: Message = {
+            id: Date.now() + 1,
+            text: 'Не удалось отправить сообщение. Попробуйте позже.',
+            isBot: true,
+            timestamp: new Date(),
+          }
+          setMessages((prev) => [...prev, botMessage])
+        })
+        .finally(() => {
+          setIsSending(false)
+        })
     }
 
     params.delete('chatMessage')
     navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
-  }, [location.pathname, location.search, navigate])
+  }, [location.pathname, location.search, messages, navigate])
 
   return (
     <>
