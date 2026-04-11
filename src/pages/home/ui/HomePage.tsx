@@ -4,6 +4,7 @@ import { Footer } from "@/widgets/Footer"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
 import { Image } from "@/shared/ui/Image"
+import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { getHomePage, type HomePageData } from "@/shared/api/home"
 
 const iconMap: Record<string, any> = {
@@ -126,6 +127,7 @@ export function HomePage() {
       />
       <Header />
       <main>
+        <BackgroundPattern opacity={0.035} size={100} />
         {/* Hero Section */}
         <div className="relative h-[100vh] w-full overflow-hidden">
           <div 

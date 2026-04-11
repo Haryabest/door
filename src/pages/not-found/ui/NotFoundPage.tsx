@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Home, ArrowLeft, DoorOpen } from 'lucide-react'
 import { SEO } from '@/shared/ui/SEO'
+import { BackgroundPattern } from '@/shared/ui/BackgroundPattern'
 
 export function NotFoundPage() {
   return (
@@ -11,8 +12,9 @@ export function NotFoundPage() {
         description="Запрашиваемая страница не найдена. Перейдите в каталог, на главную или в другие разделы сайта."
         noIndex
       />
+      <BackgroundPattern opacity={0.035} size={100} />
       {/* Контент */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
+      <main className="flex-1 flex items-center justify-center px-4 py-12 relative z-10">
         <div className="text-center max-w-2xl mx-auto">
           {/* Анимированная иконка */}
           <motion.div

@@ -35,7 +35,7 @@ const defaultHomePageData: HomePageData = {
     title: 'От А до Я',
     subtitle: 'Премиум двери и фурнитура',
     city: 'Нижний Новгород',
-    backgroundImage: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=80'
+    backgroundImage: '/home-photo.jpg'
   },
   features: [
     { id: 1, icon: 'DoorOpen', title: 'Широкий ассортимент', description: 'Межкомнатные и входные двери, системы, панели, плинтуса и фурнитура' },

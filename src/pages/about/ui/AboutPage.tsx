@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { Image } from "@/shared/ui/Image"
+import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { Award, Users, Clock, ThumbsUp, Star, Shield, Truck, Headphones, Lock } from "lucide-react"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
@@ -137,7 +138,8 @@ export function AboutPage() {
       />
       <Header />
       <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <BackgroundPattern opacity={0.035} size={100} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
             <motion.div
               initial={{ opacity: 0, x: -30 }}

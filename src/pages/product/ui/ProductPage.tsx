@@ -4,6 +4,7 @@ import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { SEO } from "@/shared/ui/SEO"
 import { Image } from "@/shared/ui/Image"
+import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { ChevronLeft, Share2, Truck, Shield, Award, Copy } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProductById } from "@/shared/api/products"
@@ -171,7 +172,8 @@ export function ProductPage() {
       />
       <Header />
       <main className="flex-1 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <BackgroundPattern opacity={0.035} size={100} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
             <Link to="/" className="hover:text-primary transition-colors">Главная</Link>
             <ChevronLeft className="w-4 h-4 rotate-180" />

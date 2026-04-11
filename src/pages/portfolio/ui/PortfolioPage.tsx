@@ -3,6 +3,7 @@ import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
+import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { getPortfolioPage, type PortfolioPageData } from "@/shared/api/portfolio"
 import { FiltersContext } from "@/App"
 
@@ -99,8 +100,9 @@ export function PortfolioPage() {
       />
       <Header />
       <main className="flex-1">
+        <BackgroundPattern opacity={0.035} size={100} />
         {/* Portfolio Grid - Masonry layout */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
             {pageData.items.map((item, index) => (
               <motion.div

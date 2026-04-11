@@ -6,6 +6,7 @@ import { Footer } from "@/widgets/Footer"
 import { Checkbox } from "@/shared/ui/checkbox"
 import { ProductSkeleton } from "@/shared/ui/product-skeleton"
 import { Image } from "@/shared/ui/Image"
+import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { Filter, X, Search, ChevronRight, DoorOpen, Home, Settings, PanelLeft, Square } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SEO } from "@/shared/ui/SEO"
@@ -225,7 +226,8 @@ export function CatalogPage() {
       />
       <Header />
       <main className="flex-1 bg-background">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <BackgroundPattern opacity={0.035} size={100} />
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
           {/* Поиск и кнопка фильтров */}
           <motion.div 
             className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6"
