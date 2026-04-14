@@ -21,9 +21,9 @@ const generatePattern = (color: string, size: number) => {
       </g>
 
       <!-- Дверь 2 -->
-      <g ${rot(-20)} transform-origin='${s * 2.5} ${s * 0.5}'>
-        <rect x='${s * 2.2}' y='${s * 0.1}' width='${s * 0.3}' height='${s * 0.65}' rx='2' fill='none' stroke='${color}' stroke-width='1.6'/>
-        <circle cx='${s * 2.43}' cy='${s * 0.45}' r='${s * 0.035}' fill='${color}'/>
+      <g ${rot(-20)} transform-origin='${s * 2.75} ${s * 0.42}'>
+        <rect x='${s * 2.45}' y='${s * 0.02}' width='${s * 0.3}' height='${s * 0.65}' rx='2' fill='none' stroke='${color}' stroke-width='1.6'/>
+        <circle cx='${s * 2.68}' cy='${s * 0.37}' r='${s * 0.035}' fill='${color}'/>
       </g>
 
       <!-- Дверь 3 -->
@@ -99,9 +99,9 @@ const generatePattern = (color: string, size: number) => {
       </g>
 
       <!-- Геометрический ромб 2 -->
-      <g ${rot(-25)} transform-origin='${s * 0.5} ${s * 0.8}'>
-        <polygon points='${s * 0.5},${s * 0.6} ${s * 0.7},${s * 0.8} ${s * 0.5},${s * 1.0} ${s * 0.3},${s * 0.8}' fill='none' stroke='${color}' stroke-width='1.5'/>
-        <circle cx='${s * 0.5}' cy='${s * 0.8}' r='${s * 0.04}' fill='${color}'/>
+      <g ${rot(-25)} transform-origin='${s * 2.0} ${s * 0.95}'>
+        <polygon points='${s * 2.0},${s * 0.75} ${s * 2.2},${s * 0.95} ${s * 2.0},${s * 1.15} ${s * 1.8},${s * 0.95}' fill='none' stroke='${color}' stroke-width='1.5'/>
+        <circle cx='${s * 2.0}' cy='${s * 0.95}' r='${s * 0.04}' fill='${color}'/>
       </g>
 
       <!-- Ключ -->
@@ -119,17 +119,10 @@ const generatePattern = (color: string, size: number) => {
         <circle cx='${s * 1.5}' cy='${s * 3.55}' r='${s * 0.025}' fill='${color}'/>
       </g>
 
-      <!-- Петля -->
-      <g ${rot(30)} transform-origin='${s * 3.5} ${s * 1.8}'>
-        <ellipse cx='${s * 3.5}' cy='${s * 1.8}' rx='${s * 0.06}' ry='${s * 0.15}' fill='none' stroke='${color}' stroke-width='1.5'/>
-        <ellipse cx='${s * 3.5}' cy='${s * 2.1}' rx='${s * 0.06}' ry='${s * 0.15}' fill='none' stroke='${color}' stroke-width='1.5'/>
-        <line x1='${s * 3.5}' y1='${s * 1.95}' x2='${s * 3.5}' y2='${s * 1.95}' stroke='${color}' stroke-width='1.5'/>
-      </g>
-
       <!-- Маленькая дверь 5 -->
-      <g ${rot(-22)} transform-origin='${s * 1.5} ${s * 0.8}'>
-        <rect x='${s * 1.3}' y='${s * 0.6}' width='${s * 0.22}' height='${s * 0.45}' rx='1.5' fill='none' stroke='${color}' stroke-width='1.3'/>
-        <circle cx='${s * 1.47}' cy='${s * 0.82}' r='${s * 0.025}' fill='${color}'/>
+      <g ${rot(-22)} transform-origin='${s * 1.95} ${s * 3.0}'>
+        <rect x='${s * 1.75}' y='${s * 2.8}' width='${s * 0.22}' height='${s * 0.45}' rx='1.5' fill='none' stroke='${color}' stroke-width='1.3'/>
+        <circle cx='${s * 1.92}' cy='${s * 3.02}' r='${s * 0.025}' fill='${color}'/>
       </g>
 
     </svg>

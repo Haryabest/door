@@ -29,6 +29,7 @@ export function ChatWidget() {
     },
   ])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const hasShownSentConfirmationRef = useRef(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -71,13 +72,16 @@ export function ChatWidget() {
         throw new Error('Failed to send message')
       }
 
-      const botMessage: Message = {
-        id: Date.now() + 1,
-        text: 'Спасибо! Сообщение отправлено менеджеру. 🕐',
-        isBot: true,
-        timestamp: new Date(),
+      if (!hasShownSentConfirmationRef.current) {
+        const botMessage: Message = {
+          id: Date.now() + 1,
+          text: 'Спасибо! Сообщение отправлено менеджеру. 🕐',
+          isBot: true,
+          timestamp: new Date(),
+        }
+        setMessages(prev => [...prev, botMessage])
+        hasShownSentConfirmationRef.current = true
       }
-      setMessages(prev => [...prev, botMessage])
     } catch {
       const botMessage: Message = {
         id: Date.now() + 1,
@@ -131,11 +135,23 @@ export function ChatWidget() {
 
       sendMessageToManager(sanitizedMessage)
         .then((isSent) => {
+          if (isSent) {
+            if (!hasShownSentConfirmationRef.current) {
+              const botMessage: Message = {
+                id: Date.now() + 1,
+                text: 'Спасибо! Сообщение отправлено менеджеру. 🕐',
+                isBot: true,
+                timestamp: new Date(),
+              }
+              setMessages((prev) => [...prev, botMessage])
+              hasShownSentConfirmationRef.current = true
+            }
+            return
+          }
+
           const botMessage: Message = {
             id: Date.now() + 1,
-            text: isSent
-              ? 'Спасибо! Сообщение отправлено менеджеру. 🕐'
-              : 'Не удалось отправить сообщение. Попробуйте позже.',
+            text: 'Не удалось отправить сообщение. Попробуйте позже.',
             isBot: true,
             timestamp: new Date(),
           }
