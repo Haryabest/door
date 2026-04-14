@@ -100,7 +100,7 @@ export function PortfolioPage() {
       />
       <Header />
       <main className="flex-1">
-        <BackgroundPattern opacity={0.035} size={100} />
+        <BackgroundPattern opacity={0.1} size={100} />
         {/* Portfolio Grid - Masonry layout */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">

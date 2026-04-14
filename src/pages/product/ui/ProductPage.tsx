@@ -172,7 +172,7 @@ export function ProductPage() {
       />
       <Header />
       <main className="flex-1 bg-background">
-        <BackgroundPattern opacity={0.035} size={100} />
+        <BackgroundPattern opacity={0.1} size={100} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
             <Link to="/" className="hover:text-primary transition-colors">Главная</Link>

@@ -134,7 +134,7 @@ export function ContactsPage() {
       />
       <Header />
       <main className="flex-1">
-        <BackgroundPattern opacity={0.035} size={100} />
+        <BackgroundPattern opacity={0.1} size={100} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Form */}
