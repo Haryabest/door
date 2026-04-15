@@ -94,7 +94,8 @@ export const chatMessageSchema = z.object({
 export const chatPublicMessageSchema = z.object({
   text: str(8000).min(1),
   chatId: z.number().int().positive().optional().nullable(),
-  clientToken: z.string().uuid().optional().nullable(),
+  /** UUID из PostgreSQL; не используем .uuid() — допускаем любой непустой секрет */
+  clientToken: str(64).optional().nullable(),
 })
 
 /** Заявка с формы «Контакты» на сайте */

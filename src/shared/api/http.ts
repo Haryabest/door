@@ -31,3 +31,14 @@ export function apiFetch(path: string, init?: RequestInit): Promise<Response> {
     credentials: 'include',
   })
 }
+
+/**
+ * Публичные эндпоинты (чат на сайте и т.п.): без Bearer и без cookie.
+ * Иначе при API на другом origin + CORS с credentials публичный фронт не получает ответ.
+ */
+export function publicApiFetch(path: string, init?: RequestInit): Promise<Response> {
+  return fetch(apiUrl(path), {
+    ...init,
+    credentials: 'omit',
+  })
+}

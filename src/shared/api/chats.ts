@@ -1,6 +1,6 @@
 // API для работы с сообщениями
 
-import { apiFetch } from './http'
+import { apiFetch, publicApiFetch } from './http'
 
 export interface Message {
   id: number
@@ -93,7 +93,7 @@ export async function postPublicChatMessage(
     body.chatId = session.chatId
     body.clientToken = session.clientToken
   }
-  const response = await apiFetch('/api/chats/public/message', {
+  const response = await publicApiFetch('/api/chats/public/message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -122,7 +122,7 @@ export async function fetchPublicChatMessages(
   chatId: number,
   clientToken: string
 ): Promise<Message[]> {
-  const response = await apiFetch(
+  const response = await publicApiFetch(
     `/api/chats/public/${chatId}/messages?token=${encodeURIComponent(clientToken)}`
   )
   if (!response.ok) return []

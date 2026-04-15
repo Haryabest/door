@@ -44,12 +44,16 @@ chatsRouter.post(
         [chatId, text]
       )
       await pool.query(`UPDATE chats SET unread_count = unread_count + 1 WHERE id = $1`, [chatId])
-      await sendVkNotification({
-        source: 'site',
-        chatId,
-        userName: chatRows[0]!.user_name,
-        text,
-      })
+      try {
+        await sendVkNotification({
+          source: 'site',
+          chatId,
+          userName: chatRows[0]!.user_name,
+          text,
+        })
+      } catch {
+        /* VK не должен ломать чат */
+      }
       const m = mapMessage(msgRows[0])
       res.status(201).json({
         chatId,
@@ -74,12 +78,16 @@ chatsRouter.post(
       `INSERT INTO chat_messages (chat_id, text, is_user) VALUES ($1, $2, true) RETURNING *`,
       [chatId, text]
     )
-    await sendVkNotification({
-      source: 'site',
-      chatId,
-      userName,
-      text,
-    })
+    try {
+      await sendVkNotification({
+        source: 'site',
+        chatId,
+        userName,
+        text,
+      })
+    } catch {
+      /* VK не должен ломать чат */
+    }
     const m = mapMessage(msgRows[0])
     res.status(201).json({
       chatId,
