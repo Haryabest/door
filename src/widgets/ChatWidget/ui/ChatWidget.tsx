@@ -23,6 +23,13 @@ function mapApiToWidget(isUser: boolean): boolean {
   return !isUser
 }
 
+const GREETING: Message = {
+  id: -1,
+  text: 'Здравствуйте! 👋 Чем могу помочь?',
+  isBot: true,
+  timestamp: new Date(),
+}
+
 export function ChatWidget() {
   const { isFiltersOpen, isChatWidgetHidden } = useContext(FiltersContext)
   const location = useLocation()
@@ -30,15 +37,12 @@ export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: -1,
-      text: 'Здравствуйте! 👋 Чем могу помочь?',
-      isBot: true,
-      timestamp: new Date(),
-    },
-  ])
+  /** Пусто до первой загрузки истории — чтобы не мигало приветствие при повторном заходе, если чат уже есть */
+  const [messages, setMessages] = useState<Message[]>([])
+  const [historyReady, setHistoryReady] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesRef = useRef<Message[]>(messages)
+  messagesRef.current = messages
   const hasShownSentConfirmationRef = useRef(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -52,7 +56,11 @@ export function ChatWidget() {
 
   const loadHistory = useCallback(async () => {
     const session = getStoredChatSession()
-    if (!session) return
+    if (!session) {
+      setMessages([{ ...GREETING, timestamp: new Date() }])
+      setHistoryReady(true)
+      return
+    }
     const list = await fetchPublicChatMessages(session.chatId, session.clientToken)
     const mapped: Message[] = list.map((m) => ({
       id: m.id,
@@ -61,13 +69,13 @@ export function ChatWidget() {
       timestamp: m.timestamp,
     }))
     mapped.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
-    setMessages((prev) => {
-      const greeting = prev.find((p) => p.id === -1)
-      const head = greeting
-        ? [greeting]
-        : [{ id: -1, text: 'Здравствуйте! 👋 Чем могу помочь?', isBot: true, timestamp: new Date() }]
-      return [...head, ...mapped]
-    })
+    // Если в БД уже есть переписка — не дублируем локальное приветствие при каждом заходе на страницу
+    if (mapped.length > 0) {
+      setMessages(mapped)
+    } else {
+      setMessages([{ ...GREETING, timestamp: new Date() }])
+    }
+    setHistoryReady(true)
   }, [])
 
   useEffect(() => {
@@ -107,7 +115,8 @@ export function ChatWidget() {
         isBot: mapApiToWidget(m.isUser),
         timestamp: m.timestamp,
       }
-      return [...greeting, ...rest, added].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+      const merged = [...greeting, ...rest, added].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+      return merged
     })
     return true
   }
@@ -177,7 +186,7 @@ export function ChatWidget() {
     }
 
     setIsOpen(true)
-    const isDuplicate = messages.some((msg) => !msg.isBot && msg.text === sanitizedMessage)
+    const isDuplicate = messagesRef.current.some((msg) => !msg.isBot && msg.text === sanitizedMessage)
     if (!isDuplicate) {
       setIsSending(true)
 
@@ -221,7 +230,7 @@ export function ChatWidget() {
 
     params.delete('chatMessage')
     navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
-  }, [location.pathname, location.search, messages, navigate])
+  }, [location.pathname, location.search, navigate])
 
   return (
     <>
@@ -275,7 +284,10 @@ export function ChatWidget() {
 
             <div className="h-80 p-4 overflow-y-auto bg-gray-50">
               <div className="space-y-4">
-                {messages.map((msg) => (
+                {!historyReady && (
+                  <p className="text-sm text-muted-foreground text-center py-4">Загрузка…</p>
+                )}
+                {historyReady && messages.map((msg) => (
                   <motion.div
                     key={msg.id}
                     initial={{ opacity: 0, y: 10 }}

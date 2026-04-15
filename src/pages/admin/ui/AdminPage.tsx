@@ -5,7 +5,7 @@ import {
   Search, Send, ChevronLeft, Home, Image as ImageIcon, FileText, Settings, MapPin, PanelTop, RefreshCw,
 } from 'lucide-react'
 import { updateProduct, deleteProduct, productsApi, createProduct, uploadImage } from '@/shared/api/products'
-import { sendMessage, getChats } from '@/shared/api/chats'
+import { sendMessage, getChats, markChatAsRead } from '@/shared/api/chats'
 import { getAboutPage, updateAboutPage, type AboutPageData, type StatItem, type AdvantageItem } from '@/shared/api/about'
 import { getContactsPage, updateContactsPage, type ContactsPageData, type LocationItem } from '@/shared/api/contacts'
 import { getPortfolioPage, updatePortfolioPage, type PortfolioPageData, type PortfolioItem } from '@/shared/api/portfolio'
@@ -202,6 +202,15 @@ export function AdminPage() {
   const loadChats = async () => {
     const list = await getChats()
     setChats(list)
+  }
+
+  const handleSelectChat = (chatId: number) => {
+    setSelectedChat(chatId)
+    void markChatAsRead(chatId).then((ok) => {
+      if (ok) {
+        setChats((prev) => prev.map((c) => (c.id === chatId ? { ...c, unread: 0 } : c)))
+      }
+    })
   }
 
   useEffect(() => {
@@ -775,16 +784,17 @@ export function AdminPage() {
     const newMessage = await sendMessage(chatId, text)
 
     if (newMessage) {
-      setChats(chats.map(chat => {
-        if (chat.id === chatId) {
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (chat.id !== chatId) return chat
           return {
             ...chat,
+            unread: 0,
             messages: [...chat.messages, newMessage],
-            lastMessage: text
+            lastMessage: text,
           }
-        }
-        return chat
-      }))
+        })
+      )
     } else {
       alert('Не удалось отправить сообщение')
     }
@@ -1200,7 +1210,8 @@ export function AdminPage() {
                 {chats.map((chat) => (
                   <button
                     key={chat.id}
-                    onClick={() => setSelectedChat(chat.id)}
+                    type="button"
+                    onClick={() => handleSelectChat(chat.id)}
                     className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
                       selectedChat === chat.id ? 'bg-gray-50' : ''
                     }`}
