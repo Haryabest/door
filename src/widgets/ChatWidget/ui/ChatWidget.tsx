@@ -40,19 +40,36 @@ export function ChatWidget() {
   /** Пусто до первой загрузки истории — чтобы не мигало приветствие при повторном заходе, если чат уже есть */
   const [messages, setMessages] = useState<Message[]>([])
   const [historyReady, setHistoryReady] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const prevMessagesLengthRef = useRef(0)
   const messagesRef = useRef<Message[]>(messages)
   messagesRef.current = messages
   const hasShownSentConfirmationRef = useRef(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    const container = messagesContainerRef.current
+    if (!container) return
+    container.scrollTo({ top: container.scrollHeight, behavior })
+  }, [])
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    if (!isOpen || !historyReady) return
+    const hasNewMessage = messages.length > prevMessagesLengthRef.current
+    const frame = requestAnimationFrame(() => {
+      scrollToBottom(hasNewMessage ? 'smooth' : 'auto')
+    })
+    prevMessagesLengthRef.current = messages.length
+    return () => cancelAnimationFrame(frame)
+  }, [messages, isOpen, historyReady, scrollToBottom])
+
+  useEffect(() => {
+    if (!isOpen || !historyReady) return
+    const frame = requestAnimationFrame(() => {
+      scrollToBottom('auto')
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [isOpen, historyReady, scrollToBottom])
 
   const loadHistory = useCallback(async () => {
     const session = getStoredChatSession()
@@ -243,7 +260,7 @@ export function ChatWidget() {
             exit={{ scale: 0 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center z-50 hover:bg-primary/90 transition-colors"
+            className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center z-[2147483647] hover:bg-primary/90 transition-colors"
             aria-label="Открыть чат"
           >
             {isOpen ? (
@@ -262,7 +279,7 @@ export function ChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-24 right-6 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl z-40 overflow-hidden"
+            className="fixed bottom-24 right-6 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl z-[2147483647] overflow-hidden"
           >
             <div className="bg-primary text-white p-4">
               <div className="flex items-center justify-between">
@@ -282,7 +299,7 @@ export function ChatWidget() {
               </div>
             </div>
 
-            <div className="h-80 p-4 overflow-y-auto bg-gray-50">
+            <div ref={messagesContainerRef} className="h-80 p-4 overflow-y-auto bg-gray-50">
               <div className="space-y-4">
                 {!historyReady && (
                   <p className="text-sm text-muted-foreground text-center py-4">Загрузка…</p>
@@ -323,7 +340,6 @@ export function ChatWidget() {
                     </div>
                   </motion.div>
                 ))}
-                <div ref={messagesEndRef} />
               </div>
             </div>
 
