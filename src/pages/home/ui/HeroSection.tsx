@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { HeroSection as HeroSectionType } from '@/shared/api/home'
 
@@ -7,11 +7,43 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ hero }: HeroSectionProps) {
-  const [mediaMode, setMediaMode] = useState<'photo' | 'video'>('photo')
+  const [mediaMode, setMediaMode] = useState<'photo' | 'video' | 'slideshow'>('photo')
+  const [currentSlide, setCurrentSlide] = useState(0)
+
+  const slideshowImages = useMemo(
+    () => [
+      hero.backgroundImage,
+      'https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1616593969747-4797dc75033e?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1600210492486-724fe5c67fb3?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?auto=format&fit=crop&w=1920&q=80',
+      'https://images.unsplash.com/photo-1617104551722-3b2d513664c8?auto=format&fit=crop&w=1920&q=80',
+    ],
+    [hero.backgroundImage]
+  )
+
+  useEffect(() => {
+    if (mediaMode !== 'slideshow') {
+      setCurrentSlide(0)
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slideshowImages.length)
+    }, 4000)
+
+    return () => window.clearInterval(timer)
+  }, [mediaMode, slideshowImages.length])
 
   return (
     <div className="relative h-[100vh] w-full overflow-hidden">
-      {/* Переключатель фото/видео */}
+      {/* Переключатель фото/видео/слайдшоу */}
       <div className="absolute top-6 right-6 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full p-1">
         <button
           onClick={() => setMediaMode('photo')}
@@ -33,9 +65,19 @@ export function HeroSection({ hero }: HeroSectionProps) {
         >
           Видео
         </button>
+        <button
+          onClick={() => setMediaMode('slideshow')}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
+            mediaMode === 'slideshow'
+              ? 'bg-white text-primary'
+              : 'text-white/80 hover:text-white'
+          }`}
+        >
+          Слайдшоу
+        </button>
       </div>
 
-      {/* Фон: фото или видео */}
+      {/* Фон: фото, видео или слайдшоу */}
       <AnimatePresence mode="wait">
         {mediaMode === 'photo' ? (
           <motion.div
@@ -47,7 +89,7 @@ export function HeroSection({ hero }: HeroSectionProps) {
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url('${hero.backgroundImage}')` }}
           />
-        ) : (
+        ) : mediaMode === 'video' ? (
           <motion.video
             key="video"
             initial={{ opacity: 0 }}
@@ -60,6 +102,16 @@ export function HeroSection({ hero }: HeroSectionProps) {
             muted
             loop
             playsInline
+          />
+        ) : (
+          <motion.div
+            key={`slideshow-${currentSlide}`}
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.7, ease: 'easeInOut' }}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url('${slideshowImages[currentSlide]}')` }}
           />
         )}
       </AnimatePresence>
@@ -132,7 +184,7 @@ export function HeroSection({ hero }: HeroSectionProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{
           opacity: { duration: 0.6, delay: 1.2 },
-          y: { duration: 1.5, repeat: Infinity, repeatType: "reverse" }
+          y: { duration: 1.5, repeat: Infinity, repeatType: 'reverse' }
         }}
       >
         <svg
