@@ -1,4 +1,4 @@
-// API для работы с шапкой сайта (заглушки для БД)
+// API шапки — GET/PUT /api/widgets/header
 
 import { apiFetch } from './http'
 

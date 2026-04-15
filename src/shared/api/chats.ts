@@ -63,3 +63,75 @@ export async function markChatAsRead(id: number): Promise<boolean> {
   const response = await apiFetch(`/api/chats/${id}`, { method: 'PUT' })
   return response.ok
 }
+
+const CHAT_ID_KEY = 'door_public_chat_id'
+const CHAT_TOKEN_KEY = 'door_public_chat_token'
+
+export function getStoredChatSession(): { chatId: number; clientToken: string } | null {
+  if (typeof localStorage === 'undefined') return null
+  const id = localStorage.getItem(CHAT_ID_KEY)
+  const token = localStorage.getItem(CHAT_TOKEN_KEY)
+  if (!id || !token) return null
+  const n = Number(id)
+  if (Number.isNaN(n)) return null
+  return { chatId: n, clientToken: token }
+}
+
+export function setStoredChatSession(chatId: number, clientToken: string): void {
+  if (typeof localStorage === 'undefined') return
+  localStorage.setItem(CHAT_ID_KEY, String(chatId))
+  localStorage.setItem(CHAT_TOKEN_KEY, clientToken)
+}
+
+/** Сообщение с сайта (без админ-сессии) */
+export async function postPublicChatMessage(
+  text: string,
+  session: { chatId: number; clientToken: string } | null
+): Promise<{ chatId: number; clientToken: string; message: Message } | null> {
+  const body: { text: string; chatId?: number; clientToken?: string } = { text }
+  if (session) {
+    body.chatId = session.chatId
+    body.clientToken = session.clientToken
+  }
+  const response = await apiFetch('/api/chats/public/message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) return null
+  const data = (await response.json()) as {
+    chatId: number
+    clientToken: string
+    message: Record<string, unknown>
+  }
+  const m = data.message
+  return {
+    chatId: data.chatId,
+    clientToken: data.clientToken,
+    message: {
+      id: m.id as number,
+      text: m.text as string,
+      isUser: m.isUser as boolean,
+      timestamp: new Date(m.timestamp as string | number | Date),
+      chatId: m.chatId as number,
+    },
+  }
+}
+
+export async function fetchPublicChatMessages(
+  chatId: number,
+  clientToken: string
+): Promise<Message[]> {
+  const response = await apiFetch(
+    `/api/chats/public/${chatId}/messages?token=${encodeURIComponent(clientToken)}`
+  )
+  if (!response.ok) return []
+  const data = (await response.json()) as { messages: Record<string, unknown>[] }
+  return (data.messages ?? []).map((m) => ({
+    id: m.id as number,
+    text: m.text as string,
+    isUser: m.isUser as boolean,
+    timestamp: new Date(m.timestamp as string | number | Date),
+    chatId: m.chatId as number,
+  }))
+}

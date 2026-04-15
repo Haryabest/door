@@ -1,15 +1,17 @@
 import { Save, Trash2 } from 'lucide-react'
-import type { HomePageData, CategoryItem } from '@/shared/api/home'
+import type { HomePageData, CategoryItem, HeroSection, FeatureItem } from '@/shared/api/home'
 
 interface HomePageEditorProps {
   data: HomePageData
   isLoading: boolean
   isSaving: boolean
   onSave: () => void
+  onUpdateHero: (field: keyof HeroSection, value: string) => void
+  onUpdateFeature: (id: number, field: keyof FeatureItem, value: string) => void
   onDeleteFeature: (id: number) => void
   onUpdateCategory: (id: number, field: keyof CategoryItem, value: string) => void
   onDeleteCategory: (id: number) => void
-  onUploadImage: (id: number, imageUrl: string) => void
+  onUploadCategoryImage: (id: number, file: File) => void
 }
 
 export function HomePageEditor({
@@ -17,10 +19,12 @@ export function HomePageEditor({
   isLoading,
   isSaving,
   onSave,
+  onUpdateHero,
+  onUpdateFeature,
   onDeleteFeature,
   onUpdateCategory,
   onDeleteCategory,
-  onUploadImage,
+  onUploadCategoryImage,
 }: HomePageEditorProps) {
   if (isLoading) {
     return (
@@ -44,7 +48,6 @@ export function HomePageEditor({
         </button>
       </div>
 
-      {/* Hero секция */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="text-lg font-bold text-primary mb-4">Hero секция</h3>
         <div className="space-y-4">
@@ -53,7 +56,7 @@ export function HomePageEditor({
             <input
               type="text"
               value={data.hero.title}
-              readOnly
+              onChange={(e) => onUpdateHero('title', e.target.value)}
               className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
             />
           </div>
@@ -62,7 +65,7 @@ export function HomePageEditor({
             <input
               type="text"
               value={data.hero.subtitle}
-              readOnly
+              onChange={(e) => onUpdateHero('subtitle', e.target.value)}
               className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
             />
           </div>
@@ -71,14 +74,23 @@ export function HomePageEditor({
             <input
               type="text"
               value={data.hero.city}
-              readOnly
+              onChange={(e) => onUpdateHero('city', e.target.value)}
               className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Фон (URL)</label>
+            <input
+              type="url"
+              value={data.hero.backgroundImage}
+              onChange={(e) => onUpdateHero('backgroundImage', e.target.value)}
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+              placeholder="https://..."
             />
           </div>
         </div>
       </div>
 
-      {/* Преимущества */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="text-lg font-bold text-primary mb-4">Преимущества</h3>
         <div className="space-y-4">
@@ -87,18 +99,26 @@ export function HomePageEditor({
               <div className="flex-1 space-y-2">
                 <input
                   type="text"
+                  value={feature.icon}
+                  onChange={(e) => onUpdateFeature(feature.id, 'icon', e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary text-sm"
+                  placeholder="Иконка (например DoorOpen)"
+                />
+                <input
+                  type="text"
                   value={feature.title}
-                  readOnly
+                  onChange={(e) => onUpdateFeature(feature.id, 'title', e.target.value)}
                   className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
                 />
                 <textarea
                   value={feature.description}
-                  readOnly
+                  onChange={(e) => onUpdateFeature(feature.id, 'description', e.target.value)}
                   className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary resize-none"
                   rows={2}
                 />
               </div>
               <button
+                type="button"
                 onClick={() => onDeleteFeature(feature.id)}
                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors self-start"
               >
@@ -109,7 +129,6 @@ export function HomePageEditor({
         </div>
       </div>
 
-      {/* Категории */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="text-lg font-bold text-primary mb-4">Категории</h3>
         <div className="space-y-4">
@@ -148,10 +167,7 @@ export function HomePageEditor({
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0]
-                        if (file) {
-                          const imageUrl = URL.createObjectURL(file)
-                          onUploadImage(category.id, imageUrl)
-                        }
+                        if (file) onUploadCategoryImage(category.id, file)
                       }}
                       className="hidden"
                     />
@@ -160,6 +176,7 @@ export function HomePageEditor({
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => onDeleteCategory(category.id)}
                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors self-start"
               >

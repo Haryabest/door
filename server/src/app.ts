@@ -10,6 +10,7 @@ import { portfolioRouter } from './routes/portfolio.js'
 import { productsRouter } from './routes/products.js'
 import { vkPublicRouter } from './routes/vkPublic.js'
 import { uploadRouter } from './routes/upload.js'
+import { contactLeadsRouter } from './routes/contactLeads.js'
 
 export function createApp() {
   const app = express()
@@ -25,6 +26,7 @@ export function createApp() {
   app.use('/api', portfolioRouter)
   app.use('/api', pagesRouter)
   app.use('/api', chatsRouter)
+  app.use('/api', contactLeadsRouter)
   app.use('/api', vkPublicRouter)
 
   app.use(notFoundApi)

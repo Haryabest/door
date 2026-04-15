@@ -41,7 +41,7 @@ export function AdminLoginPage() {
               <Lock className="w-8 h-8 text-background" />
             </div>
             <h1 className="text-2xl font-bold text-primary mb-2">Админ-панель</h1>
-            <p className="text-muted-foreground">Пароль из базы (после миграции по умолчанию — admin123, смените)</p>
+            <p className="text-muted-foreground">Введите пароль</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -71,11 +71,6 @@ export function AdminLoginPage() {
                 <p className="mt-2 text-sm text-red-500">{error}</p>
               )}
             </div>
-
-            <p className="text-xs text-muted-foreground">
-              Хранится в PostgreSQL (<code className="text-xs">admin_credential</code>). Смена:{' '}
-              <code className="text-xs">cd server && npm run set-admin-password -- '…'</code>
-            </p>
 
             <motion.button
               type="submit"

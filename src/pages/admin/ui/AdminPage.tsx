@@ -1,31 +1,41 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Package, MessageSquare, LogOut, Plus, Trash2, Edit, Save, X,
-  Search, Send, ChevronLeft, Home, Image as ImageIcon, FileText, Settings, MapPin, PanelTop
+  Package, MessageSquare, LogOut, Plus, Trash2, Edit, X,
+  Search, Send, ChevronLeft, Home, Image as ImageIcon, FileText, Settings, MapPin, PanelTop, RefreshCw,
 } from 'lucide-react'
-import { updateProduct, deleteProduct, productsApi } from '@/shared/api/products'
+import { updateProduct, deleteProduct, productsApi, createProduct, uploadImage } from '@/shared/api/products'
 import { sendMessage, getChats } from '@/shared/api/chats'
 import { getAboutPage, updateAboutPage, type AboutPageData, type StatItem, type AdvantageItem } from '@/shared/api/about'
 import { getContactsPage, updateContactsPage, type ContactsPageData, type LocationItem } from '@/shared/api/contacts'
 import { getPortfolioPage, updatePortfolioPage, type PortfolioPageData, type PortfolioItem } from '@/shared/api/portfolio'
-import { getHomePage, updateHomePage, type HomePageData, type CategoryItem } from '@/shared/api/home'
+import {
+  getHomePage,
+  updateHomePage,
+  type HomePageData,
+  type CategoryItem,
+  type FeatureItem,
+  type HeroSection,
+} from '@/shared/api/home'
 import { getCatalogPage, updateCatalogPage, type CatalogPageData, type CatalogCategory, type CatalogColor } from '@/shared/api/catalog'
 import { defaultHeaderData, getHeader, updateHeader, type HeaderData, type HeaderNavItem } from '@/shared/api/header'
 import { adminLogout, adminMe } from '@/shared/api/auth'
+import { getContactLeads, type ContactLead } from '@/shared/api/contactLeads'
+import { transliterate } from '@/shared/lib/slug'
+import {
+  emptyProductForm,
+  parseFeaturesText,
+  type ProductFormState,
+  type ProductLocal,
+} from './adminProductTypes'
+import { ProductEditForm } from './ProductEditForm'
 import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor } from './editors'
+
+export type { ProductFormState, ProductLocal } from './adminProductTypes'
+export { emptyProductForm } from './adminProductTypes'
 
 const SAVE_FAILED_HINT =
   'Ошибка сохранения. Выйдите и войдите снова (сессия). Для API-скриптов нужен Bearer (ADMIN_API_TOKEN) или VITE_ADMIN_API_TOKEN при сборке.'
-
-// Типы
-export interface ProductLocal {
-  id: number
-  name: string
-  material: string
-  color: string
-  image: string
-}
 
 export interface MessageLocal {
   id: number
@@ -108,6 +118,8 @@ export function AdminPage() {
     isSaving: false,
     data: null
   })
+  const [contactLeads, setContactLeads] = useState<ContactLead[]>([])
+  const [contactLeadsLoading, setContactLeadsLoading] = useState(false)
 
   // Страница "Портфолио"
   const [portfolioPage, setPortfolioPage] = useState<PortfolioPageState>({
@@ -137,13 +149,7 @@ export function AdminPage() {
     data: null,
   })
 
-  // Форма товара
-  const [productForm, setProductForm] = useState<Partial<ProductLocal> & { file?: File }>({
-    name: '',
-    material: '',
-    color: '',
-    image: ''
-  })
+  const [productForm, setProductForm] = useState<ProductFormState>(emptyProductForm)
 
   useEffect(() => {
     let cancelled = false
@@ -180,9 +186,15 @@ export function AdminPage() {
       list.map((p) => ({
         id: p.id,
         name: p.name,
+        price: p.price,
+        oldPrice: p.oldPrice ?? null,
+        description: p.description ?? '',
+        features: p.features ?? [],
         material: p.material,
         color: p.color,
         image: p.image,
+        category: p.category,
+        slug: p.slug,
       }))
     )
   }
@@ -191,6 +203,14 @@ export function AdminPage() {
     const list = await getChats()
     setChats(list)
   }
+
+  useEffect(() => {
+    if (activeTab !== 'messages') return
+    const timer = window.setInterval(() => {
+      void getChats().then(setChats)
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [activeTab])
 
   const loadAboutPage = async () => {
     setAboutPage({ ...aboutPage, isLoading: true })
@@ -203,7 +223,6 @@ export function AdminPage() {
   const handleSaveAboutPage = async () => {
     if (!aboutPage.data) return
     setAboutPage({ ...aboutPage, isSaving: true })
-    console.log('PUT /api/pages/about', aboutPage.data)
     const updated = await updateAboutPage(aboutPage.data)
     if (updated) {
       setAboutPage({ isLoading: false, isSaving: false, data: updated })
@@ -224,14 +243,12 @@ export function AdminPage() {
     }
     const updatedData = { ...aboutPage.data, stats: [...aboutPage.data.stats, newStat] }
     setAboutPage({ ...aboutPage, data: updatedData })
-    console.log('POST /api/pages/about/stats', newStat)
   }
 
   const handleDeleteStat = (id: number) => {
     if (!aboutPage.data) return
     const updatedData = { ...aboutPage.data, stats: aboutPage.data.stats.filter(s => s.id !== id) }
     setAboutPage({ ...aboutPage, data: updatedData })
-    console.log('DELETE /api/pages/about/stats', id)
   }
 
   const handleUpdateStat = (id: number, field: keyof StatItem, value: string) => {
@@ -239,7 +256,6 @@ export function AdminPage() {
     const updatedStats = aboutPage.data.stats.map(s => s.id === id ? { ...s, [field]: value } : s)
     const updatedData = { ...aboutPage.data, stats: updatedStats }
     setAboutPage({ ...aboutPage, data: updatedData })
-    console.log('PUT /api/pages/about/stats', id, field, value)
   }
 
   const handleAddAdvantage = () => {
@@ -252,14 +268,12 @@ export function AdminPage() {
     }
     const updatedData = { ...aboutPage.data, advantages: [...aboutPage.data.advantages, newAdvantage] }
     setAboutPage({ ...aboutPage, data: updatedData })
-    console.log('POST /api/pages/about/advantages', newAdvantage)
   }
 
   const handleDeleteAdvantage = (id: number) => {
     if (!aboutPage.data) return
     const updatedData = { ...aboutPage.data, advantages: aboutPage.data.advantages.filter(a => a.id !== id) }
     setAboutPage({ ...aboutPage, data: updatedData })
-    console.log('DELETE /api/pages/about/advantages', id)
   }
 
   const handleUpdateAdvantage = (id: number, field: keyof AdvantageItem, value: string) => {
@@ -267,7 +281,25 @@ export function AdminPage() {
     const updatedAdvantages = aboutPage.data.advantages.map(a => a.id === id ? { ...a, [field]: value } : a)
     const updatedData = { ...aboutPage.data, advantages: updatedAdvantages }
     setAboutPage({ ...aboutPage, data: updatedData })
-    console.log('PUT /api/pages/about/advantages', id, field, value)
+  }
+
+  const handleUpdateHero = (field: keyof HeroSection, value: string) => {
+    if (!homePage.data) return
+    setHomePage({
+      ...homePage,
+      data: { ...homePage.data, hero: { ...homePage.data.hero, [field]: value } },
+    })
+  }
+
+  const handleUpdateFeatureHome = (id: number, field: keyof FeatureItem, value: string) => {
+    if (!homePage.data) return
+    setHomePage({
+      ...homePage,
+      data: {
+        ...homePage.data,
+        features: homePage.data.features.map((f) => (f.id === id ? { ...f, [field]: value } : f)),
+      },
+    })
   }
 
   const handleUpdateCategoryHome = (id: number, field: keyof CategoryItem, value: string) => {
@@ -275,22 +307,21 @@ export function AdminPage() {
     const updatedCategories = homePage.data.categories.map(c => c.id === id ? { ...c, [field]: value } : c)
     const updatedData = { ...homePage.data, categories: updatedCategories }
     setHomePage({ ...homePage, data: updatedData })
-    console.log('PUT /api/pages/home/categories', id, field, value)
   }
 
   const handleDeleteCategoryHome = (id: number) => {
     if (!homePage.data) return
     const updatedData = { ...homePage.data, categories: homePage.data.categories.filter(c => c.id !== id) }
     setHomePage({ ...homePage, data: updatedData })
-    console.log('DELETE /api/pages/home/categories', id)
   }
 
-  const handleUploadImageHome = (id: number, imageUrl: string) => {
-    if (!homePage.data) return
-    const updatedCategories = homePage.data.categories.map(c => c.id === id ? { ...c, image: imageUrl } : c)
-    const updatedData = { ...homePage.data, categories: updatedCategories }
-    setHomePage({ ...homePage, data: updatedData })
-    console.log('POST /api/upload', imageUrl)
+  const handleUploadImageHome = async (id: number, file: File) => {
+    const url = await uploadImage(file)
+    if (!url) {
+      alert('Не удалось загрузить изображение')
+      return
+    }
+    handleUpdateCategoryHome(id, 'image', url)
   }
 
   const loadContactsPage = async () => {
@@ -304,7 +335,6 @@ export function AdminPage() {
   const handleSaveContactsPage = async () => {
     if (!contactsPage.data) return
     setContactsPage({ ...contactsPage, isSaving: true })
-    console.log('PUT /api/pages/contacts', contactsPage.data)
     const updated = await updateContactsPage(contactsPage.data)
     if (updated) {
       setContactsPage({ isLoading: false, isSaving: false, data: updated })
@@ -327,14 +357,12 @@ export function AdminPage() {
     }
     const updatedData = { ...contactsPage.data, locations: [...contactsPage.data.locations, newLocation] }
     setContactsPage({ ...contactsPage, data: updatedData })
-    console.log('POST /api/pages/contacts/locations', newLocation)
   }
 
   const handleDeleteLocation = (id: number) => {
     if (!contactsPage.data) return
     const updatedData = { ...contactsPage.data, locations: contactsPage.data.locations.filter(l => l.id !== id) }
     setContactsPage({ ...contactsPage, data: updatedData })
-    console.log('DELETE /api/pages/contacts/locations', id)
   }
 
   const handleUpdateLocation = (id: number, field: keyof LocationItem, value: string) => {
@@ -342,8 +370,19 @@ export function AdminPage() {
     const updatedLocations = contactsPage.data.locations.map(l => l.id === id ? { ...l, [field]: value } : l)
     const updatedData = { ...contactsPage.data, locations: updatedLocations }
     setContactsPage({ ...contactsPage, data: updatedData })
-    console.log('PUT /api/pages/contacts/locations', id, field, value)
   }
+
+  const refreshContactLeads = useCallback(async () => {
+    setContactLeadsLoading(true)
+    const items = await getContactLeads()
+    setContactLeads(items)
+    setContactLeadsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (!authChecked || activeTab !== 'pages' || activePage !== 'contacts') return
+    void refreshContactLeads()
+  }, [authChecked, activeTab, activePage, refreshContactLeads])
 
   const loadPortfolioPage = async () => {
     setPortfolioPage({ ...portfolioPage, isLoading: true })
@@ -356,7 +395,6 @@ export function AdminPage() {
   const handleSavePortfolioPage = async () => {
     if (!portfolioPage.data) return
     setPortfolioPage({ ...portfolioPage, isSaving: true })
-    console.log('PUT /api/pages/portfolio', portfolioPage.data)
     const updated = await updatePortfolioPage(portfolioPage.data)
     if (updated) {
       setPortfolioPage({ isLoading: false, isSaving: false, data: updated })
@@ -377,14 +415,12 @@ export function AdminPage() {
     }
     const updatedData = { ...portfolioPage.data, items: [...portfolioPage.data.items, newItem] }
     setPortfolioPage({ ...portfolioPage, data: updatedData })
-    console.log('POST /api/pages/portfolio/items', newItem)
   }
 
   const handleDeletePortfolioItem = (id: number) => {
     if (!portfolioPage.data) return
     const updatedData = { ...portfolioPage.data, items: portfolioPage.data.items.filter(i => i.id !== id) }
     setPortfolioPage({ ...portfolioPage, data: updatedData })
-    console.log('DELETE /api/pages/portfolio/items', id)
   }
 
   const handleUpdatePortfolioItem = (id: number, field: keyof PortfolioItem, value: string) => {
@@ -392,7 +428,6 @@ export function AdminPage() {
     const updatedItems = portfolioPage.data.items.map(i => i.id === id ? { ...i, [field]: value } : i)
     const updatedData = { ...portfolioPage.data, items: updatedItems }
     setPortfolioPage({ ...portfolioPage, data: updatedData })
-    console.log('PUT /api/pages/portfolio/items', id, field, value)
   }
 
   const handleUploadImagePortfolio = (id: number, imageUrl: string) => {
@@ -400,7 +435,6 @@ export function AdminPage() {
     const updatedItems = portfolioPage.data.items.map(i => i.id === id ? { ...i, image: imageUrl } : i)
     const updatedData = { ...portfolioPage.data, items: updatedItems }
     setPortfolioPage({ ...portfolioPage, data: updatedData })
-    console.log('POST /api/upload', imageUrl)
   }
 
   const loadHomePage = async () => {
@@ -414,7 +448,6 @@ export function AdminPage() {
   const handleSaveHomePage = async () => {
     if (!homePage.data) return
     setHomePage({ ...homePage, isSaving: true })
-    console.log('PUT /api/pages/home', homePage.data)
     const updated = await updateHomePage(homePage.data)
     if (updated) {
       setHomePage({ isLoading: false, isSaving: false, data: updated })
@@ -436,7 +469,6 @@ export function AdminPage() {
   const handleSaveCatalogPage = async () => {
     if (!catalogPage.data) return
     setCatalogPage({ ...catalogPage, isSaving: true })
-    console.log('PUT /api/pages/catalog', catalogPage.data)
     const updated = await updateCatalogPage(catalogPage.data)
     if (updated) {
       setCatalogPage({ isLoading: false, isSaving: false, data: updated })
@@ -456,7 +488,6 @@ export function AdminPage() {
   const handleSaveHeaderPage = async () => {
     if (!headerPage.data) return
     setHeaderPage((prev) => ({ ...prev, isSaving: true }))
-    console.log('PUT /api/widgets/header', headerPage.data)
     const updated = await updateHeader(headerPage.data)
     if (updated) {
       setHeaderPage({ isLoading: false, isSaving: false, data: updated })
@@ -515,14 +546,12 @@ export function AdminPage() {
     }
     const updatedData = { ...catalogPage.data, categories: [...catalogPage.data.categories, newCategory] }
     setCatalogPage({ ...catalogPage, data: updatedData })
-    console.log('POST /api/pages/catalog/categories', newCategory)
   }
 
   const handleDeleteCategoryCatalog = (id: string) => {
     if (!catalogPage.data) return
     const updatedData = { ...catalogPage.data, categories: catalogPage.data.categories.filter(c => c.id !== id) }
     setCatalogPage({ ...catalogPage, data: updatedData })
-    console.log('DELETE /api/pages/catalog/categories', id)
   }
 
   const handleUpdateCategoryCatalog = (id: string, field: keyof CatalogCategory, value: string) => {
@@ -530,21 +559,18 @@ export function AdminPage() {
     const updatedCategories = catalogPage.data.categories.map(c => c.id === id ? { ...c, [field]: value } : c)
     const updatedData = { ...catalogPage.data, categories: updatedCategories }
     setCatalogPage({ ...catalogPage, data: updatedData })
-    console.log('PUT /api/pages/catalog/categories', id, field, value)
   }
 
   const handleAddMaterial = () => {
     if (!catalogPage.data) return
     const updatedData = { ...catalogPage.data, materials: [...catalogPage.data.materials, 'Новый материал'] }
     setCatalogPage({ ...catalogPage, data: updatedData })
-    console.log('POST /api/pages/catalog/materials', 'Новый материал')
   }
 
   const handleDeleteMaterial = (index: number) => {
     if (!catalogPage.data) return
     const updatedData = { ...catalogPage.data, materials: catalogPage.data.materials.filter((_, i) => i !== index) }
     setCatalogPage({ ...catalogPage, data: updatedData })
-    console.log('DELETE /api/pages/catalog/materials', index)
   }
 
   const handleUpdateMaterial = (index: number, value: string) => {
@@ -553,7 +579,6 @@ export function AdminPage() {
     updatedMaterials[index] = value
     const updatedData = { ...catalogPage.data, materials: updatedMaterials }
     setCatalogPage({ ...catalogPage, data: updatedData })
-    console.log('PUT /api/pages/catalog/materials', index, value)
   }
 
   const handleAddColor = () => {
@@ -566,14 +591,12 @@ export function AdminPage() {
     }
     const updatedData = { ...catalogPage.data, colors: [...catalogPage.data.colors, newColor] }
     setCatalogPage({ ...catalogPage, data: updatedData })
-    console.log('POST /api/pages/catalog/colors', newColor)
   }
 
   const handleDeleteColor = (id: string) => {
     if (!catalogPage.data) return
     const updatedData = { ...catalogPage.data, colors: catalogPage.data.colors.filter(c => c.id !== id) }
     setCatalogPage({ ...catalogPage, data: updatedData })
-    console.log('DELETE /api/pages/catalog/colors', id)
   }
 
   const handleUpdateColor = (id: string, field: keyof CatalogColor, value: string) => {
@@ -581,90 +604,174 @@ export function AdminPage() {
     const updatedColors = catalogPage.data.colors.map(c => c.id === id ? { ...c, [field]: value } : c)
     const updatedData = { ...catalogPage.data, colors: updatedColors }
     setCatalogPage({ ...catalogPage, data: updatedData })
-    console.log('PUT /api/pages/catalog/colors', id, field, value)
   }
 
   // CRUD товаров
   const handleAddProduct = async () => {
-    let imageUrl = productForm.image
-
-    // Если есть файл, загружаем его
-    if (productForm.file) {
-      console.log('POST /api/upload', productForm.file)
-      imageUrl = URL.createObjectURL(productForm.file)
+    if (!productForm.name?.trim()) {
+      alert('Укажите название товара')
+      return
     }
-
-    // Реальный запрос на создание
-    console.log('POST /api/products', { ...productForm, image: imageUrl })
-    // Для демо добавляем локально
-    setProducts([...products, {
-      ...productForm,
+    const price = Number(productForm.price)
+    if (!Number.isFinite(price) || price < 0) {
+      alert('Укажите корректную цену')
+      return
+    }
+    let oldPrice: number | null = null
+    if (productForm.oldPrice !== undefined && productForm.oldPrice !== null) {
+      const o = Number(productForm.oldPrice)
+      if (Number.isFinite(o) && o >= 0) oldPrice = o
+    }
+    let imageUrl = (productForm.image ?? '').trim()
+    if (productForm.file) {
+      const up = await uploadImage(productForm.file)
+      if (!up) {
+        alert('Не удалось загрузить изображение')
+        return
+      }
+      imageUrl = up
+    }
+    if (!imageUrl || imageUrl.startsWith('blob:')) {
+      alert('Укажите URL изображения или загрузите файл')
+      return
+    }
+    const features = parseFeaturesText(productForm.featuresText)
+    const base = transliterate(`${productForm.name}-${productForm.material}-${productForm.color}`).slice(0, 400) || 'product'
+    const slugDraft = productForm.slug?.trim()
+    const slug = (slugDraft || `${base}-${Date.now()}`).slice(0, 500)
+    const created = await createProduct({
+      name: productForm.name!,
+      price,
+      oldPrice,
+      description: productForm.description?.trim() || undefined,
+      features,
+      material: productForm.material || '—',
+      color: productForm.color || '—',
       image: imageUrl,
-      id: Date.now(),
-      price: 0,
-      category: 'interior',
-      slug: ''
-    } as ProductLocal])
-
+      category: productForm.category || 'interior',
+      slug,
+    })
+    if (!created) {
+      alert(SAVE_FAILED_HINT)
+      return
+    }
+    setProducts([
+      ...products,
+      {
+        id: created.id,
+        name: created.name,
+        price: created.price,
+        oldPrice: created.oldPrice ?? null,
+        description: created.description ?? '',
+        features: created.features ?? [],
+        material: created.material,
+        color: created.color,
+        image: created.image,
+        category: created.category,
+        slug: created.slug,
+      },
+    ])
     setIsEditing(false)
-    setProductForm({ name: '', material: '', color: '', image: '', file: undefined })
+    setProductForm(emptyProductForm())
   }
 
   const handleDeleteProduct = async (id: number) => {
     if (!confirm('Вы уверены, что хотите удалить этот товар?')) return
 
-    // Реальный запрос на удаление
-    console.log('DELETE /api/products', id)
     const success = await deleteProduct(id)
 
     if (success) {
-      setProducts(products.filter(p => p.id !== id))
+      setProducts(products.filter((p) => p.id !== id))
     } else {
-      // Для демо удаляем локально
-      setProducts(products.filter(p => p.id !== id))
+      alert('Не удалось удалить товар. Проверьте сессию и права.')
     }
   }
 
   const handleEditProduct = (product: ProductLocal) => {
-    setProductForm(product)
+    setProductForm({
+      ...product,
+      featuresText: product.features?.join('\n') ?? '',
+      file: undefined,
+    })
     setIsEditing(true)
   }
 
   const handleUpdateProduct = async () => {
     if (!productForm.id) return
 
-    let imageUrl = productForm.image
-
-    // Если есть файл, загружаем его
+    const price = Number(productForm.price)
+    if (!Number.isFinite(price) || price < 0) {
+      alert('Укажите корректную цену')
+      return
+    }
+    let oldPrice: number | null = null
+    if (productForm.oldPrice !== undefined && productForm.oldPrice !== null) {
+      const o = Number(productForm.oldPrice)
+      if (Number.isFinite(o) && o >= 0) oldPrice = o
+    }
+    let imageUrl = (productForm.image ?? '').trim()
     if (productForm.file) {
-      console.log('POST /api/upload', productForm.file)
-      imageUrl = URL.createObjectURL(productForm.file)
+      const up = await uploadImage(productForm.file)
+      if (!up) {
+        alert('Не удалось загрузить изображение')
+        return
+      }
+      imageUrl = up
+    }
+    if (!imageUrl || imageUrl.startsWith('blob:')) {
+      alert('Укажите URL изображения или загрузите файл')
+      return
+    }
+    const features = parseFeaturesText(productForm.featuresText)
+    const slug = (productForm.slug?.trim() || 'product').slice(0, 500)
+    if (!slug) {
+      alert('Укажите slug (латиница, дефисы)')
+      return
     }
 
-    // Реальный запрос на обновление
-    console.log('PUT /api/products', productForm.id, { ...productForm, image: imageUrl })
     const updated = await updateProduct(productForm.id, {
       name: productForm.name || '',
+      price,
+      oldPrice,
+      description: productForm.description?.trim() || undefined,
+      features,
       material: productForm.material || '',
       color: productForm.color || '',
-      image: imageUrl || ''
+      image: imageUrl,
+      category: productForm.category || 'interior',
+      slug,
     })
 
     if (updated) {
-      setProducts(products.map(p => p.id === productForm.id ? updated : p))
+      setProducts(
+        products.map((p) =>
+          p.id === productForm.id
+            ? {
+                id: updated.id,
+                name: updated.name,
+                price: updated.price,
+                oldPrice: updated.oldPrice ?? null,
+                description: updated.description ?? '',
+                features: updated.features ?? [],
+                material: updated.material,
+                color: updated.color,
+                image: updated.image,
+                category: updated.category,
+                slug: updated.slug,
+              }
+            : p
+        )
+      )
     } else {
-      // Для демо обновляем локально
-      setProducts(products.map(p => p.id === productForm.id ? { ...p, ...productForm } as ProductLocal : p))
+      alert(SAVE_FAILED_HINT)
     }
 
     setIsEditing(false)
-    setProductForm({ name: '', material: '', color: '', image: '', file: undefined })
+    setProductForm(emptyProductForm())
   }
 
   // Отправка сообщения
   const handleSendMessage = async (chatId: number, text: string) => {
-    // Реальный запрос на отправку
-    console.log('POST /api/chats', chatId, text)
     const newMessage = await sendMessage(chatId, text)
 
     if (newMessage) {
@@ -679,22 +786,7 @@ export function AdminPage() {
         return chat
       }))
     } else {
-      // Для демо добавляем локально
-      setChats(chats.map(chat => {
-        if (chat.id === chatId) {
-          return {
-            ...chat,
-            messages: [...chat.messages, {
-              id: Date.now(),
-              text,
-              isUser: false,
-              timestamp: new Date()
-            }],
-            lastMessage: text
-          }
-        }
-        return chat
-      }))
+      alert('Не удалось отправить сообщение')
     }
   }
 
@@ -787,7 +879,7 @@ export function AdminPage() {
               <h2 className="text-xl font-bold text-primary">Управление товарами</h2>
               <button
                 onClick={() => {
-                  setProductForm({ name: '', material: '', color: '', image: '', file: undefined })
+                  setProductForm(emptyProductForm())
                   setIsEditing(true)
                 }}
                 className="flex items-center gap-2 px-6 py-2 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
@@ -817,6 +909,7 @@ export function AdminPage() {
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Фото</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цена</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Материал</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цвет</th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Действия</th>
@@ -829,6 +922,9 @@ export function AdminPage() {
                           <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
                         </td>
                         <td className="px-6 py-4 font-medium">{product.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {product.price.toLocaleString('ru-RU')} ₽
+                        </td>
                         <td className="px-6 py-4">{product.material}</td>
                         <td className="px-6 py-4">{product.color}</td>
                         <td className="px-6 py-4">
@@ -935,15 +1031,16 @@ export function AdminPage() {
                 isLoading={homePage.isLoading}
                 isSaving={homePage.isSaving}
                 onSave={handleSaveHomePage}
+                onUpdateHero={handleUpdateHero}
+                onUpdateFeature={handleUpdateFeatureHome}
                 onDeleteFeature={(id) => {
                   if (!homePage.data) return
                   const updatedData = { ...homePage.data, features: homePage.data.features.filter(f => f.id !== id) }
                   setHomePage({ ...homePage, data: updatedData })
-                  console.log('DELETE /api/pages/home/features', id)
                 }}
                 onUpdateCategory={handleUpdateCategoryHome}
                 onDeleteCategory={handleDeleteCategoryHome}
-                onUploadImage={handleUploadImageHome}
+                onUploadCategoryImage={handleUploadImageHome}
               />
             )}
 
@@ -998,15 +1095,81 @@ export function AdminPage() {
 
             {/* Редактор Контакты */}
             {activePage === 'contacts' && contactsPage.data && (
-              <ContactsPageEditor
-                data={contactsPage.data}
-                isLoading={contactsPage.isLoading}
-                isSaving={contactsPage.isSaving}
-                onSave={handleSaveContactsPage}
-                onAddLocation={handleAddLocation}
-                onUpdateLocation={handleUpdateLocation}
-                onDeleteLocation={handleDeleteLocation}
-              />
+              <div className="space-y-8">
+                <ContactsPageEditor
+                  data={contactsPage.data}
+                  isLoading={contactsPage.isLoading}
+                  isSaving={contactsPage.isSaving}
+                  onSave={handleSaveContactsPage}
+                  onAddLocation={handleAddLocation}
+                  onUpdateLocation={handleUpdateLocation}
+                  onDeleteLocation={handleDeleteLocation}
+                />
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border">
+                    <h2 className="text-lg font-bold text-primary">Заявки с формы на сайте</h2>
+                    <button
+                      type="button"
+                      onClick={() => void refreshContactLeads()}
+                      disabled={contactLeadsLoading}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-foreground hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${contactLeadsLoading ? 'animate-spin' : ''}`} />
+                      Обновить
+                    </button>
+                  </div>
+                  {contactLeadsLoading && contactLeads.length === 0 ? (
+                    <p className="px-6 py-8 text-muted-foreground text-center">Загрузка…</p>
+                  ) : contactLeads.length === 0 ? (
+                    <p className="px-6 py-8 text-muted-foreground text-center">Пока нет заявок</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left font-medium text-gray-600">Дата</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-600">Имя</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-600">Телефон</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-600">Email</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-600">Сообщение</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {contactLeads.map((lead) => (
+                            <tr key={lead.id} className="hover:bg-gray-50 align-top">
+                              <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                                {new Date(lead.createdAt).toLocaleString('ru-RU', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </td>
+                              <td className="px-4 py-3 font-medium">{lead.name}</td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <a href={`tel:${lead.phone.replace(/\s/g, '')}`} className="text-primary hover:underline">
+                                  {lead.phone}
+                                </a>
+                              </td>
+                              <td className="px-4 py-3 break-all max-w-[180px]">
+                                {lead.email ? (
+                                  <a href={`mailto:${lead.email}`} className="text-primary hover:underline">
+                                    {lead.email}
+                                  </a>
+                                ) : (
+                                  '—'
+                                )}
+                              </td>
+                              <td className="px-4 py-3 max-w-md whitespace-pre-wrap">{lead.message}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {/* Редактор шапки */}
@@ -1128,138 +1291,37 @@ export function AdminPage() {
         <>
           <div
             className="fixed inset-0 bg-black/50 z-50"
-            onClick={() => setIsEditing(false)}
+            onClick={() => {
+              setIsEditing(false)
+              setProductForm(emptyProductForm())
+            }}
           />
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 pointer-events-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-primary">
                   {productForm.id ? 'Редактировать' : 'Добавить товар'}
                 </h2>
                 <button
-                  onClick={() => setIsEditing(false)}
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false)
+                    setProductForm(emptyProductForm())
+                  }}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <form className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Название</label>
-                  <input
-                    type="text"
-                    value={productForm.name}
-                    onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-                    placeholder="Дверь Классик"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Материал</label>
-                    <input
-                      type="text"
-                      value={productForm.material}
-                      onChange={(e) => setProductForm({ ...productForm, material: e.target.value })}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-                      placeholder="ПВХ"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Цвет</label>
-                    <input
-                      type="text"
-                      value={productForm.color}
-                      onChange={(e) => setProductForm({ ...productForm, color: e.target.value })}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-                      placeholder="Белый"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Фото товара</label>
-                  <div className="space-y-3">
-                    {/* Загрузка файла */}
-                    <label className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            setProductForm({
-                              ...productForm,
-                              file,
-                              image: URL.createObjectURL(file)
-                            })
-                          }
-                        }}
-                        className="hidden"
-                      />
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">Загрузить с компьютера</p>
-                        <p className="text-xs text-gray-500">PNG, JPG до 5MB</p>
-                      </div>
-                    </label>
-
-                    {/* Или URL */}
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="text-sm text-gray-500">или</span>
-                      </div>
-                      <div className="relative border-t border-gray-300"></div>
-                    </div>
-
-                    <input
-                      type="url"
-                      value={productForm.image}
-                      onChange={(e) => setProductForm({ ...productForm, image: e.target.value, file: undefined })}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-                      placeholder="https://..."
-                    />
-
-                    {/* Предпросмотр */}
-                    {productForm.image && (
-                      <div className="relative">
-                        <img
-                          src={productForm.image}
-                          alt="Предпросмотр"
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setProductForm({ ...productForm, image: '', file: undefined })}
-                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="flex-1 py-2 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    type="button"
-                    onClick={productForm.id ? handleUpdateProduct : handleAddProduct}
-                    className="flex-1 py-2 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-                  >
-                    <Save className="w-5 h-5" />
-                    {productForm.id ? 'Сохранить' : 'Добавить'}
-                  </button>
-                </div>
-              </form>
+              <ProductEditForm
+                productForm={productForm}
+                setProductForm={setProductForm}
+                onCancel={() => {
+                  setIsEditing(false)
+                  setProductForm(emptyProductForm())
+                }}
+                onSubmit={productForm.id ? handleUpdateProduct : handleAddProduct}
+              />
             </div>
           </div>
         </>

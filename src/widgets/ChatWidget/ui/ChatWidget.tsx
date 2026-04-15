@@ -1,16 +1,26 @@
-import { useState, useRef, useEffect, useContext } from 'react'
+import { useState, useRef, useEffect, useContext, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, X, MessageCircle } from 'lucide-react'
 import { FiltersContext } from '@/App'
 import { sanitizeInput, validateRequired } from '@/shared/lib/validation'
-import { apiFetch } from '@/shared/api/http'
+import {
+  postPublicChatMessage,
+  fetchPublicChatMessages,
+  getStoredChatSession,
+  setStoredChatSession,
+} from '@/shared/api/chats'
 
 interface Message {
   id: number
   text: string
   isBot: boolean
   timestamp: Date
+}
+
+function mapApiToWidget(isUser: boolean): boolean {
+  // DB: is_user true = посетитель; виджет: isBot true = менеджер слева
+  return !isUser
 }
 
 export function ChatWidget() {
@@ -22,7 +32,7 @@ export function ChatWidget() {
   const [isSending, setIsSending] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 1,
+      id: -1,
       text: 'Здравствуйте! 👋 Чем могу помочь?',
       isBot: true,
       timestamp: new Date(),
@@ -30,6 +40,7 @@ export function ChatWidget() {
   ])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const hasShownSentConfirmationRef = useRef(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -39,14 +50,66 @@ export function ChatWidget() {
     scrollToBottom()
   }, [messages])
 
-  const sendMessageToManager = async (text: string): Promise<boolean> => {
-    const response = await apiFetch('/api/vk/contact', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+  const loadHistory = useCallback(async () => {
+    const session = getStoredChatSession()
+    if (!session) return
+    const list = await fetchPublicChatMessages(session.chatId, session.clientToken)
+    const mapped: Message[] = list.map((m) => ({
+      id: m.id,
+      text: m.text,
+      isBot: mapApiToWidget(m.isUser),
+      timestamp: m.timestamp,
+    }))
+    mapped.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+    setMessages((prev) => {
+      const greeting = prev.find((p) => p.id === -1)
+      const head = greeting
+        ? [greeting]
+        : [{ id: -1, text: 'Здравствуйте! 👋 Чем могу помочь?', isBot: true, timestamp: new Date() }]
+      return [...head, ...mapped]
     })
+  }, [])
 
-    return response.ok
+  useEffect(() => {
+    void loadHistory()
+  }, [loadHistory])
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = null
+      }
+      return
+    }
+    const session = getStoredChatSession()
+    if (!session) return
+    pollRef.current = setInterval(() => {
+      void loadHistory()
+    }, 3000)
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
+  }, [isOpen, loadHistory])
+
+  const sendToBackend = async (text: string): Promise<boolean> => {
+    const session = getStoredChatSession()
+    const result = await postPublicChatMessage(text, session)
+    if (!result) return false
+    setStoredChatSession(result.chatId, result.clientToken)
+    const m = result.message
+    setMessages((prev) => {
+      const greeting = prev.filter((x) => x.id === -1)
+      const rest = prev.filter((x) => x.id !== -1 && x.id !== m.id)
+      const added: Message = {
+        id: m.id,
+        text: m.text,
+        isBot: mapApiToWidget(m.isUser),
+        timestamp: m.timestamp,
+      }
+      return [...greeting, ...rest, added].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+    })
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,19 +119,12 @@ export function ChatWidget() {
     const sanitizedMessage = sanitizeInput(message)
     if (!validateRequired(sanitizedMessage)) return
 
-    const userMessage: Message = {
-      id: Date.now(),
-      text: sanitizedMessage,
-      isBot: false,
-      timestamp: new Date(),
-    }
-    setMessages(prev => [...prev, userMessage])
     setMessage('')
 
     setIsSending(true)
     try {
-      const isSent = await sendMessageToManager(sanitizedMessage)
-      if (!isSent) {
+      const ok = await sendToBackend(sanitizedMessage)
+      if (!ok) {
         throw new Error('Failed to send message')
       }
 
@@ -79,7 +135,7 @@ export function ChatWidget() {
           isBot: true,
           timestamp: new Date(),
         }
-        setMessages(prev => [...prev, botMessage])
+        setMessages((prev) => [...prev, botMessage])
         hasShownSentConfirmationRef.current = true
       }
     } catch {
@@ -89,7 +145,7 @@ export function ChatWidget() {
         isBot: true,
         timestamp: new Date(),
       }
-      setMessages(prev => [...prev, botMessage])
+      setMessages((prev) => [...prev, botMessage])
     } finally {
       setIsSending(false)
     }
@@ -123,19 +179,11 @@ export function ChatWidget() {
     setIsOpen(true)
     const isDuplicate = messages.some((msg) => !msg.isBot && msg.text === sanitizedMessage)
     if (!isDuplicate) {
-      const userMessage: Message = {
-        id: Date.now(),
-        text: sanitizedMessage,
-        isBot: false,
-        timestamp: new Date(),
-      }
-
-      setMessages((prev) => [...prev, userMessage])
       setIsSending(true)
 
-      sendMessageToManager(sanitizedMessage)
-        .then((isSent) => {
-          if (isSent) {
+      sendToBackend(sanitizedMessage)
+        .then((ok) => {
+          if (ok) {
             if (!hasShownSentConfirmationRef.current) {
               const botMessage: Message = {
                 id: Date.now() + 1,
@@ -177,7 +225,6 @@ export function ChatWidget() {
 
   return (
     <>
-      {/* Кнопка открытия чата */}
       <AnimatePresence>
         {!isFiltersOpen && !isChatWidgetHidden && (
           <motion.button
@@ -199,7 +246,6 @@ export function ChatWidget() {
         )}
       </AnimatePresence>
 
-      {/* Окно чата */}
       <AnimatePresence>
         {isOpen && !isChatWidgetHidden && (
           <motion.div
@@ -209,7 +255,6 @@ export function ChatWidget() {
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed bottom-24 right-6 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl z-40 overflow-hidden"
           >
-            {/* Заголовок */}
             <div className="bg-primary text-white p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -228,7 +273,6 @@ export function ChatWidget() {
               </div>
             </div>
 
-            {/* Сообщения */}
             <div className="h-80 p-4 overflow-y-auto bg-gray-50">
               <div className="space-y-4">
                 {messages.map((msg) => (
@@ -241,7 +285,6 @@ export function ChatWidget() {
                       msg.isBot ? '' : 'flex-row-reverse'
                     }`}
                   >
-                    {/* Аватар */}
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 ${
                         msg.isBot ? 'bg-primary' : 'bg-gray-400'
@@ -250,7 +293,6 @@ export function ChatWidget() {
                       {msg.isBot ? 'М' : 'Вы'}
                     </div>
 
-                    {/* Сообщение */}
                     <div
                       className={`max-w-[75%] p-3 rounded-2xl ${
                         msg.isBot
@@ -273,7 +315,6 @@ export function ChatWidget() {
               </div>
             </div>
 
-            {/* Ввод сообщения */}
             <form onSubmit={handleSubmit} className="p-4 border-t border-border bg-white">
               <div className="flex items-center gap-2">
                 <input

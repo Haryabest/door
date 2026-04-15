@@ -90,3 +90,20 @@ export const chatMessageSchema = z.object({
   chatId: z.coerce.number().int().positive(),
   text: str(8000).min(1),
 })
+
+export const chatPublicMessageSchema = z.object({
+  text: str(8000).min(1),
+  chatId: z.number().int().positive().optional().nullable(),
+  clientToken: z.string().uuid().optional().nullable(),
+})
+
+/** Заявка с формы «Контакты» на сайте */
+export const contactLeadCreateSchema = z.object({
+  name: str(100).min(1),
+  phone: str(40),
+  email: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : v),
+    str(320).optional()
+  ),
+  message: str(2000).min(1),
+})

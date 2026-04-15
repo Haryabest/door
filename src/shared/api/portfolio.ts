@@ -1,4 +1,4 @@
-// API для работы со страницей "Портфолио" (заглушки для БД)
+// API портфолио — GET/PUT /api/pages/portfolio и вложенные ресурсы
 
 import { apiFetch } from './http'
 

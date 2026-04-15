@@ -6,6 +6,7 @@ import { Phone, Mail, Clock, Send, User, MessageSquare, Calendar } from "lucide-
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
 import { sanitizeInput, validateRequired, validateEmail, validatePhone, validateLength, formatPhoneInput } from "@/shared/lib/validation"
+import { submitContactLead } from "@/shared/api/contactLeads"
 
 const locations = [
   {
@@ -58,52 +59,70 @@ export function ContactsPage() {
     message: ""
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
 
-  const validateForm = () => {
+  const validateFormFields = (data: typeof formData) => {
     const newErrors: Record<string, string> = {}
-    
-    if (!validateRequired(formData.name)) {
+
+    if (!validateRequired(data.name)) {
       newErrors.name = 'Введите имя'
-    } else if (!validateLength(formData.name, 2, 100)) {
+    } else if (!validateLength(data.name, 2, 100)) {
       newErrors.name = 'Имя должно быть от 2 до 100 символов'
     }
-    
-    if (!validateRequired(formData.phone)) {
+
+    if (!validateRequired(data.phone)) {
       newErrors.phone = 'Введите телефон'
-    } else if (!validatePhone(formData.phone)) {
+    } else if (!validatePhone(data.phone)) {
       newErrors.phone = 'Введите корректный номер телефона'
     }
-    
-    if (formData.email && !validateEmail(formData.email)) {
+
+    if (data.email && !validateEmail(data.email)) {
       newErrors.email = 'Введите корректный email'
     }
-    
-    if (!validateRequired(formData.message)) {
+
+    if (!validateRequired(data.message)) {
       newErrors.message = 'Введите сообщение'
-    } else if (!validateLength(formData.message, 2, 1000)) {
+    } else if (!validateLength(data.message, 2, 1000)) {
       newErrors.message = 'Сообщение должно быть от 2 до 1000 символов'
     }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+
+    return newErrors
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    setSubmitError(null)
+    setSubmitSuccess(false)
+
     const sanitizedData = {
       name: sanitizeInput(formData.name),
       phone: sanitizeInput(formData.phone),
       email: sanitizeInput(formData.email),
-      message: sanitizeInput(formData.message)
+      message: sanitizeInput(formData.message),
     }
-    
     setFormData(sanitizedData)
-    
-    if (!validateForm()) return
-    
-    alert("Спасибо! Мы свяжемся с вами в ближайшее время.")
-    setFormData({ name: "", phone: "", email: "", message: "" })
+
+    const newErrors = validateFormFields(sanitizedData)
+    setErrors(newErrors)
+    if (Object.keys(newErrors).length > 0) return
+
+    setSubmitting(true)
+    const result = await submitContactLead({
+      name: sanitizedData.name,
+      phone: sanitizedData.phone,
+      email: sanitizedData.email || undefined,
+      message: sanitizedData.message,
+    })
+    setSubmitting(false)
+
+    if (result.ok) {
+      setSubmitSuccess(true)
+      setFormData({ name: "", phone: "", email: "", message: "" })
+    } else {
+      setSubmitError(result.error)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -214,15 +233,27 @@ export function ContactsPage() {
                   )}
                 </motion.div>
 
+                {submitError && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert">
+                    {submitError}
+                  </p>
+                )}
+                {submitSuccess && (
+                  <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-lg px-4 py-3" role="status">
+                    Спасибо! Заявка отправлена. Мы свяжемся с вами в ближайшее время.
+                  </p>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 bg-primary text-background font-semibold rounded-lg opacity-0 translate-y-5 hover:opacity-90 transition-all duration-200 cursor-pointer"
+                  disabled={submitting}
+                  className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 bg-primary text-background font-semibold rounded-lg opacity-0 translate-y-5 hover:opacity-90 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     animation: 'fadeInUp 0.5s ease-out 0.5s forwards'
                   }}
                 >
                   <Send className="w-5 h-5" />
-                  Отправить заявку
+                  {submitting ? 'Отправка…' : 'Отправить заявку'}
                 </button>
               </form>
             </motion.div>

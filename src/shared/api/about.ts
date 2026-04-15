@@ -1,4 +1,4 @@
-// API для работы со страницей "О нас" (заглушки для БД)
+// API страницы «О нас» — GET/PUT /api/pages/about и вложенные ресурсы
 
 import { apiFetch } from './http'
 

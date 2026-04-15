@@ -1,4 +1,4 @@
-// API для работы со страницей "Контакты" (заглушки для БД)
+// API страницы «Контакты» — GET/PUT /api/pages/contacts
 
 import { apiFetch } from './http'
 

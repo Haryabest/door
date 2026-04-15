@@ -1,4 +1,4 @@
-// API для работы с Главной страницей (заглушки для БД)
+// API главной страницы — GET/PUT /api/pages/home
 
 import { apiFetch } from './http'
 

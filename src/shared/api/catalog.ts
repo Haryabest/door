@@ -1,4 +1,4 @@
-// API для работы со страницей "Каталог" (заглушки для БД)
+// API страницы «Каталог» — GET/PUT /api/pages/catalog
 
 import { apiFetch } from './http'
 
