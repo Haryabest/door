@@ -23,6 +23,31 @@ const iconMap: Record<string, any> = {
   'Square': Square,
 }
 
+function normalizeFilterValue(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/ё/g, 'е')
+    .replace(/[abekmhopctxy]/g, (char) => {
+      const map: Record<string, string> = {
+        a: 'а',
+        b: 'в',
+        e: 'е',
+        k: 'к',
+        m: 'м',
+        h: 'н',
+        o: 'о',
+        p: 'р',
+        c: 'с',
+        t: 'т',
+        x: 'х',
+        y: 'у',
+      }
+      return map[char] ?? char
+    })
+    .replace(/\s+/g, ' ')
+}
+
 // Категории каталога
 const catalogCategories = [
   {
@@ -101,16 +126,32 @@ export function CatalogPage() {
     return () => window.clearTimeout(timer)
   }, [searchQuery])
 
+  const selectedSubcategoryName = useMemo(() => {
+    if (selectedSubcategory === 'all') return null
+    const categories = (catalogData?.categories || catalogCategories) as any[]
+    const currentCategory = categories.find((cat) => cat.id === selectedCategory)
+    const currentSubcategory = currentCategory?.subcategories?.find((subcat: any) => subcat.id === selectedSubcategory)
+    return currentSubcategory?.name ?? null
+  }, [catalogData, selectedCategory, selectedSubcategory])
+
+  const effectiveMaterialFilters = useMemo(() => {
+    const merged = [...selectedMaterials]
+    if (selectedSubcategoryName && !merged.includes(selectedSubcategoryName)) {
+      merged.push(selectedSubcategoryName)
+    }
+    return merged
+  }, [selectedMaterials, selectedSubcategoryName])
+
   useEffect(() => {
     void loadProducts({
       q: debouncedSearchQuery,
       category: selectedCategory !== 'all' ? selectedCategory : undefined,
-      materials: selectedMaterials.length > 0 ? selectedMaterials : undefined,
+      materials: effectiveMaterialFilters.length > 0 ? effectiveMaterialFilters : undefined,
       colors: selectedColors.length > 0 ? selectedColors : undefined,
       minPrice: priceRange[0],
       maxPrice: priceRange[1],
     })
-  }, [debouncedSearchQuery, selectedCategory, selectedMaterials, selectedColors, priceRange])
+  }, [debouncedSearchQuery, selectedCategory, effectiveMaterialFilters, selectedColors, priceRange])
 
   const loadCatalogData = async () => {
     const data = await getCatalogPage()
@@ -202,23 +243,25 @@ export function CatalogPage() {
       ) return false
       if (selectedCategory !== 'all' && product.category !== selectedCategory) return false
       if (
-        selectedMaterials.length > 0 &&
-        !selectedMaterials.some((materialFilter) =>
-          product.material.toLowerCase().includes(materialFilter.toLowerCase()) ||
-          materialFilter.toLowerCase().includes(product.material.toLowerCase())
-        )
+        effectiveMaterialFilters.length > 0 &&
+        !effectiveMaterialFilters.some((materialFilter) => {
+          const productMaterial = normalizeFilterValue(product.material)
+          const filterMaterial = normalizeFilterValue(materialFilter)
+          return productMaterial.includes(filterMaterial) || filterMaterial.includes(productMaterial)
+        })
       ) return false
       if (
         selectedColors.length > 0 &&
-        !selectedColors.some((colorFilter) =>
-          product.color.toLowerCase().includes(colorFilter.toLowerCase()) ||
-          colorFilter.toLowerCase().includes(product.color.toLowerCase())
-        )
+        !selectedColors.some((colorFilter) => {
+          const productColor = normalizeFilterValue(product.color)
+          const filterColor = normalizeFilterValue(colorFilter)
+          return productColor.includes(filterColor) || filterColor.includes(productColor)
+        })
       ) return false
       if (product.price < priceRange[0] || product.price > priceRange[1]) return false
       return true
     })
-  }, [products, searchQuery, selectedCategory, selectedMaterials, selectedColors, priceRange])
+  }, [products, searchQuery, selectedCategory, effectiveMaterialFilters, selectedColors, priceRange])
 
   // Пагинация
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)

@@ -621,16 +621,8 @@ export function AdminPage() {
       alert('Укажите название товара')
       return
     }
-    const price = Number(productForm.price)
-    if (!Number.isFinite(price) || price < 0) {
-      alert('Укажите корректную цену')
-      return
-    }
-    let oldPrice: number | null = null
-    if (productForm.oldPrice !== undefined && productForm.oldPrice !== null) {
-      const o = Number(productForm.oldPrice)
-      if (Number.isFinite(o) && o >= 0) oldPrice = o
-    }
+    const price = 0
+    const oldPrice: number | null = null
     let imageUrl = (productForm.image ?? '').trim()
     if (productForm.file) {
       const up = await uploadImage(productForm.file)

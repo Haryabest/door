@@ -30,42 +30,44 @@ export function ProductEditForm({
           placeholder="Дверь Классик"
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Цена, ₽</label>
-          <input
-            type="number"
-            min={0}
-            step={100}
-            value={productForm.price === undefined || productForm.price === null ? '' : productForm.price}
-            onChange={(e) =>
-              setProductForm({
-                ...productForm,
-                price: e.target.value === '' ? 0 : Number(e.target.value),
-              })
-            }
-            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-          />
+      {isEdit && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Цена, ₽</label>
+            <input
+              type="number"
+              min={0}
+              step={100}
+              value={productForm.price === undefined || productForm.price === null ? '' : productForm.price}
+              onChange={(e) =>
+                setProductForm({
+                  ...productForm,
+                  price: e.target.value === '' ? 0 : Number(e.target.value),
+                })
+              }
+              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Старая цена (опц.)</label>
+            <input
+              type="number"
+              min={0}
+              step={100}
+              value={
+                productForm.oldPrice === undefined || productForm.oldPrice === null ? '' : productForm.oldPrice
+              }
+              onChange={(e) =>
+                setProductForm({
+                  ...productForm,
+                  oldPrice: e.target.value === '' ? null : Number(e.target.value),
+                })
+              }
+              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Старая цена (опц.)</label>
-          <input
-            type="number"
-            min={0}
-            step={100}
-            value={
-              productForm.oldPrice === undefined || productForm.oldPrice === null ? '' : productForm.oldPrice
-            }
-            onChange={(e) =>
-              setProductForm({
-                ...productForm,
-                oldPrice: e.target.value === '' ? null : Number(e.target.value),
-              })
-            }
-            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-          />
-        </div>
-      </div>
+      )}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">Категория</label>
