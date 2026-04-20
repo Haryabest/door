@@ -201,8 +201,20 @@ export function CatalogPage() {
         !`${product.name} ${product.material}`.toLowerCase().includes(searchQuery.toLowerCase())
       ) return false
       if (selectedCategory !== 'all' && product.category !== selectedCategory) return false
-      if (selectedMaterials.length > 0 && !selectedMaterials.includes(product.material)) return false
-      if (selectedColors.length > 0 && !selectedColors.includes(product.color)) return false
+      if (
+        selectedMaterials.length > 0 &&
+        !selectedMaterials.some((materialFilter) =>
+          product.material.toLowerCase().includes(materialFilter.toLowerCase()) ||
+          materialFilter.toLowerCase().includes(product.material.toLowerCase())
+        )
+      ) return false
+      if (
+        selectedColors.length > 0 &&
+        !selectedColors.some((colorFilter) =>
+          product.color.toLowerCase().includes(colorFilter.toLowerCase()) ||
+          colorFilter.toLowerCase().includes(product.color.toLowerCase())
+        )
+      ) return false
       if (product.price < priceRange[0] || product.price > priceRange[1]) return false
       return true
     })

@@ -59,12 +59,12 @@ productsRouter.get('/products', async (req, res) => {
 
   if (materials.length > 0) {
     params.push(materials)
-    whereClauses.push(`material = ANY($${params.length}::text[])`)
+    whereClauses.push(`EXISTS (SELECT 1 FROM unnest($${params.length}::text[]) AS material_filter WHERE material ILIKE ('%' || material_filter || '%'))`)
   }
 
   if (colors.length > 0) {
     params.push(colors)
-    whereClauses.push(`color = ANY($${params.length}::text[])`)
+    whereClauses.push(`EXISTS (SELECT 1 FROM unnest($${params.length}::text[]) AS color_filter WHERE color ILIKE ('%' || color_filter || '%'))`)
   }
 
   if (minPrice !== null) {
