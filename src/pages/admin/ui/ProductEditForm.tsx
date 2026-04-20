@@ -1,6 +1,7 @@
-import type { Dispatch, SetStateAction } from 'react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { Save, X } from 'lucide-react'
-import type { ProductFormState } from './adminProductTypes'
+import { productsApi } from '@/shared/api/products'
+import type { ProductFormState, ProductCategoryOption } from './adminProductTypes'
 import { PRODUCT_CATEGORIES } from './adminProductTypes'
 
 interface ProductEditFormProps {
@@ -17,6 +18,28 @@ export function ProductEditForm({
   onSubmit,
 }: ProductEditFormProps) {
   const isEdit = Boolean(productForm.id)
+  const [categories, setCategories] = useState<ProductCategoryOption[]>(PRODUCT_CATEGORIES)
+
+  useEffect(() => {
+    let cancelled = false
+
+    productsApi.getProductCategories().then((data) => {
+      if (cancelled) return
+      if (!data || data.length === 0) return
+
+      const normalized = data
+        .filter((item) => item?.value?.trim() && item?.label?.trim())
+        .map((item) => ({ value: item.value.trim(), label: item.label.trim() }))
+
+      if (normalized.length > 0) {
+        setCategories(normalized)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
@@ -76,7 +99,7 @@ export function ProductEditForm({
             onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
             className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
           >
-            {PRODUCT_CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
               </option>

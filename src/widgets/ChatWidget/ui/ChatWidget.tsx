@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, X, MessageCircle } from 'lucide-react'
 import { FiltersContext } from '@/App'
 import { sanitizeInput, validateRequired } from '@/shared/lib/validation'
+import { containsProfanity } from '@/shared/lib/profanity'
 import {
   postPublicChatMessage,
   fetchPublicChatMessages,
@@ -37,6 +38,7 @@ export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [validationError, setValidationError] = useState('')
   /** Пусто до первой загрузки истории — чтобы не мигало приветствие при повторном заходе, если чат уже есть */
   const [messages, setMessages] = useState<Message[]>([])
   const [historyReady, setHistoryReady] = useState(false)
@@ -143,7 +145,16 @@ export function ChatWidget() {
     if (!message.trim() || isSending) return
 
     const sanitizedMessage = sanitizeInput(message)
-    if (!validateRequired(sanitizedMessage)) return
+    if (!validateRequired(sanitizedMessage)) {
+      setValidationError('Введите сообщение')
+      return
+    }
+    if (containsProfanity(sanitizedMessage)) {
+      setValidationError('Пожалуйста, без мата и оскорблений.')
+      return
+    }
+
+    setValidationError('')
 
     setMessage('')
 
@@ -197,6 +208,11 @@ export function ChatWidget() {
 
     const sanitizedMessage = sanitizeInput(chatMessage)
     if (!validateRequired(sanitizedMessage)) {
+      params.delete('chatMessage')
+      navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
+      return
+    }
+    if (containsProfanity(sanitizedMessage)) {
       params.delete('chatMessage')
       navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
       return
@@ -348,7 +364,10 @@ export function ChatWidget() {
                 <input
                   type="text"
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => {
+                    setMessage(e.target.value)
+                    if (validationError) setValidationError('')
+                  }}
                   placeholder="Введите сообщение..."
                   className="flex-1 px-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                 />
@@ -363,6 +382,9 @@ export function ChatWidget() {
                   <Send className="w-5 h-5" />
                 </motion.button>
               </div>
+              {validationError && (
+                <p className="mt-2 text-xs text-red-500 px-2">{validationError}</p>
+              )}
             </form>
           </motion.div>
         )}

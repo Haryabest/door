@@ -16,6 +16,11 @@ export interface Product {
   slug: string
 }
 
+export interface ProductCategory {
+  value: string
+  label: string
+}
+
 export interface ProductListParams {
   q?: string
   category?: string
@@ -52,6 +57,12 @@ export const productsApi = {
     const response = await apiFetch(`/api/products/search?q=${encodeURIComponent(q)}`)
     if (!response.ok) return []
     return parseJson<Product[]>(response)
+  },
+
+  getProductCategories: async (): Promise<ProductCategory[]> => {
+    const response = await apiFetch('/api/products/categories')
+    if (!response.ok) return []
+    return parseJson<ProductCategory[]>(response)
   },
 }
 
