@@ -635,7 +635,12 @@ export function CatalogPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        navigate(`?chatMessage=${encodeURIComponent(`Меня заинтересовала дверь «${product.name}»`)}`)
+                        const params = new URLSearchParams()
+                        params.set('chatMessage', `Меня заинтересовала дверь «${product.name}»`)
+                        params.set('leadType', 'price_clarification')
+                        params.set('productName', product.name)
+                        params.set('productUrl', `${window.location.origin}/catalog/${product.slug}-${product.id}`)
+                        navigate(`?${params.toString()}`)
                       }}
                       className="tap-click w-full py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
                     >

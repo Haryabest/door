@@ -28,6 +28,15 @@ chatsRouter.post(
   async (req, res) => {
     const b = req.body as z.infer<typeof chatPublicMessageSchema>
     const text = b.text
+    const eventType = b.eventType ?? 'chat_message'
+    const notifyMeta = {
+      eventType,
+      clientName: b.clientName,
+      clientPhone: b.clientPhone,
+      productName: b.productName,
+      productUrl: b.productUrl,
+      pageUrl: b.pageUrl,
+    }
 
     if (b.chatId != null && b.clientToken) {
       const { rows: chatRows } = await pool.query<{ id: number; user_name: string }>(
@@ -50,6 +59,7 @@ chatsRouter.post(
           chatId,
           userName: chatRows[0]!.user_name,
           text,
+          ...notifyMeta,
         })
       } catch {
         /* VK не должен ломать чат */
@@ -84,6 +94,7 @@ chatsRouter.post(
         chatId,
         userName,
         text,
+        ...notifyMeta,
       })
     } catch {
       /* VK не должен ломать чат */

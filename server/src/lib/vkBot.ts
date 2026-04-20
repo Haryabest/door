@@ -1,6 +1,6 @@
 import { VK, Keyboard } from 'vk-io'
 import { logger } from './logger.js'
-import { addVkSubscriber, removeVkSubscriber } from './vkNotify.js'
+import { addVkSubscriber, getVkAdminBaseUrl, getVkDailyStats, isVkSubscriber, removeVkSubscriber } from './vkNotify.js'
 
 function getVkConfig(): { token: string; groupId: number } | null {
   const token = process.env.VK_GROUP_TOKEN?.trim()
@@ -23,16 +23,32 @@ export async function startVkBotLongPoll(): Promise<void> {
     pollingGroupId: cfg.groupId,
   })
 
+  const adminUrl = getVkAdminBaseUrl()
+
   const subscribedKeyboard = Keyboard.builder()
-    .textButton({ label: 'Отключить уведомления', payload: { cmd: 'unsubscribe' }, color: Keyboard.NEGATIVE_COLOR })
+    .textButton({ label: '📊 Статистика за день', payload: { cmd: 'daily_stats' }, color: Keyboard.PRIMARY_COLOR })
     .row()
-    .textButton({ label: 'Помощь', payload: { cmd: 'help' }, color: Keyboard.SECONDARY_COLOR })
+    .textButton({ label: '⚙️ Настройки уведомлений', payload: { cmd: 'settings' }, color: Keyboard.SECONDARY_COLOR })
+    .row()
+    .textButton({ label: '📂 Перейти в админку сайта', payload: { cmd: 'open_admin' }, color: Keyboard.POSITIVE_COLOR })
     .oneTime(false)
 
   const unsubscribedKeyboard = Keyboard.builder()
+    .textButton({ label: '⚙️ Настройки уведомлений', payload: { cmd: 'settings' }, color: Keyboard.SECONDARY_COLOR })
+    .row()
+    .textButton({ label: '📂 Перейти в админку сайта', payload: { cmd: 'open_admin' }, color: Keyboard.POSITIVE_COLOR })
+    .oneTime(false)
+
+  const settingsKeyboardSubscribed = Keyboard.builder()
+    .textButton({ label: 'Отключить уведомления', payload: { cmd: 'unsubscribe' }, color: Keyboard.NEGATIVE_COLOR })
+    .row()
+    .textButton({ label: 'Назад в меню', payload: { cmd: 'menu' }, color: Keyboard.SECONDARY_COLOR })
+    .oneTime(false)
+
+  const settingsKeyboardUnsubscribed = Keyboard.builder()
     .textButton({ label: 'Включить уведомления', payload: { cmd: 'subscribe' }, color: Keyboard.POSITIVE_COLOR })
     .row()
-    .textButton({ label: 'Помощь', payload: { cmd: 'help' }, color: Keyboard.SECONDARY_COLOR })
+    .textButton({ label: 'Назад в меню', payload: { cmd: 'menu' }, color: Keyboard.SECONDARY_COLOR })
     .oneTime(false)
 
   vk.updates.on('message_new', async (context) => {
@@ -42,17 +58,20 @@ export async function startVkBotLongPoll(): Promise<void> {
     const text = (context.text ?? '').trim()
     const lower = text.toLowerCase()
     const peerId = context.peerId
+    const payloadCmd = (context.messagePayload as { cmd?: string } | null)?.cmd?.toLowerCase()
+    const command = payloadCmd ?? lower
+    const isSubscribed = isVkSubscriber(peerId)
 
-    if (lower === 'start' || text === '/start' || lower === 'подписаться') {
+    if (command === 'start' || text === '/start' || command === 'подписаться' || command === 'menu' || command === 'help' || command === 'помощь') {
       addVkSubscriber(peerId)
       await context.send({
-        message: 'Подписка включена. Теперь ты будешь получать уведомления сообщества.',
+        message: 'Меню менеджера:\n• 📊 Статистика за день\n• ⚙️ Настройки уведомлений\n• 📂 Перейти в админку сайта',
         keyboard: subscribedKeyboard,
       })
       return
     }
 
-    if (lower === 'stop' || lower === '/stop' || lower === 'отписаться' || lower === 'отключить уведомления') {
+    if (command === 'stop' || command === '/stop' || command === 'отписаться' || command === 'отключить уведомления' || command === 'unsubscribe') {
       removeVkSubscriber(peerId)
       await context.send({
         message: '🔕 Вы выключили отправку уведомлений ✅',
@@ -61,7 +80,7 @@ export async function startVkBotLongPoll(): Promise<void> {
       return
     }
 
-    if (lower === 'включить уведомления') {
+    if (command === 'включить уведомления' || command === 'subscribe') {
       addVkSubscriber(peerId)
       await context.send({
         message: '🔔 Уведомления снова включены ✅',
@@ -70,12 +89,42 @@ export async function startVkBotLongPoll(): Promise<void> {
       return
     }
 
-    if (lower === 'help' || lower === 'помощь') {
+    if (command === 'settings' || command === '⚙️ настройки уведомлений') {
       await context.send({
-        message: 'Команды: start (подписаться), stop (отписаться).',
+        message: isSubscribed
+          ? 'Уведомления сейчас включены. Выберите действие:'
+          : 'Уведомления сейчас выключены. Выберите действие:',
+        keyboard: isSubscribed ? settingsKeyboardSubscribed : settingsKeyboardUnsubscribed,
+      })
+      return
+    }
+
+    if (command === 'daily_stats' || command === '📊 статистика за день') {
+      const stats = getVkDailyStats()
+      await context.send({
+        message: [
+          `📊 Статистика за ${stats.dateKey}:`,
+          `• Всего заявок: ${stats.totalLeads}`,
+          `• Срочные сообщения чата: ${stats.urgentChats}`,
+          `• Уточнения цены: ${stats.priceClarifications}`,
+        ].join('\n'),
         keyboard: subscribedKeyboard,
       })
+      return
     }
+
+    if (command === 'open_admin' || command === '📂 перейти в админку сайта') {
+      await context.send({
+        message: adminUrl ? `📂 Админка сайта: ${adminUrl}/admin` : 'Админка не настроена. Укажите VK_MANAGER_PANEL_URL или PUBLIC_BASE_URL в server/.env.',
+        keyboard: subscribedKeyboard,
+      })
+      return
+    }
+
+    await context.send({
+      message: 'Используйте кнопки меню ниже.',
+      keyboard: subscribedKeyboard,
+    })
   })
 
   try {

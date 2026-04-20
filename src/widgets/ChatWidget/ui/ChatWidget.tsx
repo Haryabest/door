@@ -10,6 +10,7 @@ import {
   fetchPublicChatMessages,
   getStoredChatSession,
   setStoredChatSession,
+  type PublicChatMeta,
 } from '@/shared/api/chats'
 
 interface Message {
@@ -119,9 +120,9 @@ export function ChatWidget() {
     }
   }, [isOpen, loadHistory])
 
-  const sendToBackend = async (text: string): Promise<boolean> => {
+  const sendToBackend = async (text: string, meta?: PublicChatMeta): Promise<boolean> => {
     const session = getStoredChatSession()
-    const result = await postPublicChatMessage(text, session)
+    const result = await postPublicChatMessage(text, session, meta)
     if (!result) return false
     setStoredChatSession(result.chatId, result.clientToken)
     const m = result.message
@@ -160,7 +161,10 @@ export function ChatWidget() {
 
     setIsSending(true)
     try {
-      const ok = await sendToBackend(sanitizedMessage)
+      const ok = await sendToBackend(sanitizedMessage, {
+        eventType: 'chat_message',
+        pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+      })
       if (!ok) {
         throw new Error('Failed to send message')
       }
@@ -201,6 +205,11 @@ export function ChatWidget() {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const chatMessage = params.get('chatMessage')
+    const leadType = params.get('leadType')
+    const productName = params.get('productName')
+    const productUrl = params.get('productUrl')
+    const clientName = params.get('clientName')
+    const clientPhone = params.get('clientPhone')
 
     if (!chatMessage) {
       return
@@ -223,7 +232,16 @@ export function ChatWidget() {
     if (!isDuplicate) {
       setIsSending(true)
 
-      sendToBackend(sanitizedMessage)
+      const meta: PublicChatMeta = {
+        eventType: leadType === 'price_clarification' ? 'price_clarification' : 'chat_message',
+        productName: productName ? sanitizeInput(productName) : undefined,
+        productUrl: productUrl ? sanitizeInput(productUrl) : undefined,
+        clientName: clientName ? sanitizeInput(clientName) : undefined,
+        clientPhone: clientPhone ? sanitizeInput(clientPhone) : undefined,
+        pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+      }
+
+      sendToBackend(sanitizedMessage, meta)
         .then((ok) => {
           if (ok) {
             if (!hasShownSentConfirmationRef.current) {
@@ -262,6 +280,11 @@ export function ChatWidget() {
     }
 
     params.delete('chatMessage')
+    params.delete('leadType')
+    params.delete('productName')
+    params.delete('productUrl')
+    params.delete('clientName')
+    params.delete('clientPhone')
     navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
   }, [location.pathname, location.search, navigate])
 

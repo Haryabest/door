@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Package, MessageSquare, LogOut, Plus, Trash2, Edit, X,
   Search, Send, ChevronLeft, Home, Image as ImageIcon, FileText, Settings, MapPin, PanelTop, RefreshCw,
@@ -96,6 +96,7 @@ interface HeaderPageState {
 
 export function AdminPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [authChecked, setAuthChecked] = useState(false)
   const [activeTab, setActiveTab] = useState<'products' | 'pages' | 'messages'>('products')
   const [activePage, setActivePage] = useState<'home' | 'catalog' | 'portfolio' | 'about' | 'contacts' | 'header'>('home')
@@ -220,6 +221,29 @@ export function AdminPage() {
     }, 4000)
     return () => clearInterval(timer)
   }, [activeTab])
+
+  useEffect(() => {
+    if (!authChecked) return
+
+    const params = new URLSearchParams(location.search)
+    const tab = params.get('tab')
+    const chatIdRaw = params.get('chatId')
+
+    if (tab === 'messages') {
+      setActiveTab('messages')
+    }
+
+    if (!chatIdRaw) return
+    const chatId = Number(chatIdRaw)
+    if (!Number.isFinite(chatId) || chatId <= 0) return
+
+    const chatExists = chats.some((chat) => chat.id === chatId)
+    if (!chatExists) return
+
+    if (selectedChat !== chatId) {
+      handleSelectChat(chatId)
+    }
+  }, [authChecked, chats, location.search, selectedChat])
 
   const loadAboutPage = async () => {
     setAboutPage({ ...aboutPage, isLoading: true })

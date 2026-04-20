@@ -96,6 +96,12 @@ export const chatPublicMessageSchema = z.object({
   chatId: z.number().int().positive().optional().nullable(),
   /** UUID из PostgreSQL; не используем .uuid() — допускаем любой непустой секрет */
   clientToken: str(64).optional().nullable(),
+  eventType: z.enum(['price_clarification', 'chat_message']).optional(),
+  clientName: str(200).optional(),
+  clientPhone: str(60).optional(),
+  productName: str(500).optional(),
+  productUrl: urlOrPath.optional(),
+  pageUrl: urlOrPath.optional(),
 })
 
 /** Заявка с формы «Контакты» на сайте */
