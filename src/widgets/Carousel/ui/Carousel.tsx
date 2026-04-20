@@ -58,7 +58,7 @@ export function HeroSection() {
             >
               <Link
                 to="/catalog"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-background font-semibold rounded-lg hover:bg-primary/90 transition-colors cursor-pointer text-base sm:text-lg"
+                className="tap-click inline-flex items-center gap-2 px-8 py-4 bg-primary text-background font-semibold rounded-lg hover:bg-primary/90 transition-colors cursor-pointer text-base sm:text-lg"
               >
                 <ArrowRight className="w-5 h-5" />
                 Каталог продукции
@@ -72,7 +72,7 @@ export function HeroSection() {
             >
               <a
                 href="tel:+79601663030"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary font-semibold rounded-lg hover:bg-white/90 transition-colors cursor-pointer text-base sm:text-lg"
+                className="tap-click inline-flex items-center gap-2 px-8 py-4 bg-white text-primary font-semibold rounded-lg hover:bg-white/90 transition-colors cursor-pointer text-base sm:text-lg"
               >
                 <Phone className="w-5 h-5" />
                 Позвонить

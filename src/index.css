@@ -49,6 +49,39 @@ html {
   cursor: pointer;
 }
 
+.tap-click {
+  transform-origin: center;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.tap-click:active {
+  transform: scale(0.98);
+  filter: brightness(0.97);
+}
+
+.admin-click-zone button {
+  transform-origin: center;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.admin-click-zone button:active:not(:disabled) {
+  transform: scale(0.98);
+  filter: brightness(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tap-click,
+  .admin-click-zone button {
+    transition: none;
+  }
+
+  .tap-click:active,
+  .admin-click-zone button:active:not(:disabled) {
+    transform: none;
+    filter: none;
+  }
+}
+
 canvas {
   display: block;
   width: 100%;

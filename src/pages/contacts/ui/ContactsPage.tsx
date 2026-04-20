@@ -280,7 +280,7 @@ export function ContactsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 bg-primary text-background font-semibold rounded-lg opacity-0 translate-y-5 hover:opacity-90 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="tap-click w-full inline-flex items-center justify-center gap-2 py-4 px-6 bg-primary text-background font-semibold rounded-lg opacity-0 translate-y-5 hover:opacity-90 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ animation: "fadeInUp 0.5s ease-out 0.5s forwards" }}
                 >
                   <Send className="w-5 h-5" />

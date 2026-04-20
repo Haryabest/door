@@ -235,7 +235,7 @@ export function ProductPage() {
                 <div className="flex gap-3 sm:gap-4">
                   <button
                     onClick={() => navigate(`?chatMessage=${encodeURIComponent(`Меня заинтересовала дверь «${product.name}»`)}`)}
-                    className="flex-1 py-3 sm:py-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer text-sm sm:text-base"
+                    className="tap-click flex-1 py-3 sm:py-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer text-sm sm:text-base"
                   >
                     Узнать цену
                   </button>
