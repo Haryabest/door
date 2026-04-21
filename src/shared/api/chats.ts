@@ -18,6 +18,15 @@ export interface Chat {
   messages: Message[]
 }
 
+export interface PublicChatMeta {
+  eventType?: 'price_clarification' | 'chat_message'
+  clientName?: string
+  clientPhone?: string
+  productName?: string
+  productUrl?: string
+  pageUrl?: string
+}
+
 function normalizeChat(raw: Record<string, unknown>): Chat {
   const messages = (raw.messages as Record<string, unknown>[]) ?? []
   return {
@@ -86,9 +95,30 @@ export function setStoredChatSession(chatId: number, clientToken: string): void 
 /** Сообщение с сайта (без админ-сессии) */
 export async function postPublicChatMessage(
   text: string,
-  session: { chatId: number; clientToken: string } | null
+  session: { chatId: number; clientToken: string } | null,
+  meta?: PublicChatMeta
 ): Promise<{ chatId: number; clientToken: string; message: Message } | null> {
-  const body: { text: string; chatId?: number; clientToken?: string } = { text }
+  const body: {
+    text: string
+    chatId?: number
+    clientToken?: string
+    eventType?: 'price_clarification' | 'chat_message'
+    clientName?: string
+    clientPhone?: string
+    productName?: string
+    productUrl?: string
+    pageUrl?: string
+  } = { text }
+
+  if (meta) {
+    body.eventType = meta.eventType
+    body.clientName = meta.clientName
+    body.clientPhone = meta.clientPhone
+    body.productName = meta.productName
+    body.productUrl = meta.productUrl
+    body.pageUrl = meta.pageUrl
+  }
+
   if (session) {
     body.chatId = session.chatId
     body.clientToken = session.clientToken

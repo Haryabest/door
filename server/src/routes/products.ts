@@ -8,6 +8,13 @@ import { productCreateSchema, productUpdateSchema } from '../validation/schemas.
 
 export const productsRouter = Router()
 
+function parseList(value: unknown): string[] {
+  return String(value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
 productsRouter.get('/products/search', async (req, res) => {
   const q = String(req.query.q ?? '').trim()
   if (!q) {
@@ -25,8 +32,53 @@ productsRouter.get('/products/search', async (req, res) => {
   res.json(rows.map(mapProduct))
 })
 
-productsRouter.get('/products', async (_req, res) => {
-  const { rows } = await pool.query('SELECT * FROM products ORDER BY id ASC')
+productsRouter.get('/products', async (req, res) => {
+  const q = String(req.query.q ?? '').trim()
+  const category = String(req.query.category ?? '').trim()
+  const materials = parseList(req.query.materials)
+  const colors = parseList(req.query.colors)
+
+  const minPriceRaw = Number(req.query.minPrice)
+  const maxPriceRaw = Number(req.query.maxPrice)
+  const minPrice = Number.isFinite(minPriceRaw) ? minPriceRaw : null
+  const maxPrice = Number.isFinite(maxPriceRaw) ? maxPriceRaw : null
+
+  const whereClauses: string[] = []
+  const params: Array<string | number | string[]> = []
+
+  if (q) {
+    params.push(`%${q}%`)
+    const index = params.length
+    whereClauses.push(`(name ILIKE $${index} OR material ILIKE $${index})`)
+  }
+
+  if (category && category !== 'all') {
+    params.push(category)
+    whereClauses.push(`category = $${params.length}`)
+  }
+
+  if (materials.length > 0) {
+    params.push(materials)
+    whereClauses.push(`EXISTS (SELECT 1 FROM unnest($${params.length}::text[]) AS material_filter WHERE material ILIKE ('%' || material_filter || '%'))`)
+  }
+
+  if (colors.length > 0) {
+    params.push(colors)
+    whereClauses.push(`EXISTS (SELECT 1 FROM unnest($${params.length}::text[]) AS color_filter WHERE color ILIKE ('%' || color_filter || '%'))`)
+  }
+
+  if (minPrice !== null) {
+    params.push(minPrice)
+    whereClauses.push(`price >= $${params.length}`)
+  }
+
+  if (maxPrice !== null) {
+    params.push(maxPrice)
+    whereClauses.push(`price <= $${params.length}`)
+  }
+
+  const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : ''
+  const { rows } = await pool.query(`SELECT * FROM products ${whereSql} ORDER BY id ASC`, params)
   res.json(rows.map(mapProduct))
 })
 

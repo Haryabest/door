@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, X, MessageCircle } from 'lucide-react'
 import { FiltersContext } from '@/App'
 import { sanitizeInput, validateRequired } from '@/shared/lib/validation'
+import { containsProfanity } from '@/shared/lib/profanity'
 import {
   postPublicChatMessage,
   fetchPublicChatMessages,
   getStoredChatSession,
   setStoredChatSession,
+  type PublicChatMeta,
 } from '@/shared/api/chats'
 import { useVpnDetection } from '@/shared/lib/vpnDetection'
 
@@ -46,6 +48,7 @@ export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [validationError, setValidationError] = useState('')
   /** Пусто до первой загрузки истории — чтобы не мигало приветствие при повторном заходе, если чат уже есть */
   const [messages, setMessages] = useState<Message[]>([])
   const [historyReady, setHistoryReady] = useState(false)
@@ -140,9 +143,9 @@ export function ChatWidget() {
     }
   }, [isOpen, loadHistory])
 
-  const sendToBackend = async (text: string): Promise<boolean> => {
+  const sendToBackend = async (text: string, meta?: PublicChatMeta): Promise<boolean> => {
     const session = getStoredChatSession()
-    const result = await postPublicChatMessage(text, session)
+    const result = await postPublicChatMessage(text, session, meta)
     if (!result) return false
     setStoredChatSession(result.chatId, result.clientToken)
     const m = result.message
@@ -167,13 +170,25 @@ export function ChatWidget() {
     if (!message.trim() || isSending) return
 
     const sanitizedMessage = sanitizeInput(message)
-    if (!validateRequired(sanitizedMessage)) return
+    if (!validateRequired(sanitizedMessage)) {
+      setValidationError('Введите сообщение')
+      return
+    }
+    if (containsProfanity(sanitizedMessage)) {
+      setValidationError('Пожалуйста, без мата и оскорблений.')
+      return
+    }
+
+    setValidationError('')
 
     setMessage('')
 
     setIsSending(true)
     try {
-      const ok = await sendToBackend(sanitizedMessage)
+      const ok = await sendToBackend(sanitizedMessage, {
+        eventType: 'chat_message',
+        pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+      })
       if (!ok) {
         throw new Error('Failed to send message')
       }
@@ -214,6 +229,11 @@ export function ChatWidget() {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const chatMessage = params.get('chatMessage')
+    const leadType = params.get('leadType')
+    const productName = params.get('productName')
+    const productUrl = params.get('productUrl')
+    const clientName = params.get('clientName')
+    const clientPhone = params.get('clientPhone')
 
     if (!chatMessage) {
       return
@@ -225,13 +245,27 @@ export function ChatWidget() {
       navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
       return
     }
+    if (containsProfanity(sanitizedMessage)) {
+      params.delete('chatMessage')
+      navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
+      return
+    }
 
     setIsOpen(true)
     const isDuplicate = messagesRef.current.some((msg) => !msg.isBot && msg.text === sanitizedMessage)
     if (!isDuplicate) {
       setIsSending(true)
 
-      sendToBackend(sanitizedMessage)
+      const meta: PublicChatMeta = {
+        eventType: leadType === 'price_clarification' ? 'price_clarification' : 'chat_message',
+        productName: productName ? sanitizeInput(productName) : undefined,
+        productUrl: productUrl ? sanitizeInput(productUrl) : undefined,
+        clientName: clientName ? sanitizeInput(clientName) : undefined,
+        clientPhone: clientPhone ? sanitizeInput(clientPhone) : undefined,
+        pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+      }
+
+      sendToBackend(sanitizedMessage, meta)
         .then((ok) => {
           if (ok) {
             if (!hasShownSentConfirmationRef.current) {
@@ -270,6 +304,11 @@ export function ChatWidget() {
     }
 
     params.delete('chatMessage')
+    params.delete('leadType')
+    params.delete('productName')
+    params.delete('productUrl')
+    params.delete('clientName')
+    params.delete('clientPhone')
     navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
   }, [location.pathname, location.search, navigate])
 
@@ -372,7 +411,10 @@ export function ChatWidget() {
                 <input
                   type="text"
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => {
+                    setMessage(e.target.value)
+                    if (validationError) setValidationError('')
+                  }}
                   placeholder="Введите сообщение..."
                   className="flex-1 px-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                 />
@@ -387,6 +429,9 @@ export function ChatWidget() {
                   <Send className="w-5 h-5" />
                 </motion.button>
               </div>
+              {validationError && (
+                <p className="mt-2 text-xs text-red-500 px-2">{validationError}</p>
+              )}
             </form>
           </motion.div>
         )}

@@ -12,6 +12,11 @@ export interface ProductLocal {
   slug: string
 }
 
+export interface ProductCategoryOption {
+  value: string
+  label: string
+}
+
 export type ProductFormState = Partial<ProductLocal> & { file?: File; featuresText?: string }
 
 export function parseFeaturesText(text: string | undefined): string[] {
@@ -39,7 +44,7 @@ export function emptyProductForm(): ProductFormState {
   }
 }
 
-export const PRODUCT_CATEGORIES: { value: string; label: string }[] = [
+export const PRODUCT_CATEGORIES: ProductCategoryOption[] = [
   { value: 'interior', label: 'Межкомнатные' },
   { value: 'entrance', label: 'Входные' },
   { value: 'hardware', label: 'Фурнитура' },

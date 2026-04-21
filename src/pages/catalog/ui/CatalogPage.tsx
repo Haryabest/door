@@ -23,6 +23,31 @@ const iconMap: Record<string, any> = {
   'Square': Square,
 }
 
+function normalizeFilterValue(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/ё/g, 'е')
+    .replace(/[abekmhopctxy]/g, (char) => {
+      const map: Record<string, string> = {
+        a: 'а',
+        b: 'в',
+        e: 'е',
+        k: 'к',
+        m: 'м',
+        h: 'н',
+        o: 'о',
+        p: 'р',
+        c: 'с',
+        t: 'т',
+        x: 'х',
+        y: 'у',
+      }
+      return map[char] ?? char
+    })
+    .replace(/\s+/g, ' ')
+}
+
 // Категории каталога
 const catalogCategories = [
   {
@@ -73,6 +98,7 @@ export function CatalogPage() {
   const [catalogData, setCatalogData] = useState<CatalogPageData | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all')
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
@@ -90,8 +116,42 @@ export function CatalogPage() {
 
   useEffect(() => {
     loadCatalogData()
-    loadProducts()
   }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
+
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const selectedSubcategoryName = useMemo(() => {
+    if (selectedSubcategory === 'all') return null
+    const categories = (catalogData?.categories || catalogCategories) as any[]
+    const currentCategory = categories.find((cat) => cat.id === selectedCategory)
+    const currentSubcategory = currentCategory?.subcategories?.find((subcat: any) => subcat.id === selectedSubcategory)
+    return currentSubcategory?.name ?? null
+  }, [catalogData, selectedCategory, selectedSubcategory])
+
+  const effectiveMaterialFilters = useMemo(() => {
+    const merged = [...selectedMaterials]
+    if (selectedSubcategoryName && !merged.includes(selectedSubcategoryName)) {
+      merged.push(selectedSubcategoryName)
+    }
+    return merged
+  }, [selectedMaterials, selectedSubcategoryName])
+
+  useEffect(() => {
+    void loadProducts({
+      q: debouncedSearchQuery,
+      category: selectedCategory !== 'all' ? selectedCategory : undefined,
+      materials: effectiveMaterialFilters.length > 0 ? effectiveMaterialFilters : undefined,
+      colors: selectedColors.length > 0 ? selectedColors : undefined,
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1],
+    })
+  }, [debouncedSearchQuery, selectedCategory, effectiveMaterialFilters, selectedColors, priceRange])
 
   const loadCatalogData = async () => {
     const data = await getCatalogPage()
@@ -100,31 +160,20 @@ export function CatalogPage() {
     }
   }
 
-  const loadProducts = async () => {
+  const loadProducts = async (params?: {
+    q?: string
+    category?: string
+    materials?: string[]
+    colors?: string[]
+    minPrice?: number
+    maxPrice?: number
+  }) => {
     setIsLoading(true)
-    const data = await productsApi.getProducts()
-    if (data && data.length > 0) {
-      setProducts(data.map((product: any) => ({
-        ...product,
-        slug: generateProductSlug(product.name, product.material, product.color, product.id)
-      })))
-    } else {
-      // Тестовые данные
-      setProducts([
-        { id: 1, slug: 'dver-klassik-pvh-belyy-1', name: "Дверь Классик", price: 15900, oldPrice: 18900, image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400", category: "interior", material: "ПВХ", color: "Белый" },
-        { id: 2, slug: 'dver-modern-emal-seryy-2', name: "Дверь Модерн", price: 18500, oldPrice: 22000, image: "https://images.unsplash.com/photo-1484154218962-a1c002085d2f?w=400", category: "interior", material: "Эмаль", color: "Серый" },
-        { id: 3, slug: 'dver-loft-ekoshpon-korichnevyy-3', name: "Дверь Лофт", price: 21000, oldPrice: null, image: "https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=400", category: "interior", material: "Экошпон", color: "Коричневый" },
-        { id: 4, slug: 'dver-skandi-massiv-belyy-4', name: "Дверь Сканди", price: 17200, oldPrice: 19500, image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400", category: "interior", material: "Массив", color: "Белый" },
-        { id: 5, slug: 'dver-neoklassika-emal-bezhevyy-5', name: "Дверь Неоклассика", price: 24900, oldPrice: 29900, image: "https://images.unsplash.com/photo-1506306465497-6a840848fcab?w=400", category: "interior", material: "Эмаль", color: "Бежевый" },
-        { id: 6, slug: 'dver-khay-tek-pvh-chernyy-6', name: "Дверь Хай-тек", price: 26500, oldPrice: null, image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", category: "interior", material: "ПВХ", color: "Чёрный" },
-        { id: 7, slug: 'dver-provans-naturalnyy-shpon-bezhevyy-7', name: "Дверь Прованс", price: 19800, oldPrice: 23000, image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400", category: "interior", material: "Натуральный шпон", color: "Бежевый" },
-        { id: 8, slug: 'dver-minimalizm-ekoshpon-seryy-8', name: "Дверь Минимализм", price: 22300, oldPrice: null, image: "https://images.unsplash.com/photo-1484154218962-a1c002085d2f?w=400", category: "interior", material: "Экошпон", color: "Серый" },
-        { id: 9, slug: 'dver-art-deko-emal-venge-9', name: "Дверь Арт-деко", price: 31500, oldPrice: 38000, image: "https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=400", category: "interior", material: "Эмаль", color: "Венге" },
-        { id: 10, slug: 'dver-eko-ekoshpon-belyy-10', name: "Дверь Эко", price: 16700, oldPrice: 18900, image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400", category: "interior", material: "Экошпон", color: "Белый" },
-        { id: 11, slug: 'dver-standart-pvh-bezhevyy-11', name: "Дверь Стандарт", price: 12900, oldPrice: null, image: "https://images.unsplash.com/photo-1506306465497-6a840848fcab?w=400", category: "interior", material: "ПВХ", color: "Бежевый" },
-        { id: 12, slug: 'dver-lyuks-massiv-duba-venge-12', name: "Дверь Люкс", price: 45900, oldPrice: 55000, image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", category: "interior", material: "Массив дуба", color: "Венге" },
-      ])
-    }
+    const data = await productsApi.getProducts(params)
+    setProducts((data ?? []).map((product: any) => ({
+      ...product,
+      slug: generateProductSlug(product.name, product.material, product.color, product.id)
+    })))
     setIsLoading(false)
   }
 
@@ -178,8 +227,9 @@ export function CatalogPage() {
     setSelectedMaterials([])
     setSelectedColors([])
     setPriceRange([0, 50000])
+    setSearchQuery('')
+    setDebouncedSearchQuery('')
     setCurrentPage(1)
-    loadProducts()
   }
 
   const selectedCount = selectedMaterials.length + selectedColors.length + (selectedCategory !== 'all' ? 1 : 0) + (selectedSubcategory !== 'all' ? 1 : 0)
@@ -187,14 +237,31 @@ export function CatalogPage() {
   // Фильтрация товаров
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
-      if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
+      if (
+        searchQuery &&
+        !`${product.name} ${product.material}`.toLowerCase().includes(searchQuery.toLowerCase())
+      ) return false
       if (selectedCategory !== 'all' && product.category !== selectedCategory) return false
-      if (selectedMaterials.length > 0 && !selectedMaterials.includes(product.material)) return false
-      if (selectedColors.length > 0 && !selectedColors.includes(product.color)) return false
+      if (
+        effectiveMaterialFilters.length > 0 &&
+        !effectiveMaterialFilters.some((materialFilter) => {
+          const productMaterial = normalizeFilterValue(product.material)
+          const filterMaterial = normalizeFilterValue(materialFilter)
+          return productMaterial.includes(filterMaterial) || filterMaterial.includes(productMaterial)
+        })
+      ) return false
+      if (
+        selectedColors.length > 0 &&
+        !selectedColors.some((colorFilter) => {
+          const productColor = normalizeFilterValue(product.color)
+          const filterColor = normalizeFilterValue(colorFilter)
+          return productColor.includes(filterColor) || filterColor.includes(productColor)
+        })
+      ) return false
       if (product.price < priceRange[0] || product.price > priceRange[1]) return false
       return true
     })
-  }, [products, searchQuery, selectedCategory, selectedMaterials, selectedColors, priceRange])
+  }, [products, searchQuery, selectedCategory, effectiveMaterialFilters, selectedColors, priceRange])
 
   // Пагинация
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
@@ -568,9 +635,14 @@ export function CatalogPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        navigate(`?chatMessage=${encodeURIComponent(`Меня заинтересовала дверь «${product.name}»`)}`)
+                        const params = new URLSearchParams()
+                        params.set('chatMessage', `Меня заинтересовала дверь «${product.name}»`)
+                        params.set('leadType', 'price_clarification')
+                        params.set('productName', product.name)
+                        params.set('productUrl', `${window.location.origin}/catalog/${product.slug}-${product.id}`)
+                        navigate(`?${params.toString()}`)
                       }}
-                      className="w-full py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+                      className="tap-click w-full py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
                     >
                       Узнать цену
                     </button>

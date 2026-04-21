@@ -16,13 +16,37 @@ export interface Product {
   slug: string
 }
 
+export interface ProductCategory {
+  value: string
+  label: string
+}
+
+export interface ProductListParams {
+  q?: string
+  category?: string
+  materials?: string[]
+  colors?: string[]
+  minPrice?: number
+  maxPrice?: number
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T
 }
 
 export const productsApi = {
-  getProducts: async (): Promise<Product[]> => {
-    const response = await apiFetch('/api/products')
+  getProducts: async (params?: ProductListParams): Promise<Product[]> => {
+    const searchParams = new URLSearchParams()
+
+    if (params?.q?.trim()) searchParams.set('q', params.q.trim())
+    if (params?.category?.trim()) searchParams.set('category', params.category.trim())
+    if (params?.materials && params.materials.length > 0) searchParams.set('materials', params.materials.join(','))
+    if (params?.colors && params.colors.length > 0) searchParams.set('colors', params.colors.join(','))
+    if (typeof params?.minPrice === 'number') searchParams.set('minPrice', String(params.minPrice))
+    if (typeof params?.maxPrice === 'number') searchParams.set('maxPrice', String(params.maxPrice))
+
+    const query = searchParams.toString()
+    const response = await apiFetch(`/api/products${query ? `?${query}` : ''}`)
     if (!response.ok) return []
     return parseJson<Product[]>(response)
   },
@@ -33,6 +57,12 @@ export const productsApi = {
     const response = await apiFetch(`/api/products/search?q=${encodeURIComponent(q)}`)
     if (!response.ok) return []
     return parseJson<Product[]>(response)
+  },
+
+  getProductCategories: async (): Promise<ProductCategory[]> => {
+    const response = await apiFetch('/api/products/categories')
+    if (!response.ok) return []
+    return parseJson<ProductCategory[]>(response)
   },
 }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
 import type { ChatLocal } from '@/pages/admin/ui/AdminPage'
+import { containsProfanity } from '@/shared/lib/profanity'
 
 interface MessengerEditorProps {
   chats: ChatLocal[]
@@ -16,13 +17,20 @@ export function MessengerEditor({
   onSendMessage,
 }: MessengerEditorProps) {
   const [message, setMessage] = useState('')
+  const [validationError, setValidationError] = useState('')
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault()
-    if (selectedChat && message.trim()) {
-      onSendMessage(selectedChat, message)
-      setMessage('')
+    const text = message.trim()
+    if (!selectedChat || !text) return
+    if (containsProfanity(text)) {
+      setValidationError('Ответ с матом/бранью отправить нельзя.')
+      return
     }
+
+    setValidationError('')
+    onSendMessage(selectedChat, text)
+    setMessage('')
   }
 
   if (chats.length === 0) {
@@ -101,7 +109,10 @@ export function MessengerEditor({
                 <input
                   type="text"
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => {
+                    setMessage(e.target.value)
+                    if (validationError) setValidationError('')
+                  }}
                   placeholder="Введите сообщение..."
                   className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
                 />
@@ -112,6 +123,7 @@ export function MessengerEditor({
                   <Send className="w-5 h-5" />
                 </button>
               </form>
+              {validationError && <p className="mt-2 text-xs text-red-500">{validationError}</p>}
             </div>
           </>
         ) : (
