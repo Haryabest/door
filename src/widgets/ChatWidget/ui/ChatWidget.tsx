@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useContext, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, X, MessageCircle } from 'lucide-react'
+import { Send, X, MessageCircle, AlertTriangle } from 'lucide-react'
 import { FiltersContext } from '@/App'
 import { sanitizeInput, validateRequired } from '@/shared/lib/validation'
 import { containsProfanity } from '@/shared/lib/profanity'
@@ -35,7 +35,7 @@ const GREETING: Message = {
 
 const VPN_WARNING: Message = {
   id: -2,
-  text: 'Возможны проблемы из-за включенного VPN',
+  text: '⚠️ Похоже, вы используете VPN. Это может ограничивать работу сайта — попробуйте отключить VPN для корректной связи.',
   isBot: true,
   timestamp: new Date(),
 }
@@ -331,6 +331,12 @@ export function ChatWidget() {
             ) : (
               <MessageCircle className="w-6 h-6" />
             )}
+            {/* Индикатор VPN на кнопке чата */}
+            {isVpn && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-2.5 h-2.5 text-amber-900" />
+              </span>
+            )}
           </motion.button>
         )}
       </AnimatePresence>
@@ -361,6 +367,16 @@ export function ChatWidget() {
                 </button>
               </div>
             </div>
+
+            {/* Постоянная плашка VPN внутри чата */}
+            {isVpn && (
+              <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <p className="text-xs text-amber-800">
+                  Похоже, вы используете VPN — это может ограничивать работу сайта
+                </p>
+              </div>
+            )}
 
             <div ref={messagesContainerRef} className="h-80 p-4 overflow-y-auto bg-gray-50">
               <div className="space-y-4">
