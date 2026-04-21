@@ -10,6 +10,7 @@ import {
   getStoredChatSession,
   setStoredChatSession,
 } from '@/shared/api/chats'
+import { useVpnDetection } from '@/shared/lib/vpnDetection'
 
 interface Message {
   id: number
@@ -30,16 +31,25 @@ const GREETING: Message = {
   timestamp: new Date(),
 }
 
+const VPN_WARNING: Message = {
+  id: -2,
+  text: 'Возможны проблемы из-за включенного VPN',
+  isBot: true,
+  timestamp: new Date(),
+}
+
 export function ChatWidget() {
   const { isFiltersOpen, isChatWidgetHidden } = useContext(FiltersContext)
   const location = useLocation()
   const navigate = useNavigate()
+  const { isVpn } = useVpnDetection()
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
   /** Пусто до первой загрузки истории — чтобы не мигало приветствие при повторном заходе, если чат уже есть */
   const [messages, setMessages] = useState<Message[]>([])
   const [historyReady, setHistoryReady] = useState(false)
+  const [vpnWarningShown, setVpnWarningShown] = useState(false)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const prevMessagesLengthRef = useRef(0)
   const messagesRef = useRef<Message[]>(messages)
@@ -100,6 +110,19 @@ export function ChatWidget() {
   }, [loadHistory])
 
   useEffect(() => {
+    if (isVpn === true && !vpnWarningShown && messages.length > 0) {
+      setMessages((prev) => {
+        const hasWarning = prev.some((msg) => msg.id === -2)
+        if (!hasWarning) {
+          setVpnWarningShown(true)
+          return [...prev, { ...VPN_WARNING, timestamp: new Date() }]
+        }
+        return prev
+      })
+    }
+  }, [isVpn, vpnWarningShown, messages.length])
+
+  useEffect(() => {
     if (!isOpen) {
       if (pollRef.current) {
         clearInterval(pollRef.current)
@@ -125,14 +148,15 @@ export function ChatWidget() {
     const m = result.message
     setMessages((prev) => {
       const greeting = prev.filter((x) => x.id === -1)
-      const rest = prev.filter((x) => x.id !== -1 && x.id !== m.id)
+      const vpnWarning = prev.filter((x) => x.id === -2)
+      const rest = prev.filter((x) => x.id !== -1 && x.id !== -2 && x.id !== m.id)
       const added: Message = {
         id: m.id,
         text: m.text,
         isBot: mapApiToWidget(m.isUser),
         timestamp: m.timestamp,
       }
-      const merged = [...greeting, ...rest, added].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+      const merged = [...greeting, ...vpnWarning, ...rest, added].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
       return merged
     })
     return true
