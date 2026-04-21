@@ -35,7 +35,7 @@ const GREETING: Message = {
 
 const VPN_WARNING: Message = {
   id: -2,
-  text: '⚠️ Похоже, вы используете VPN. Это может ограничивать работу сайта — попробуйте отключить VPN для корректной связи.',
+  text: '⚠️Включённый VPN может негативно влиять на работу чата.',
   isBot: true,
   timestamp: new Date(),
 }
