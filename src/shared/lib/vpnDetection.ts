@@ -61,18 +61,6 @@ async function checkWebRTC(): Promise<boolean> {
 }
 
 /**
- * Проверяет несоответствие часового пояса
- */
-function checkTimezoneMismatch(): boolean {
-  if (typeof Intl === 'undefined') return false
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  // Список популярных VPN-локаций
-  const vpnTimezones = ['UTC', 'GMT', 'America/New_York', 'America/Los_Angeles', 'America/Chicago']
-  // Если часовой пояс не определён или относится к VPN-локациям
-  return !timezone || vpnTimezones.includes(timezone)
-}
-
-/**
  * Проверяет использование прокси через navigator.webdriver
  */
 function checkWebdriver(): boolean {
@@ -90,7 +78,6 @@ function checkVpnExtensions(): boolean {
     'hotspotshield', 'protonvpn', 'windscribe', 'mullvad',
     'purevpn', 'ipvanish', 'privatevpn', 'vyprvpn'
   ]
-  // Проверяем в user agent и плагинах браузера
   const userAgent = navigator.userAgent.toLowerCase()
   return vpnExtensions.some(ext => userAgent.includes(ext))
 }
@@ -100,20 +87,17 @@ function checkVpnExtensions(): boolean {
  */
 function checkDoH(): boolean {
   if (typeof window === 'undefined') return false
-  // Проверяем, использует ли браузер DoH (частый признак VPN)
   const connection = (navigator as { connection?: { effectiveType?: string, saveData?: boolean } }).connection
   return !!(connection?.saveData)
 }
 
 /**
- * Проверяет размер экрана и window matchMedia
+ * Проверяет размер экрана
  */
 function checkScreenFingerprint(): boolean {
   if (typeof window === 'undefined') return false
-  // VPN иногда неправильно сообщают разрешение экрана
   const screenWidth = window.screen.width
   const innerWidth = window.innerWidth
-  // Если innerWidth близко к screenWidth, это может быть признаком VPN
   return Math.abs(innerWidth - screenWidth) < 50
 }
 
@@ -124,7 +108,6 @@ function checkLanguageTimezoneMismatch(): boolean {
   if (typeof Intl === 'undefined' || typeof navigator === 'undefined') return false
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const language = navigator.language || ''
-  // Русский язык, но часовой пояс не российский
   if (language.toLowerCase().startsWith('ru') && timezone && 
       !timezone.includes('Moscow') && !timezone.includes('Krasnoyarsk') && 
       !timezone.includes('Ekaterinburg') && !timezone.includes('Samara') &&
@@ -136,10 +119,8 @@ function checkLanguageTimezoneMismatch(): boolean {
 
 /**
  * Основная функция определения VPN
- * Возвращает Promise с результатом проверки
  */
 export async function detectVpn(): Promise<VpnDetectionResult> {
-  // Запускаем все проверки параллельно
   const [webrtc, webdriver, extensions, doh, screenFingerprint, langTimezone] = await Promise.all([
     checkWebRTC(),
     Promise.resolve(checkWebdriver()),
@@ -149,22 +130,10 @@ export async function detectVpn(): Promise<VpnDetectionResult> {
     Promise.resolve(checkLanguageTimezoneMismatch())
   ])
   
-  // Webdriver — высокая уверенность (автоматизированный браузер)
-  if (webdriver) {
+  if (webdriver || webrtc || extensions) {
     return { isVpn: true, confidence: 'high' }
   }
   
-  // WebRTC обнаружил внешний IP — высокая уверенность
-  if (webrtc) {
-    return { isVpn: true, confidence: 'high' }
-  }
-  
-  // VPN-расширение обнаружено — высокая уверенность
-  if (extensions) {
-    return { isVpn: true, confidence: 'high' }
-  }
-  
-  // Несколько косвенных признаков
   const indirectSigns = [doh, screenFingerprint, langTimezone].filter(Boolean).length
   
   if (indirectSigns >= 2) {
@@ -180,7 +149,6 @@ export async function detectVpn(): Promise<VpnDetectionResult> {
 
 /**
  * Хук для React компонентов
- * Выполняет проверку один раз при монтировании
  */
 export function useVpnDetection() {
   const [isVpn, setIsVpn] = useState<boolean | null>(null)
