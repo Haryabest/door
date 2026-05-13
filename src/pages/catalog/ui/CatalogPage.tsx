@@ -48,48 +48,6 @@ function normalizeFilterValue(value: string): string {
     .replace(/\s+/g, ' ')
 }
 
-// Категории каталога
-const catalogCategories = [
-  {
-    id: 'interior',
-    name: 'Межкомнатные двери',
-    icon: DoorOpen,
-    subcategories: [
-      { id: 'pvh', name: 'ПВХ' },
-      { id: 'emal', name: 'Эмаль' },
-      { id: 'ecoshpon', name: 'Экошпон' },
-      { id: 'massiv', name: 'Массив и натуральный шпон' },
-    ],
-  },
-  {
-    id: 'entrance',
-    name: 'Входные двери',
-    icon: Home,
-    subcategories: [
-      { id: 'flat', name: 'В квартиру' },
-      { id: 'house', name: 'В дом' },
-    ],
-  },
-  {
-    id: 'systems',
-    name: 'Системы открывания',
-    icon: Settings,
-    subcategories: [],
-  },
-  {
-    id: 'panels',
-    name: 'Стеновые панели',
-    icon: PanelLeft,
-    subcategories: [],
-  },
-  {
-    id: 'plinths',
-    name: 'Плинтуса',
-    icon: Square,
-    subcategories: [],
-  },
-]
-
 export function CatalogPage() {
   const navigate = useNavigate()
   const { setIsFiltersOpen } = useContext(FiltersContext)
@@ -99,8 +57,7 @@ export function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [expandedSections, setExpandedSections] = useState({
@@ -124,30 +81,14 @@ export function CatalogPage() {
     return () => window.clearTimeout(timer)
   }, [searchQuery])
 
-  const selectedSubcategoryName = useMemo(() => {
-    if (selectedSubcategory === 'all') return null
-    const categories = (catalogData?.categories || catalogCategories) as any[]
-    const currentCategory = categories.find((cat) => cat.id === selectedCategory)
-    const currentSubcategory = currentCategory?.subcategories?.find((subcat: any) => subcat.id === selectedSubcategory)
-    return currentSubcategory?.name ?? null
-  }, [catalogData, selectedCategory, selectedSubcategory])
-
-  const effectiveMaterialFilters = useMemo(() => {
-    const merged = [...selectedMaterials]
-    if (selectedSubcategoryName && !merged.includes(selectedSubcategoryName)) {
-      merged.push(selectedSubcategoryName)
-    }
-    return merged
-  }, [selectedMaterials, selectedSubcategoryName])
-
   useEffect(() => {
     void loadProducts({
       q: debouncedSearchQuery,
-      category: selectedCategory !== 'all' ? selectedCategory : undefined,
-      materials: effectiveMaterialFilters.length > 0 ? effectiveMaterialFilters : undefined,
+      categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+      materials: selectedMaterials.length > 0 ? selectedMaterials : undefined,
       colors: selectedColors.length > 0 ? selectedColors : undefined,
     })
-  }, [debouncedSearchQuery, selectedCategory, effectiveMaterialFilters, selectedColors])
+  }, [debouncedSearchQuery, selectedCategories, selectedMaterials, selectedColors])
 
   const loadCatalogData = async () => {
     const data = await getCatalogPage()
@@ -158,7 +99,7 @@ export function CatalogPage() {
 
   const loadProducts = async (params?: {
     q?: string
-    category?: string
+    categories?: string[]
     materials?: string[]
     colors?: string[]
   }) => {
@@ -171,10 +112,20 @@ export function CatalogPage() {
     setIsLoading(false)
   }
 
+  const categoriesList = catalogData?.categories ?? []
+  const materials = catalogData?.materials ?? []
+  const colors = catalogData?.colors ?? []
+
   const toggleFilters = () => {
     const newState = !showFilters
     setShowFilters(newState)
     setIsFiltersOpen(newState)
+  }
+
+  const toggleCatalogCategory = (catId: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
+    )
   }
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -182,25 +133,6 @@ export function CatalogPage() {
       ...prev,
       [section]: !prev[section]
     }))
-  }
-
-  const materials = catalogData?.materials || ["ПВХ", "Эмаль", "Экошпон", "Массив", "Натуральный шпон"]
-  const colors = catalogData?.colors || [
-    { name: "Белый", color: "#FFFFFF", border: "#E5E5E5" },
-    { name: "Серый", color: "#9CA3AF", border: "#6B7280" },
-    { name: "Бежевый", color: "#F5E6D3", border: "#D4C4B0" },
-    { name: "Коричневый", color: "#8B4513", border: "#6B3410" },
-    { name: "Венге", color: "#4A3728", border: "#2D1F15" },
-    { name: "Чёрный", color: "#1F2937", border: "#111827" }
-  ]
-
-  const toggleCategory = (cat: string) => {
-    setSelectedCategory(cat)
-    setSelectedSubcategory('all')
-  }
-
-  const toggleSubcategory = (subcat: string) => {
-    setSelectedSubcategory(subcat)
   }
 
   const toggleMaterial = (mat: string) => {
@@ -216,8 +148,7 @@ export function CatalogPage() {
   }
 
   const resetFilters = () => {
-    setSelectedCategory('all')
-    setSelectedSubcategory('all')
+    setSelectedCategories([])
     setSelectedMaterials([])
     setSelectedColors([])
     setSearchQuery('')
@@ -225,7 +156,8 @@ export function CatalogPage() {
     setCurrentPage(1)
   }
 
-  const selectedCount = selectedMaterials.length + selectedColors.length + (selectedCategory !== 'all' ? 1 : 0) + (selectedSubcategory !== 'all' ? 1 : 0)
+  const selectedCount =
+    selectedCategories.length + selectedMaterials.length + selectedColors.length
 
   // Фильтрация товаров
   const filteredProducts = useMemo(() => {
@@ -234,10 +166,13 @@ export function CatalogPage() {
         searchQuery &&
         !`${product.name} ${product.material}`.toLowerCase().includes(searchQuery.toLowerCase())
       ) return false
-      if (selectedCategory !== 'all' && product.category !== selectedCategory) return false
       if (
-        effectiveMaterialFilters.length > 0 &&
-        !effectiveMaterialFilters.some((materialFilter) => {
+        selectedCategories.length > 0 &&
+        !selectedCategories.includes(product.category)
+      ) return false
+      if (
+        selectedMaterials.length > 0 &&
+        !selectedMaterials.some((materialFilter) => {
           const productMaterial = normalizeFilterValue(product.material)
           const filterMaterial = normalizeFilterValue(materialFilter)
           return productMaterial.includes(filterMaterial) || filterMaterial.includes(productMaterial)
@@ -253,7 +188,7 @@ export function CatalogPage() {
       ) return false
       return true
     })
-  }, [products, searchQuery, selectedCategory, effectiveMaterialFilters, selectedColors])
+  }, [products, searchQuery, selectedCategories, selectedMaterials, selectedColors])
 
   // Пагинация
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
@@ -265,7 +200,7 @@ export function CatalogPage() {
   // Сброс на первую страницу при изменении фильтров
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedCategory, selectedSubcategory, selectedMaterials, selectedColors])
+  }, [searchQuery, selectedCategories, selectedMaterials, selectedColors])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -423,58 +358,37 @@ export function CatalogPage() {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            <div className="p-3 space-y-1 bg-background">
-                              {(catalogData?.categories || catalogCategories).map((cat: any) => (
-                                <div key={cat.id}>
-                                  <button
-                                    onClick={() => toggleCategory(cat.id)}
-                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                                      selectedCategory === cat.id
-                                        ? 'bg-primary text-background font-medium'
-                                        : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      {(() => {
-                                        const IconComponent = iconMap[cat.icon] || cat.icon
-                                        return typeof IconComponent === 'string' ? null : <IconComponent className="w-4 h-4" />
-                                      })()}
-                                      {cat.name}
-                                    </div>
-                                    {cat.subcategories.length > 0 && (
-                                      <ChevronRight className={`w-4 h-4 transition-transform ${
-                                        selectedCategory === cat.id ? 'rotate-90' : ''
-                                      }`} />
-                                    )}
-                                  </button>
-
-                                  {/* Подкатегории */}
-                                  {cat.subcategories.length > 0 && selectedCategory === cat.id && (
-                                    <motion.div
-                                      initial={{ height: 0, opacity: 0 }}
-                                      animate={{ height: 'auto', opacity: 1 }}
-                                      transition={{ duration: 0.2 }}
-                                      className="overflow-hidden"
+                            <div className="p-3 space-y-2 bg-background">
+                              {categoriesList.length === 0 ? (
+                                <p className="text-sm text-muted-foreground px-2 py-1">
+                                  Загрузка категорий…
+                                </p>
+                              ) : (
+                                categoriesList.map((cat) => {
+                                  const IconComponent = iconMap[cat.icon]
+                                  const IconEl =
+                                    IconComponent && typeof IconComponent !== 'string' ? (
+                                      <IconComponent className="w-4 h-4 shrink-0 text-primary" />
+                                    ) : null
+                                  return (
+                                    <label
+                                      key={cat.id}
+                                      className="flex items-center gap-3 cursor-pointer group px-2 py-2 rounded-lg hover:bg-primary/5"
                                     >
-                                      <div className="ml-6 mt-2 space-y-1">
-                                        {cat.subcategories.map((subcat: any) => (
-                                          <button
-                                            key={subcat.id}
-                                            onClick={() => toggleSubcategory(subcat.id)}
-                                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                                              selectedSubcategory === subcat.id
-                                                ? 'bg-primary/20 text-primary font-medium'
-                                                : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
-                                            }`}
-                                          >
-                                            {subcat.name}
-                                          </button>
-                                        ))}
+                                      <Checkbox
+                                        checked={selectedCategories.includes(cat.id)}
+                                        onCheckedChange={() => toggleCatalogCategory(cat.id)}
+                                      />
+                                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        {IconEl}
+                                        <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">
+                                          {cat.name}
+                                        </span>
                                       </div>
-                                    </motion.div>
-                                  )}
-                                </div>
-                              ))}
+                                    </label>
+                                  )
+                                })
+                              )}
                             </div>
                           </motion.div>
                         )}
@@ -502,15 +416,23 @@ export function CatalogPage() {
                             className="overflow-hidden"
                           >
                             <div className="p-3 space-y-2 bg-background">
-                              {materials.map((mat) => (
-                                <label key={mat} className="flex items-center gap-3 cursor-pointer group">
-                                  <Checkbox
-                                    checked={selectedMaterials.includes(mat)}
-                                    onCheckedChange={() => toggleMaterial(mat)}
-                                  />
-                                  <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">{mat}</span>
-                                </label>
-                              ))}
+                              {materials.length === 0 ? (
+                                <p className="text-sm text-muted-foreground px-2 py-1">
+                                  Нет материалов в каталоге (настройте в админке).
+                                </p>
+                              ) : (
+                                materials.map((mat) => (
+                                  <label key={mat} className="flex items-center gap-3 cursor-pointer group">
+                                    <Checkbox
+                                      checked={selectedMaterials.includes(mat)}
+                                      onCheckedChange={() => toggleMaterial(mat)}
+                                    />
+                                    <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">
+                                      {mat}
+                                    </span>
+                                  </label>
+                                ))
+                              )}
                             </div>
                           </motion.div>
                         )}
@@ -538,9 +460,17 @@ export function CatalogPage() {
                             className="overflow-hidden"
                           >
                             <div className="p-3 bg-background">
-                              <div className="grid grid-cols-3 gap-3">
-                                {colors.map((color) => (
-                                  <label key={color.name} className="flex flex-col items-center gap-2 cursor-pointer group">
+                              {colors.length === 0 ? (
+                                <p className="text-sm text-muted-foreground px-2 py-1">
+                                  Нет цветов в каталоге (настройте в админке).
+                                </p>
+                              ) : (
+                                <div className="grid grid-cols-3 gap-3">
+                                  {colors.map((color) => (
+                                    <label
+                                      key={color.id ?? color.name}
+                                      className="flex flex-col items-center gap-2 cursor-pointer group"
+                                    >
                                     <button
                                       type="button"
                                       onClick={() => toggleColor(color.name)}
@@ -562,8 +492,9 @@ export function CatalogPage() {
                                     </button>
                                     <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">{color.name}</span>
                                   </label>
-                                ))}
-                              </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </motion.div>
                         )}
@@ -636,7 +567,7 @@ export function CatalogPage() {
                       }}
                       className="tap-click w-full py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
                     >
-                      Связаться с менеджером
+                      Узнать цену
                     </button>
                   </div>
                 </div>

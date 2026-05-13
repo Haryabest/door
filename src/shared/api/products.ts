@@ -16,7 +16,10 @@ export interface Product {
 
 export interface ProductListParams {
   q?: string
+  /** Один category (старое API) */
   category?: string
+  /** Несколько категорий (id из каталога) */
+  categories?: string[]
   materials?: string[]
   colors?: string[]
 }
@@ -30,7 +33,9 @@ export const productsApi = {
     const searchParams = new URLSearchParams()
 
     if (params?.q?.trim()) searchParams.set('q', params.q.trim())
-    if (params?.category?.trim()) searchParams.set('category', params.category.trim())
+    if (params?.categories && params.categories.length > 0)
+      searchParams.set('categories', params.categories.join(','))
+    else if (params?.category?.trim()) searchParams.set('category', params.category.trim())
     if (params?.materials && params.materials.length > 0) searchParams.set('materials', params.materials.join(','))
     if (params?.colors && params.colors.length > 0) searchParams.set('colors', params.colors.join(','))
 

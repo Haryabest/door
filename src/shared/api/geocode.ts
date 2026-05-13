@@ -7,7 +7,11 @@ export async function geocodeAddress(query: string): Promise<GeocodeResult | nul
   const q = query.trim()
   if (q.length < 4) return null
 
-  const response = await apiFetch(`/api/geocode?q=${encodeURIComponent(q)}`)
+  const response = await apiFetch('/api/geocode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ q }),
+  })
   if (!response.ok) return null
 
   try {

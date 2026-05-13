@@ -34,9 +34,17 @@ productsRouter.get('/products/search', async (req, res) => {
 
 productsRouter.get('/products', async (req, res) => {
   const q = String(req.query.q ?? '').trim()
-  const category = String(req.query.category ?? '').trim()
+  const categoryLegacy = String(req.query.category ?? '').trim()
+  const categoriesMulti = parseList(req.query.categories)
   const materials = parseList(req.query.materials)
   const colors = parseList(req.query.colors)
+
+  const categoryFilters =
+    categoriesMulti.length > 0
+      ? categoriesMulti
+      : categoryLegacy && categoryLegacy !== 'all'
+        ? [categoryLegacy]
+        : []
 
   const whereClauses: string[] = []
   const params: Array<string | number | string[]> = []
@@ -47,9 +55,9 @@ productsRouter.get('/products', async (req, res) => {
     whereClauses.push(`(name ILIKE $${index} OR material ILIKE $${index})`)
   }
 
-  if (category && category !== 'all') {
-    params.push(category)
-    whereClauses.push(`category = $${params.length}`)
+  if (categoryFilters.length > 0) {
+    params.push(categoryFilters)
+    whereClauses.push(`category = ANY($${params.length}::text[])`)
   }
 
   if (materials.length > 0) {
