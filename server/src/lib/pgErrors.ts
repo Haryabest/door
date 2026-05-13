@@ -31,13 +31,21 @@ export function mapPgError(err: unknown): MappedPgError | null {
         message: 'Связанная запись не найдена',
         logDetail: detail,
       }
-    case '23502':
+    case '23502': {
+      const src = `${e.detail ?? ''} ${e.message ?? ''}`
+      const colMatch = /column\s+"([^"]+)"/i.exec(src)
+      const col = colMatch?.[1]
+      const priceHint =
+        col === 'price' || /\bprice\b/i.test(src)
+          ? ' На сервере нужно применить миграции (удаление колонки price): в каталоге server выполните npm run migrate.'
+          : ''
       return {
         status: 400,
         code: 'not_null',
-        message: 'Не заполнено обязательное поле',
+        message: `Не заполнено обязательное поле${col ? `: ${col}` : ''}.${priceHint}`.trim(),
         logDetail: detail,
       }
+    }
     case '23514':
       return {
         status: 400,
