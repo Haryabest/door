@@ -103,7 +103,7 @@ export function HeaderPageEditor({
 
         <div className="space-y-3">
           {data.navItems.map((item, index) => (
-            <div key={`${item.label}-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 items-start p-4 border-2 border-border rounded-lg">
+            <div key={`header-nav-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 items-start p-4 border-2 border-border rounded-lg">
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">Название</label>
                 <input

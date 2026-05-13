@@ -138,7 +138,7 @@ export function FooterPageEditor({
         </div>
         <div className="space-y-3">
           {data.navItems.map((item, index) => (
-            <div key={`${item.label}-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 p-4 border-2 border-border rounded-lg">
+            <div key={`footer-nav-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 p-4 border-2 border-border rounded-lg">
               <input
                 type="text"
                 value={item.label}
@@ -171,7 +171,7 @@ export function FooterPageEditor({
         </div>
         <div className="space-y-3">
           {data.phones.map((item, index) => (
-            <div key={`${item.text}-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 p-4 border-2 border-border rounded-lg">
+            <div key={`footer-phone-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 p-4 border-2 border-border rounded-lg">
               <input
                 type="text"
                 value={item.text}
@@ -204,7 +204,7 @@ export function FooterPageEditor({
         </div>
         <div className="space-y-3">
           {data.legalLinks.map((item, index) => (
-            <div key={`${item.label}-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 p-4 border-2 border-border rounded-lg">
+            <div key={`footer-legal-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 p-4 border-2 border-border rounded-lg">
               <input
                 type="text"
                 value={item.label}

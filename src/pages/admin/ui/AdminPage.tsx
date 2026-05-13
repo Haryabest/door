@@ -267,7 +267,7 @@ export function AdminPage() {
     const updated = await updateAboutPage(aboutPage.data)
     if (updated) {
       setAboutPage({ isLoading: false, isSaving: false, data: updated })
-      alert('РЎС‚СЂР°РЅРёС†Р° "Рћ РЅР°СЃ" СЃРѕС…СЂР°РЅРµРЅР°!')
+      alert('Страница «О нас» сохранена!')
     } else {
       setAboutPage({ ...aboutPage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -279,8 +279,8 @@ export function AdminPage() {
     const newStat: StatItem = {
       id: Date.now(),
       icon: 'Clock',
-      value: 'РќРѕРІРѕРµ',
-      label: 'РћРїРёСЃР°РЅРёРµ'
+      value: 'Новое',
+      label: 'Описание'
     }
     const updatedData = { ...aboutPage.data, stats: [...aboutPage.data.stats, newStat] }
     setAboutPage({ ...aboutPage, data: updatedData })
@@ -304,8 +304,8 @@ export function AdminPage() {
     const newAdvantage: AdvantageItem = {
       id: Date.now(),
       icon: 'Star',
-      title: 'РќРѕРІРѕРµ РїСЂРµРёРјСѓС‰РµСЃС‚РІРѕ',
-      description: 'РћРїРёСЃР°РЅРёРµ РїСЂРµРёРјСѓС‰РµСЃС‚РІР°'
+      title: 'Новое преимущество',
+      description: 'Описание преимущества'
     }
     const updatedData = { ...aboutPage.data, advantages: [...aboutPage.data.advantages, newAdvantage] }
     setAboutPage({ ...aboutPage, data: updatedData })
@@ -366,7 +366,7 @@ export function AdminPage() {
   const handleUploadImageHome = async (id: number, file: File) => {
     const url = await uploadImage(file)
     if (!url) {
-      alert('РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёРµ')
+      alert('Не удалось загрузить изображение')
       return
     }
     handleUpdateCategoryHome(id, 'image', url)
@@ -386,7 +386,7 @@ export function AdminPage() {
     const updated = await updateContactsPage(contactsPage.data)
     if (updated) {
       setContactsPage({ isLoading: false, isSaving: false, data: updated })
-      alert('РЎС‚СЂР°РЅРёС†Р° "РљРѕРЅС‚Р°РєС‚С‹" СЃРѕС…СЂР°РЅРµРЅР°!')
+      alert('Страница «Контакты» сохранена!')
     } else {
       setContactsPage({ ...contactsPage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -397,10 +397,10 @@ export function AdminPage() {
     if (!contactsPage.data) return
     const newLocation: LocationItem = {
       id: Date.now(),
-      name: 'РќРѕРІС‹Р№ СЃР°Р»РѕРЅ',
-      address: 'РђРґСЂРµСЃ',
+      name: 'Новый салон',
+      address: 'Адрес',
       phone: '+7 (___) ___-__-__',
-      hours: 'Р•Р¶РµРґРЅРµРІРЅРѕ СЃ 10:00 РґРѕ 20:00',
+      hours: 'Ежедневно с 10:00 до 20:00',
       coords: [56.2906, 44.0024]
     }
     const updatedData = { ...contactsPage.data, locations: [...contactsPage.data.locations, newLocation] }
@@ -458,7 +458,7 @@ export function AdminPage() {
     const updated = await updatePortfolioPage(portfolioPage.data)
     if (updated) {
       setPortfolioPage({ isLoading: false, isSaving: false, data: updated })
-      alert('РЎС‚СЂР°РЅРёС†Р° "РџРѕСЂС‚С„РѕР»РёРѕ" СЃРѕС…СЂР°РЅРµРЅР°!')
+      alert('Страница «Портфолио» сохранена!')
     } else {
       setPortfolioPage({ ...portfolioPage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -470,8 +470,8 @@ export function AdminPage() {
     const newItem: PortfolioItem = {
       id: Date.now(),
       image: '',
-      title: 'РќРѕРІС‹Р№ РїСЂРѕРµРєС‚',
-      description: 'РћРїРёСЃР°РЅРёРµ РїСЂРѕРµРєС‚Р°'
+      title: 'Новый проект',
+      description: 'Описание проекта'
     }
     const updatedData = { ...portfolioPage.data, items: [...portfolioPage.data.items, newItem] }
     setPortfolioPage({ ...portfolioPage, data: updatedData })
@@ -511,7 +511,7 @@ export function AdminPage() {
     const updated = await updateHomePage(homePage.data)
     if (updated) {
       setHomePage({ isLoading: false, isSaving: false, data: updated })
-      alert('Р“Р»Р°РІРЅР°СЏ СЃС‚СЂР°РЅРёС†Р° СЃРѕС…СЂР°РЅРµРЅР°!')
+      alert('Главная страница сохранена!')
     } else {
       setHomePage({ ...homePage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -532,7 +532,7 @@ export function AdminPage() {
     const updated = await updateCatalogPage(catalogPage.data)
     if (updated) {
       setCatalogPage({ isLoading: false, isSaving: false, data: updated })
-      alert('РЎС‚СЂР°РЅРёС†Р° "РљР°С‚Р°Р»РѕРі" СЃРѕС…СЂР°РЅРµРЅР°!')
+      alert('Страница «Каталог» сохранена!')
     } else {
       setCatalogPage({ ...catalogPage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -551,7 +551,7 @@ export function AdminPage() {
     const updated = await updateHeader(headerPage.data)
     if (updated) {
       setHeaderPage({ isLoading: false, isSaving: false, data: updated })
-      alert('РЁР°РїРєР° СЃРѕС…СЂР°РЅРµРЅР°!')
+      alert('Шапка сохранена!')
     } else {
       setHeaderPage((prev) => ({ ...prev, isSaving: false }))
       alert(SAVE_FAILED_HINT)
@@ -568,7 +568,7 @@ export function AdminPage() {
 
   const handleAddHeaderNavItem = () => {
     if (!headerPage.data) return
-    const next: HeaderNavItem = { label: 'РќРѕРІС‹Р№ РїСѓРЅРєС‚', path: '/' }
+    const next: HeaderNavItem = { label: 'Новый пункт', path: '/' }
     setHeaderPage((prev) => ({
       ...prev,
       data: prev.data ? { ...prev.data, navItems: [...prev.data.navItems, next] } : prev.data,
@@ -608,7 +608,7 @@ export function AdminPage() {
     const updated = await updateFooter(footerPage.data)
     if (updated) {
       setFooterPage({ isLoading: false, isSaving: false, data: updated })
-      alert('Р¤СѓС‚РµСЂ СЃРѕС…СЂР°РЅРµРЅ!')
+      alert('Футер сохранён!')
     } else {
       setFooterPage((prev) => ({ ...prev, isSaving: false }))
       alert(SAVE_FAILED_HINT)
@@ -625,7 +625,7 @@ export function AdminPage() {
 
   const handleAddFooterNavItem = () => {
     if (!footerPage.data) return
-    const next: FooterLinkItem = { label: 'РќРѕРІС‹Р№ РїСѓРЅРєС‚', path: '/' }
+    const next: FooterLinkItem = { label: 'Новый пункт', path: '/' }
     setFooterPage((prev) => ({
       ...prev,
       data: prev.data ? { ...prev.data, navItems: [...prev.data.navItems, next] } : prev.data,
@@ -685,7 +685,7 @@ export function AdminPage() {
 
   const handleAddFooterLegalLink = () => {
     if (!footerPage.data) return
-    const next: FooterLinkItem = { label: 'РќРѕРІР°СЏ СЃСЃС‹Р»РєР°', path: '/' }
+    const next: FooterLinkItem = { label: 'Новая ссылка', path: '/' }
     setFooterPage((prev) => ({
       ...prev,
       data: prev.data ? { ...prev.data, legalLinks: [...prev.data.legalLinks, next] } : prev.data,
@@ -717,7 +717,7 @@ export function AdminPage() {
     if (!catalogPage.data) return
     const newCategory: CatalogCategory = {
       id: `cat-${Date.now()}`,
-      name: 'РќРѕРІР°СЏ РєР°С‚РµРіРѕСЂРёСЏ',
+      name: 'Новая категория',
       icon: 'DoorOpen',
       subcategories: []
     }
@@ -740,7 +740,7 @@ export function AdminPage() {
 
   const handleAddMaterial = () => {
     if (!catalogPage.data) return
-    const updatedData = { ...catalogPage.data, materials: [...catalogPage.data.materials, 'РќРѕРІС‹Р№ РјР°С‚РµСЂРёР°Р»'] }
+    const updatedData = { ...catalogPage.data, materials: [...catalogPage.data.materials, 'Новый материал'] }
     setCatalogPage({ ...catalogPage, data: updatedData })
   }
 
@@ -762,7 +762,7 @@ export function AdminPage() {
     if (!catalogPage.data) return
     const newColor: CatalogColor = {
       id: `color-${Date.now()}`,
-      name: 'РќРѕРІС‹Р№ С†РІРµС‚',
+      name: 'Новый цвет',
       color: '#000000',
       border: '#000000'
     }
@@ -890,10 +890,10 @@ export function AdminPage() {
     setIsEditing(true)
   }
 
-  // CRUD С‚РѕРІР°СЂРѕРІ
+  // CRUD товаров
   const handleAddProduct = async () => {
     if (!productForm.name?.trim()) {
-      alert('РЈРєР°Р¶РёС‚Рµ РЅР°Р·РІР°РЅРёРµ С‚РѕРІР°СЂР°')
+      alert('Укажите название товара')
       return
     }
     if (!productForm.category?.trim()) {
@@ -912,13 +912,13 @@ export function AdminPage() {
     if (productForm.file) {
       const up = await uploadImage(productForm.file)
       if (!up) {
-        alert('РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёРµ')
+        alert('Не удалось загрузить изображение')
         return
       }
       imageUrl = up
     }
     if (!imageUrl || imageUrl.startsWith('blob:')) {
-      alert('РЈРєР°Р¶РёС‚Рµ URL РёР·РѕР±СЂР°Р¶РµРЅРёСЏ РёР»Рё Р·Р°РіСЂСѓР·РёС‚Рµ С„Р°Р№Р»')
+      alert('Укажите URL изображения или загрузите файл')
       return
     }
     const features = parseFeaturesText(productForm.featuresText)
@@ -958,14 +958,14 @@ export function AdminPage() {
   }
 
   const handleDeleteProduct = async (id: number) => {
-    if (!confirm('Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ СЌС‚РѕС‚ С‚РѕРІР°СЂ?')) return
+    if (!confirm('Вы уверены, что хотите удалить этот товар?')) return
 
     const success = await deleteProduct(id)
 
     if (success) {
       setProducts(products.filter((p) => p.id !== id))
     } else {
-      alert('РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ С‚РѕРІР°СЂ. РџСЂРѕРІРµСЂСЊС‚Рµ СЃРµСЃСЃРёСЋ Рё РїСЂР°РІР°.')
+      alert('Не удалось удалить товар. Проверьте сессию и права.')
     }
   }
 
@@ -1004,13 +1004,13 @@ export function AdminPage() {
     if (productForm.file) {
       const up = await uploadImage(productForm.file)
       if (!up) {
-        alert('РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёРµ')
+        alert('Не удалось загрузить изображение')
         return
       }
       imageUrl = up
     }
     if (!imageUrl || imageUrl.startsWith('blob:')) {
-      alert('РЈРєР°Р¶РёС‚Рµ URL РёР·РѕР±СЂР°Р¶РµРЅРёСЏ РёР»Рё Р·Р°РіСЂСѓР·РёС‚Рµ С„Р°Р№Р»')
+      alert('Укажите URL изображения или загрузите файл')
       return
     }
     const features = parseFeaturesText(productForm.featuresText)
@@ -1058,7 +1058,7 @@ export function AdminPage() {
     setProductForm(emptyProductForm())
   }
 
-  // РћС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёСЏ
+  // Отправка сообщения
   const handleSendMessage = async (chatId: number, text: string) => {
     const newMessage = await sendMessage(chatId, text)
 
@@ -1075,7 +1075,7 @@ export function AdminPage() {
         })
       )
     } else {
-      alert('РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РїСЂР°РІРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ')
+      alert('Не удалось отправить сообщение')
     }
   }
 
@@ -1083,7 +1083,7 @@ export function AdminPage() {
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Р’С‹С…РѕРґ
+  // Выход
   const handleLogout = async () => {
     await adminLogout()
     navigate('/')
@@ -1092,7 +1092,7 @@ export function AdminPage() {
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center text-muted-foreground">
-        РџСЂРѕРІРµСЂРєР° СЃРµСЃСЃРёРёвЂ¦
+        Проверка сессии…
       </div>
     )
   }
@@ -1110,14 +1110,14 @@ export function AdminPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h1 className="text-xl font-bold text-primary">РђРґРјРёРЅ-РїР°РЅРµР»СЊ</h1>
+              <h1 className="text-xl font-bold text-primary">Админ-панель</h1>
             </div>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
             >
               <LogOut className="w-5 h-5" />
-              <span className="hidden sm:inline">Р’С‹Р№С‚Рё</span>
+              <span className="hidden sm:inline">Выйти</span>
             </button>
           </div>
         </div>
@@ -1135,7 +1135,7 @@ export function AdminPage() {
             }`}
           >
             <Package className="w-5 h-5" />
-            РўРѕРІР°СЂС‹
+            Товары
           </button>
           <button
             onClick={() => setActiveTab('pages')}
@@ -1146,7 +1146,7 @@ export function AdminPage() {
             }`}
           >
             <Settings className="w-5 h-5" />
-            РЎС‚СЂР°РЅРёС†С‹
+            Страницы
           </button>
           <button
             onClick={() => setActiveTab('messages')}
@@ -1157,15 +1157,15 @@ export function AdminPage() {
             }`}
           >
             <MessageSquare className="w-5 h-5" />
-            РњРµСЃСЃРµРЅРґР¶РµСЂ
+            Мессенджер
           </button>
         </div>
 
-        {/* РўРѕРІР°СЂС‹ */}
+        {/* Товары */}
         {activeTab === 'products' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-primary">РЈРїСЂР°РІР»РµРЅРёРµ С‚РѕРІР°СЂР°РјРё</h2>
+              <h2 className="text-xl font-bold text-primary">Управление товарами</h2>
               <button
                 onClick={() => {
                   openProductEditorForCreate()
@@ -1173,34 +1173,34 @@ export function AdminPage() {
                 className="flex items-center gap-2 px-6 py-2 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
               >
                 <Plus className="w-5 h-5" />
-                Р”РѕР±Р°РІРёС‚СЊ С‚РѕРІР°СЂ
+                Добавить товар
               </button>
             </div>
 
-            {/* РџРѕРёСЃРє */}
+            {/* Поиск */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="РџРѕРёСЃРє С‚РѕРІР°СЂРѕРІ..."
+                placeholder="Поиск товаров..."
                 className="w-full pl-10 pr-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
-            {/* РўР°Р±Р»РёС†Р° С‚РѕРІР°СЂРѕРІ */}
+            {/* Таблица товаров */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Р¤РѕС‚Рѕ</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">РќР°Р·РІР°РЅРёРµ</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">РљР°С‚РµРіРѕСЂРёСЏ</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">РњР°С‚РµСЂРёР°Р»</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Р¦РІРµС‚</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Р”РµР№СЃС‚РІРёСЏ</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Фото</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Категория</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Материал</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цвет</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Действия</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -1241,90 +1241,90 @@ export function AdminPage() {
           </div>
         )}
 
-        {/* РЎС‚СЂР°РЅРёС†С‹ */}
+        {/* Страницы */}
         {activeTab === 'pages' && (
           <div className="space-y-6">
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            <div className="flex flex-wrap gap-2 mb-6 pb-2">
               <button
                 onClick={() => setActivePage('home')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap shrink-0 ${
                   activePage === 'home'
                     ? 'bg-primary text-background'
                     : 'bg-white text-foreground hover:bg-gray-100'
                 }`}
               >
                 <Home className="w-5 h-5" />
-                Р“Р»Р°РІРЅР°СЏ (Hero)
+                Главная (Hero)
               </button>
               <button
                 onClick={() => setActivePage('catalog')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap shrink-0 ${
                   activePage === 'catalog'
                     ? 'bg-primary text-background'
                     : 'bg-white text-foreground hover:bg-gray-100'
                 }`}
               >
                 <ImageIcon className="w-5 h-5" />
-                РљР°С‚Р°Р»РѕРі
+                Каталог
               </button>
               <button
                 onClick={() => setActivePage('portfolio')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap shrink-0 ${
                   activePage === 'portfolio'
                     ? 'bg-primary text-background'
                     : 'bg-white text-foreground hover:bg-gray-100'
                 }`}
               >
                 <FileText className="w-5 h-5" />
-                РџРѕСЂС‚С„РѕР»РёРѕ
+                Портфолио
               </button>
               <button
                 onClick={() => setActivePage('about')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap shrink-0 ${
                   activePage === 'about'
                     ? 'bg-primary text-background'
                     : 'bg-white text-foreground hover:bg-gray-100'
                 }`}
               >
                 <Settings className="w-5 h-5" />
-                Рћ РЅР°СЃ
+                О нас
               </button>
               <button
                 onClick={() => setActivePage('contacts')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap shrink-0 ${
                   activePage === 'contacts'
                     ? 'bg-primary text-background'
                     : 'bg-white text-foreground hover:bg-gray-100'
                 }`}
               >
                 <MapPin className="w-5 h-5" />
-                РљРѕРЅС‚Р°РєС‚С‹
+                Контакты
               </button>
               <button
                 onClick={() => setActivePage('header')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap shrink-0 ${
                   activePage === 'header'
                     ? 'bg-primary text-background'
                     : 'bg-white text-foreground hover:bg-gray-100'
                 }`}
               >
                 <PanelTop className="w-5 h-5" />
-                РЁР°РїРєР°
+                Шапка
               </button>
               <button
                 onClick={() => setActivePage('footer')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap shrink-0 ${
                   activePage === 'footer'
                     ? 'bg-primary text-background'
                     : 'bg-white text-foreground hover:bg-gray-100'
                 }`}
               >
                 <PanelTop className="w-5 h-5" />
-                Footer
+                Футер
               </button>
             </div>
 
-            {/* Р РµРґР°Р°РєС‚РѕСЂ РіР»Р°РІРЅРѕР№ СЃС‚СЂР°РЅРёС†С‹ */}
+            {/* Редактор главной страницы */}
             {activePage === 'home' && homePage.data && (
               <HomePageEditor
                 data={homePage.data}
@@ -1344,7 +1344,7 @@ export function AdminPage() {
               />
             )}
 
-            {/* Р РµРґР°РєС‚РѕСЂ РєР°С‚Р°Р»РѕРіР° */}
+            {/* Редактор каталога */}
             {activePage === 'catalog' && catalogPage.data && (
               <CatalogPageEditor
                 data={catalogPage.data}
@@ -1363,7 +1363,7 @@ export function AdminPage() {
               />
             )}
 
-            {/* Р РµРґР°РєС‚РѕСЂ РїРѕСЂС‚С„РѕР»РёРѕ */}
+            {/* Редактор портфолио */}
             {activePage === 'portfolio' && portfolioPage.data && (
               <PortfolioPageEditor
                 data={portfolioPage.data}
@@ -1377,7 +1377,7 @@ export function AdminPage() {
               />
             )}
 
-            {/* Р РµРґР°РєС‚РѕСЂ Рћ РЅР°СЃ */}
+            {/* Редактор «О нас» */}
             {activePage === 'about' && aboutPage.data && (
               <AboutPageEditor
                 data={aboutPage.data}
@@ -1394,7 +1394,7 @@ export function AdminPage() {
               />
             )}
 
-            {/* Р РµРґР°РєС‚РѕСЂ РљРѕРЅС‚Р°РєС‚С‹ */}
+            {/* Редактор контактов */}
             {activePage === 'contacts' && contactsPage.data && (
               <ContactsPageEditor
                 data={contactsPage.data}
@@ -1409,7 +1409,7 @@ export function AdminPage() {
               />
             )}
 
-            {/* Р РµРґР°РєС‚РѕСЂ С€Р°РїРєРё */}
+            {/* Редактор шапки */}
             {activePage === 'header' && headerPage.data && (
               <HeaderPageEditor
                 data={headerPage.data}
@@ -1444,13 +1444,13 @@ export function AdminPage() {
           </div>
         )}
 
-        {/* РњРµСЃСЃРµРЅРґР¶РµСЂ */}
+        {/* Мессенджер */}
         {activeTab === 'messages' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* РЎРїРёСЃРѕРє С‡Р°С‚РѕРІ */}
+            {/* Список чатов */}
             <div className="lg:col-span-1 bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="p-4 border-b">
-                <h2 className="font-semibold text-primary">Р§Р°С‚С‹</h2>
+                <h2 className="font-semibold text-primary">Чаты</h2>
               </div>
               <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
                 {chats.map((chat) => (
@@ -1478,7 +1478,7 @@ export function AdminPage() {
               </div>
             </div>
 
-            {/* РћРєРЅРѕ С‡Р°С‚Р° */}
+            {/* Окно чата */}
             <div className="lg:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
               {selectedChat ? (
                 <>
@@ -1524,7 +1524,7 @@ export function AdminPage() {
                       <input
                         name="message"
                         type="text"
-                        placeholder="Р’РІРµРґРёС‚Рµ СЃРѕРѕР±С‰РµРЅРёРµ..."
+                        placeholder="Введите сообщение..."
                         className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
                       />
                       <button
@@ -1538,7 +1538,7 @@ export function AdminPage() {
                 </>
               ) : (
                 <div className="flex-1 flex items-center justify-center text-gray-500">
-                  Р’С‹Р±РµСЂРёС‚Рµ С‡Р°С‚ РґР»СЏ РЅР°С‡Р°Р»Р° РѕР±С‰РµРЅРёСЏ
+                  Выберите чат для начала общения
                 </div>
               )}
             </div>
@@ -1546,7 +1546,7 @@ export function AdminPage() {
         )}
       </div>
 
-      {/* РњРѕРґР°Р»СЊРЅРѕРµ РѕРєРЅРѕ РґРѕР±Р°РІР»РµРЅРёСЏ/СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ */}
+      {/* Модальное окно добавления / редактирования */}
       {isEditing && (
         <>
           <div
@@ -1560,7 +1560,7 @@ export function AdminPage() {
             <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 pointer-events-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-primary">
-                  {productForm.id ? 'Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ' : 'Р”РѕР±Р°РІРёС‚СЊ С‚РѕРІР°СЂ'}
+                  {productForm.id ? 'Редактировать' : 'Добавить товар'}
                 </h2>
                 <button
                   type="button"
