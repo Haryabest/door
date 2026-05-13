@@ -1,5 +1,6 @@
 // API для работы с товарами
 
+import { parseAdminApiFailure, type AdminApiFailure } from './adminApiFailure'
 import { apiFetch } from './http'
 
 export interface Product {
@@ -60,14 +61,28 @@ export async function getProductById(id: number): Promise<Product | null> {
   return parseJson<Product>(response)
 }
 
-export async function createProduct(product: Omit<Product, 'id'>): Promise<Product | null> {
-  const response = await apiFetch('/api/products', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(product),
-  })
-  if (!response.ok) return null
-  return parseJson<Product>(response)
+export type ProductCreateResult =
+  | { ok: true; data: Product }
+  | { ok: false; failure: AdminApiFailure }
+
+export async function createProduct(product: Omit<Product, 'id'>): Promise<ProductCreateResult> {
+  try {
+    const response = await apiFetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product),
+    })
+    if (!response.ok) {
+      const failure = await parseAdminApiFailure(response)
+      console.warn('[products POST]', failure)
+      return { ok: false, failure }
+    }
+    return { ok: true, data: await parseJson<Product>(response) }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Network error'
+    console.error('Error creating product:', error)
+    return { ok: false, failure: { status: 0, error: message } }
+  }
 }
 
 export async function updateProduct(id: number, product: Partial<Product>): Promise<Product | null> {

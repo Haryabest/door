@@ -17,10 +17,19 @@ import {
   type FeatureItem,
   type HeroSection,
 } from '@/shared/api/home'
-import { getCatalogPage, updateCatalogPage, type CatalogPageData, type CatalogCategory, type CatalogColor } from '@/shared/api/catalog'
+import {
+  formatCatalogSaveFailureMessage,
+  getCatalogPage,
+  updateCatalogPage,
+  type CatalogPageData,
+  type CatalogCategory,
+  type CatalogColor,
+  type CatalogPutFailure,
+} from '@/shared/api/catalog'
 import { defaultHeaderData, getHeader, updateHeader, type HeaderData, type HeaderNavItem } from '@/shared/api/header'
 import { defaultFooterData, getFooter, updateFooter, type FooterData, type FooterLinkItem, type FooterPhoneItem } from '@/shared/api/footer'
 import { adminLogout, adminMe } from '@/shared/api/auth'
+import { formatAdminSaveFailureMessage } from '@/shared/api/adminApiFailure'
 import { generateProductSlug, transliterate } from '@/shared/lib/slug'
 import {
   emptyProductForm,
@@ -612,13 +621,13 @@ export function AdminPage() {
   const handleSaveCatalogPage = async () => {
     if (!catalogPage.data) return
     setCatalogPage({ ...catalogPage, isSaving: true })
-    const updated = await updateCatalogPage(catalogPage.data)
-    if (updated) {
-      setCatalogPage({ isLoading: false, isSaving: false, data: updated })
+    const result = await updateCatalogPage(catalogPage.data)
+    if (result.ok) {
+      setCatalogPage({ isLoading: false, isSaving: false, data: result.data })
       alert('Страница «Каталог» сохранена!')
     } else {
       setCatalogPage({ ...catalogPage, isSaving: false })
-      alert(SAVE_FAILED_HINT)
+      alert(formatCatalogSaveFailureMessage(result.failure))
     }
   }
 
@@ -866,13 +875,15 @@ export function AdminPage() {
     setCatalogPage({ ...catalogPage, data: updatedData })
   }
 
-  const persistCatalogSnapshot = async (next: CatalogPageData): Promise<CatalogPageData | null> => {
-    const updated = await updateCatalogPage(next)
-    if (updated) {
-      setCatalogPage((prev) => ({ ...prev, data: updated }))
-      return updated
+  const persistCatalogSnapshot = async (
+    next: CatalogPageData
+  ): Promise<{ ok: true; data: CatalogPageData } | { ok: false; failure: CatalogPutFailure }> => {
+    const result = await updateCatalogPage(next)
+    if (result.ok) {
+      setCatalogPage((prev) => ({ ...prev, data: result.data }))
+      return { ok: true, data: result.data }
     }
-    return null
+    return { ok: false, failure: result.failure }
   }
 
   const handleQuickAddCatalogMaterialForProduct = async (name: string): Promise<boolean> => {
@@ -890,8 +901,8 @@ export function AdminPage() {
     }
     const next = { ...cur, materials: [...cur.materials, t] }
     const saved = await persistCatalogSnapshot(next)
-    if (!saved) {
-      alert(SAVE_FAILED_HINT)
+    if (!saved.ok) {
+      alert(formatCatalogSaveFailureMessage(saved.failure))
       return false
     }
     setProductForm((pf) => ({ ...pf, material: t }))
@@ -933,8 +944,8 @@ export function AdminPage() {
     }
     const next = { ...cur, colors: [...cur.colors, newColor] }
     const saved = await persistCatalogSnapshot(next)
-    if (!saved) {
-      alert(SAVE_FAILED_HINT)
+    if (!saved.ok) {
+      alert(formatCatalogSaveFailureMessage(saved.failure))
       return false
     }
     setProductForm((pf) => ({ ...pf, color: t }))
@@ -960,8 +971,8 @@ export function AdminPage() {
     const newCat: CatalogCategory = { id: uniqueId, name: t, icon: 'DoorOpen', subcategories: [] }
     const next = { ...cur, categories: [...cur.categories, newCat] }
     const saved = await persistCatalogSnapshot(next)
-    if (!saved) {
-      alert(SAVE_FAILED_HINT)
+    if (!saved.ok) {
+      alert(formatCatalogSaveFailureMessage(saved.failure))
       return false
     }
     setProductForm((pf) => ({ ...pf, category: uniqueId }))
@@ -1011,7 +1022,7 @@ export function AdminPage() {
       return
     }
     const features = parseFeaturesText(productForm.featuresText)
-    const created = await createProduct({
+    const createdResult = await createProduct({
       name: productForm.name!,
       description: productForm.description?.trim() || undefined,
       features,
@@ -1021,10 +1032,11 @@ export function AdminPage() {
       category: productForm.category,
       slug: 'new',
     })
-    if (!created) {
-      alert(SAVE_FAILED_HINT)
+    if (!createdResult.ok) {
+      alert(formatAdminSaveFailureMessage(createdResult.failure, { action: 'Создание товара' }))
       return
     }
+    const created = createdResult.data
     const slug = generateProductSlug(created.name, created.material, created.color, created.id).slice(0, 500)
     const finalized = slug !== created.slug ? await updateProduct(created.id, { slug }) : created
     const saved = finalized ?? created

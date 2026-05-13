@@ -62,27 +62,45 @@ export function getSessionFromRequest(cookieHeader: string | undefined): string 
 }
 
 /** Только при HTTPS; на HTTP оставьте false (по умолчанию). */
-function cookieSecure(): boolean {
+function cookieSecureFlag(): boolean {
   return process.env.ADMIN_COOKIE_SECURE === 'true'
+}
+
+/**
+ * Lax — по умолчанию (один сайт или фронт проксируется под тем же origin).
+ * None — если SPA на другом домене, чем API (нужен HTTPS и флаг Secure у cookie).
+ */
+function cookieSameSite(): 'Lax' | 'Strict' | 'None' {
+  const raw = process.env.ADMIN_COOKIE_SAMESITE?.trim().toLowerCase()
+  if (raw === 'none') return 'None'
+  if (raw === 'strict') return 'Strict'
+  return 'Lax'
+}
+
+/** Secure обязателен при SameSite=None; иначе — только если ADMIN_COOKIE_SECURE=true */
+function cookieSecureEffective(): boolean {
+  return cookieSameSite() === 'None' || cookieSecureFlag()
 }
 
 /** Set-Cookie для успешного входа */
 export function buildSessionSetCookie(value: string): string {
   const maxAgeSec = Math.floor(MAX_AGE_MS / 1000)
+  const site = cookieSameSite()
   const parts = [
     `${COOKIE_NAME}=${encodeURIComponent(value)}`,
     'Path=/',
     `Max-Age=${maxAgeSec}`,
     'HttpOnly',
-    'SameSite=Lax',
+    `SameSite=${site}`,
   ]
-  if (cookieSecure()) parts.push('Secure')
+  if (cookieSecureEffective()) parts.push('Secure')
   return parts.join('; ')
 }
 
 /** Сброс сессии */
 export function buildSessionClearCookie(): string {
-  const parts = [`${COOKIE_NAME}=`, 'Path=/', 'Max-Age=0', 'HttpOnly', 'SameSite=Lax']
-  if (cookieSecure()) parts.push('Secure')
+  const site = cookieSameSite()
+  const parts = [`${COOKIE_NAME}=`, 'Path=/', 'Max-Age=0', 'HttpOnly', `SameSite=${site}`]
+  if (cookieSecureEffective()) parts.push('Secure')
   return parts.join('; ')
 }

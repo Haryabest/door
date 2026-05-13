@@ -1,5 +1,6 @@
 // API страницы «Каталог» — GET/PUT /api/pages/catalog
 
+import { formatAdminSaveFailureMessage, parseAdminApiFailure, type AdminApiFailure } from './adminApiFailure'
 import { apiFetch } from './http'
 
 export interface CatalogPageData {
@@ -25,6 +26,18 @@ export interface CatalogColor {
   name: string
   color: string
   border: string
+}
+
+/** Детали ошибки PUT /api/pages/catalog (для сообщений в админке) */
+export type CatalogPutFailure = AdminApiFailure
+
+export type CatalogPutResult =
+  | { ok: true; data: CatalogPageData }
+  | { ok: false; failure: CatalogPutFailure }
+
+/** Текст alert при неуспешном сохранении каталога */
+export function formatCatalogSaveFailureMessage(f: CatalogPutFailure): string {
+  return formatAdminSaveFailureMessage(f, { action: 'Сохранение каталога' })
 }
 
 // Данные по умолчанию (если API не доступен)
@@ -99,7 +112,7 @@ export async function getCatalogPage(): Promise<CatalogPageData | null> {
  * Обновить данные страницы "Каталог"
  * PUT /api/pages/catalog
  */
-export async function updateCatalogPage(data: CatalogPageData): Promise<CatalogPageData | null> {
+export async function updateCatalogPage(data: CatalogPageData): Promise<CatalogPutResult> {
   try {
     const response = await apiFetch('/api/pages/catalog', {
       method: 'PUT',
@@ -108,10 +121,19 @@ export async function updateCatalogPage(data: CatalogPageData): Promise<CatalogP
       },
       body: JSON.stringify(data),
     })
-    if (!response.ok) throw new Error('Failed to update catalog page')
-    return await response.json()
+    if (!response.ok) {
+      const failure = await parseAdminApiFailure(response)
+      console.warn('[catalog PUT]', failure)
+      return { ok: false, failure }
+    }
+    const json = (await response.json()) as CatalogPageData
+    return { ok: true, data: json }
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Network error'
     console.error('Error updating catalog page:', error)
-    return null
+    return {
+      ok: false,
+      failure: { status: 0, error: message },
+    }
   }
 }
