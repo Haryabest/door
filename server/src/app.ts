@@ -11,6 +11,7 @@ import { productsRouter } from './routes/products.js'
 import { vkPublicRouter } from './routes/vkPublic.js'
 import { uploadRouter } from './routes/upload.js'
 import { contactLeadsRouter } from './routes/contactLeads.js'
+import { geocodeRouter } from './routes/geocode.js'
 
 export function createApp() {
   const app = express()
@@ -28,6 +29,7 @@ export function createApp() {
   app.use('/api', chatsRouter)
   app.use('/api', contactLeadsRouter)
   app.use('/api', vkPublicRouter)
+  app.use('/api', geocodeRouter)
 
   app.use(notFoundApi)
   app.use(errorHandler)

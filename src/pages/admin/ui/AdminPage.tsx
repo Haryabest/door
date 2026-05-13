@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Package, MessageSquare, LogOut, Plus, Trash2, Edit, X,
@@ -50,6 +50,31 @@ export interface ChatLocal {
   lastMessage: string
   messages: MessageLocal[]
   unread: number
+}
+
+function lastMessageTime(chat: ChatLocal): number {
+  const last = chat.messages[chat.messages.length - 1]
+  return last ? new Date(last.timestamp).getTime() : 0
+}
+
+/** Чаты с недавней активностью — выше в списке */
+function sortChatsByRecentActivity(list: ChatLocal[]): ChatLocal[] {
+  return [...list].sort((a, b) => {
+    const tb = lastMessageTime(b)
+    const ta = lastMessageTime(a)
+    if (tb !== ta) return tb - ta
+    return b.id - a.id
+  })
+}
+
+/** Новые сообщения первыми (сверху в колонке) */
+function sortMessagesNewestFirst(messages: MessageLocal[]): MessageLocal[] {
+  return [...messages].sort((a, b) => {
+    const tb = new Date(b.timestamp).getTime()
+    const ta = new Date(a.timestamp).getTime()
+    if (tb !== ta) return tb - ta
+    return b.id - a.id
+  })
 }
 
 // Для страницы О нас
@@ -111,6 +136,13 @@ export function AdminPage() {
   const [selectedChat, setSelectedChat] = useState<number | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  const chatsForSidebar = useMemo(() => sortChatsByRecentActivity(chats), [chats])
+  const messagesScrollRef = useRef<HTMLDivElement>(null)
+  const chatMessagesSnapshotRef = useRef<{ chatId: number | null; len: number }>({
+    chatId: null,
+    len: 0,
+  })
 
   // Страница "О нас"
   const [aboutPage, setAboutPage] = useState<AboutPageState>({
@@ -229,6 +261,28 @@ export function AdminPage() {
     }, 4000)
     return () => clearInterval(timer)
   }, [activeTab])
+
+  useEffect(() => {
+    const chat = chats.find((c) => c.id === selectedChat)
+    const len = chat?.messages.length ?? 0
+    const snap = chatMessagesSnapshotRef.current
+
+    if (selectedChat == null) {
+      chatMessagesSnapshotRef.current = { chatId: null, len: 0 }
+      return
+    }
+
+    if (snap.chatId !== selectedChat) {
+      chatMessagesSnapshotRef.current = { chatId: selectedChat, len }
+      messagesScrollRef.current?.scrollTo({ top: 0 })
+      return
+    }
+
+    if (len > snap.len) {
+      messagesScrollRef.current?.scrollTo({ top: 0 })
+    }
+    chatMessagesSnapshotRef.current = { chatId: selectedChat, len }
+  }, [chats, selectedChat])
 
   useEffect(() => {
     if (!authChecked) return
@@ -432,6 +486,19 @@ export function AdminPage() {
     })
     const updatedData = { ...contactsPage.data, locations: updatedLocations }
     setContactsPage({ ...contactsPage, data: updatedData })
+  }
+
+  const handleSetLocationCoords = (id: number, coords: [number, number]) => {
+    setContactsPage((prev) => {
+      if (!prev.data) return prev
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          locations: prev.data.locations.map((l) => (l.id === id ? { ...l, coords } : l)),
+        },
+      }
+    })
   }
 
   const handleUpdateContactsGeneral = (
@@ -1405,6 +1472,7 @@ export function AdminPage() {
                 onAddLocation={handleAddLocation}
                 onUpdateLocation={handleUpdateLocation}
                 onUpdateLocationCoords={handleUpdateLocationCoords}
+                onSetLocationCoords={handleSetLocationCoords}
                 onDeleteLocation={handleDeleteLocation}
               />
             )}
@@ -1453,7 +1521,7 @@ export function AdminPage() {
                 <h2 className="font-semibold text-primary">Чаты</h2>
               </div>
               <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
-                {chats.map((chat) => (
+                {chatsForSidebar.map((chat) => (
                   <button
                     key={chat.id}
                     type="button"
@@ -1487,11 +1555,12 @@ export function AdminPage() {
                       {chats.find(c => c.id === selectedChat)?.userName}
                     </h2>
                   </div>
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4 max-h-[400px]">
-                    {(chats.find((c) => c.id === selectedChat)?.messages ?? [])
-                      .slice()
-                      .reverse()
-                      .map((msg) => (
+                  <div
+                    ref={messagesScrollRef}
+                    className="flex-1 p-4 overflow-y-auto space-y-4 max-h-[400px]"
+                  >
+                    {sortMessagesNewestFirst(chats.find((c) => c.id === selectedChat)?.messages ?? []).map(
+                      (msg) => (
                       <div
                         key={msg.id}
                         className={`flex ${msg.isUser ? 'justify-start' : 'justify-end'}`}
@@ -1506,7 +1575,8 @@ export function AdminPage() {
                           <p className="text-sm">{msg.text}</p>
                         </div>
                       </div>
-                    ))}
+                    )
+                    )}
                   </div>
                   <div className="p-4 border-t">
                     <form
