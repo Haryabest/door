@@ -12,8 +12,6 @@ export const jsonPageDocument = z
 
 export const productCreateSchema = z.object({
   name: str(500),
-  price: z.number().nonnegative().finite(),
-  oldPrice: z.number().nonnegative().finite().nullable().optional(),
   description: str(20_000).nullable().optional(),
   features: z.array(str(500)).max(100).optional().default([]),
   material: str(200),

@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Package, MessageSquare, LogOut, Plus, Trash2, Edit, X,
-  Search, Send, ChevronLeft, Home, Image as ImageIcon, FileText, Settings, MapPin, PanelTop, RefreshCw,
+  Search, Send, ChevronLeft, Home, Image as ImageIcon, FileText, Settings, MapPin, PanelTop,
 } from 'lucide-react'
 import { updateProduct, deleteProduct, productsApi, createProduct, uploadImage } from '@/shared/api/products'
 import { sendMessage, getChats, markChatAsRead } from '@/shared/api/chats'
@@ -19,9 +19,9 @@ import {
 } from '@/shared/api/home'
 import { getCatalogPage, updateCatalogPage, type CatalogPageData, type CatalogCategory, type CatalogColor } from '@/shared/api/catalog'
 import { defaultHeaderData, getHeader, updateHeader, type HeaderData, type HeaderNavItem } from '@/shared/api/header'
+import { defaultFooterData, getFooter, updateFooter, type FooterData, type FooterLinkItem, type FooterPhoneItem } from '@/shared/api/footer'
 import { adminLogout, adminMe } from '@/shared/api/auth'
-import { getContactLeads, type ContactLead } from '@/shared/api/contactLeads'
-import { transliterate } from '@/shared/lib/slug'
+import { generateProductSlug, transliterate } from '@/shared/lib/slug'
 import {
   emptyProductForm,
   parseFeaturesText,
@@ -29,7 +29,7 @@ import {
   type ProductLocal,
 } from './adminProductTypes'
 import { ProductEditForm } from './ProductEditForm'
-import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor } from './editors'
+import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor, FooterPageEditor } from './editors'
 
 export type { ProductFormState, ProductLocal } from './adminProductTypes'
 export { emptyProductForm } from './adminProductTypes'
@@ -94,12 +94,18 @@ interface HeaderPageState {
   data: HeaderData | null
 }
 
+interface FooterPageState {
+  isLoading: boolean
+  isSaving: boolean
+  data: FooterData | null
+}
+
 export function AdminPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [authChecked, setAuthChecked] = useState(false)
   const [activeTab, setActiveTab] = useState<'products' | 'pages' | 'messages'>('products')
-  const [activePage, setActivePage] = useState<'home' | 'catalog' | 'portfolio' | 'about' | 'contacts' | 'header'>('home')
+  const [activePage, setActivePage] = useState<'home' | 'catalog' | 'portfolio' | 'about' | 'contacts' | 'header' | 'footer'>('home')
   const [products, setProducts] = useState<ProductLocal[]>([])
   const [chats, setChats] = useState<ChatLocal[]>([])
   const [selectedChat, setSelectedChat] = useState<number | null>(null)
@@ -119,8 +125,6 @@ export function AdminPage() {
     isSaving: false,
     data: null
   })
-  const [contactLeads, setContactLeads] = useState<ContactLead[]>([])
-  const [contactLeadsLoading, setContactLeadsLoading] = useState(false)
 
   // Страница "Портфолио"
   const [portfolioPage, setPortfolioPage] = useState<PortfolioPageState>({
@@ -145,6 +149,11 @@ export function AdminPage() {
 
   // Шапка сайта
   const [headerPage, setHeaderPage] = useState<HeaderPageState>({
+    isLoading: false,
+    isSaving: false,
+    data: null,
+  })
+  const [footerPage, setFooterPage] = useState<FooterPageState>({
     isLoading: false,
     isSaving: false,
     data: null,
@@ -179,6 +188,7 @@ export function AdminPage() {
     loadHomePage()
     loadCatalogPage()
     loadHeaderPage()
+    loadFooterPage()
   }, [authChecked])
 
   const loadProducts = async () => {
@@ -187,8 +197,6 @@ export function AdminPage() {
       list.map((p) => ({
         id: p.id,
         name: p.name,
-        price: p.price,
-        oldPrice: p.oldPrice ?? null,
         description: p.description ?? '',
         features: p.features ?? [],
         material: p.material,
@@ -259,7 +267,7 @@ export function AdminPage() {
     const updated = await updateAboutPage(aboutPage.data)
     if (updated) {
       setAboutPage({ isLoading: false, isSaving: false, data: updated })
-      alert('Страница "О нас" сохранена!')
+      alert('РЎС‚СЂР°РЅРёС†Р° "Рћ РЅР°СЃ" СЃРѕС…СЂР°РЅРµРЅР°!')
     } else {
       setAboutPage({ ...aboutPage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -271,8 +279,8 @@ export function AdminPage() {
     const newStat: StatItem = {
       id: Date.now(),
       icon: 'Clock',
-      value: 'Новое',
-      label: 'Описание'
+      value: 'РќРѕРІРѕРµ',
+      label: 'РћРїРёСЃР°РЅРёРµ'
     }
     const updatedData = { ...aboutPage.data, stats: [...aboutPage.data.stats, newStat] }
     setAboutPage({ ...aboutPage, data: updatedData })
@@ -296,8 +304,8 @@ export function AdminPage() {
     const newAdvantage: AdvantageItem = {
       id: Date.now(),
       icon: 'Star',
-      title: 'Новое преимущество',
-      description: 'Описание преимущества'
+      title: 'РќРѕРІРѕРµ РїСЂРµРёРјСѓС‰РµСЃС‚РІРѕ',
+      description: 'РћРїРёСЃР°РЅРёРµ РїСЂРµРёРјСѓС‰РµСЃС‚РІР°'
     }
     const updatedData = { ...aboutPage.data, advantages: [...aboutPage.data.advantages, newAdvantage] }
     setAboutPage({ ...aboutPage, data: updatedData })
@@ -314,6 +322,13 @@ export function AdminPage() {
     const updatedAdvantages = aboutPage.data.advantages.map(a => a.id === id ? { ...a, [field]: value } : a)
     const updatedData = { ...aboutPage.data, advantages: updatedAdvantages }
     setAboutPage({ ...aboutPage, data: updatedData })
+  }
+
+  const handleUpdateAboutIntro = (field: 'aboutTitle' | 'aboutDescription', value: string) => {
+    setAboutPage((prev) => {
+      if (!prev.data) return prev
+      return { ...prev, data: { ...prev.data, [field]: value } }
+    })
   }
 
   const handleUpdateHero = (field: keyof HeroSection, value: string) => {
@@ -351,7 +366,7 @@ export function AdminPage() {
   const handleUploadImageHome = async (id: number, file: File) => {
     const url = await uploadImage(file)
     if (!url) {
-      alert('Не удалось загрузить изображение')
+      alert('РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёРµ')
       return
     }
     handleUpdateCategoryHome(id, 'image', url)
@@ -371,7 +386,7 @@ export function AdminPage() {
     const updated = await updateContactsPage(contactsPage.data)
     if (updated) {
       setContactsPage({ isLoading: false, isSaving: false, data: updated })
-      alert('Страница "Контакты" сохранена!')
+      alert('РЎС‚СЂР°РЅРёС†Р° "РљРѕРЅС‚Р°РєС‚С‹" СЃРѕС…СЂР°РЅРµРЅР°!')
     } else {
       setContactsPage({ ...contactsPage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -382,10 +397,10 @@ export function AdminPage() {
     if (!contactsPage.data) return
     const newLocation: LocationItem = {
       id: Date.now(),
-      name: 'Новый салон',
-      address: 'Адрес',
+      name: 'РќРѕРІС‹Р№ СЃР°Р»РѕРЅ',
+      address: 'РђРґСЂРµСЃ',
       phone: '+7 (___) ___-__-__',
-      hours: 'Ежедневно с 10:00 до 20:00',
+      hours: 'Р•Р¶РµРґРЅРµРІРЅРѕ СЃ 10:00 РґРѕ 20:00',
       coords: [56.2906, 44.0024]
     }
     const updatedData = { ...contactsPage.data, locations: [...contactsPage.data.locations, newLocation] }
@@ -405,17 +420,29 @@ export function AdminPage() {
     setContactsPage({ ...contactsPage, data: updatedData })
   }
 
-  const refreshContactLeads = useCallback(async () => {
-    setContactLeadsLoading(true)
-    const items = await getContactLeads()
-    setContactLeads(items)
-    setContactLeadsLoading(false)
-  }, [])
+  const handleUpdateLocationCoords = (id: number, coordIndex: 0 | 1, value: string) => {
+    if (!contactsPage.data) return
+    const numeric = Number(value.replace(',', '.'))
+    if (!Number.isFinite(numeric)) return
+    const updatedLocations = contactsPage.data.locations.map((l) => {
+      if (l.id !== id) return l
+      const nextCoords: [number, number] = [...l.coords] as [number, number]
+      nextCoords[coordIndex] = numeric
+      return { ...l, coords: nextCoords }
+    })
+    const updatedData = { ...contactsPage.data, locations: updatedLocations }
+    setContactsPage({ ...contactsPage, data: updatedData })
+  }
 
-  useEffect(() => {
-    if (!authChecked || activeTab !== 'pages' || activePage !== 'contacts') return
-    void refreshContactLeads()
-  }, [authChecked, activeTab, activePage, refreshContactLeads])
+  const handleUpdateContactsGeneral = (
+    field: 'phone' | 'email' | 'workHours' | 'address',
+    value: string
+  ) => {
+    setContactsPage((prev) => {
+      if (!prev.data) return prev
+      return { ...prev, data: { ...prev.data, [field]: value } }
+    })
+  }
 
   const loadPortfolioPage = async () => {
     setPortfolioPage({ ...portfolioPage, isLoading: true })
@@ -431,7 +458,7 @@ export function AdminPage() {
     const updated = await updatePortfolioPage(portfolioPage.data)
     if (updated) {
       setPortfolioPage({ isLoading: false, isSaving: false, data: updated })
-      alert('Страница "Портфолио" сохранена!')
+      alert('РЎС‚СЂР°РЅРёС†Р° "РџРѕСЂС‚С„РѕР»РёРѕ" СЃРѕС…СЂР°РЅРµРЅР°!')
     } else {
       setPortfolioPage({ ...portfolioPage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -443,8 +470,8 @@ export function AdminPage() {
     const newItem: PortfolioItem = {
       id: Date.now(),
       image: '',
-      title: 'Новый проект',
-      description: 'Описание проекта'
+      title: 'РќРѕРІС‹Р№ РїСЂРѕРµРєС‚',
+      description: 'РћРїРёСЃР°РЅРёРµ РїСЂРѕРµРєС‚Р°'
     }
     const updatedData = { ...portfolioPage.data, items: [...portfolioPage.data.items, newItem] }
     setPortfolioPage({ ...portfolioPage, data: updatedData })
@@ -484,7 +511,7 @@ export function AdminPage() {
     const updated = await updateHomePage(homePage.data)
     if (updated) {
       setHomePage({ isLoading: false, isSaving: false, data: updated })
-      alert('Главная страница сохранена!')
+      alert('Р“Р»Р°РІРЅР°СЏ СЃС‚СЂР°РЅРёС†Р° СЃРѕС…СЂР°РЅРµРЅР°!')
     } else {
       setHomePage({ ...homePage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -505,7 +532,7 @@ export function AdminPage() {
     const updated = await updateCatalogPage(catalogPage.data)
     if (updated) {
       setCatalogPage({ isLoading: false, isSaving: false, data: updated })
-      alert('Страница "Каталог" сохранена!')
+      alert('РЎС‚СЂР°РЅРёС†Р° "РљР°С‚Р°Р»РѕРі" СЃРѕС…СЂР°РЅРµРЅР°!')
     } else {
       setCatalogPage({ ...catalogPage, isSaving: false })
       alert(SAVE_FAILED_HINT)
@@ -524,7 +551,7 @@ export function AdminPage() {
     const updated = await updateHeader(headerPage.data)
     if (updated) {
       setHeaderPage({ isLoading: false, isSaving: false, data: updated })
-      alert('Шапка сохранена!')
+      alert('РЁР°РїРєР° СЃРѕС…СЂР°РЅРµРЅР°!')
     } else {
       setHeaderPage((prev) => ({ ...prev, isSaving: false }))
       alert(SAVE_FAILED_HINT)
@@ -541,7 +568,7 @@ export function AdminPage() {
 
   const handleAddHeaderNavItem = () => {
     if (!headerPage.data) return
-    const next: HeaderNavItem = { label: 'Новый пункт', path: '/' }
+    const next: HeaderNavItem = { label: 'РќРѕРІС‹Р№ РїСѓРЅРєС‚', path: '/' }
     setHeaderPage((prev) => ({
       ...prev,
       data: prev.data ? { ...prev.data, navItems: [...prev.data.navItems, next] } : prev.data,
@@ -569,11 +596,128 @@ export function AdminPage() {
     }))
   }
 
+  const loadFooterPage = async () => {
+    setFooterPage((prev) => ({ ...prev, isLoading: true }))
+    const data = await getFooter()
+    setFooterPage({ isLoading: false, isSaving: false, data: data ?? defaultFooterData })
+  }
+
+  const handleSaveFooterPage = async () => {
+    if (!footerPage.data) return
+    setFooterPage((prev) => ({ ...prev, isSaving: true }))
+    const updated = await updateFooter(footerPage.data)
+    if (updated) {
+      setFooterPage({ isLoading: false, isSaving: false, data: updated })
+      alert('Р¤СѓС‚РµСЂ СЃРѕС…СЂР°РЅРµРЅ!')
+    } else {
+      setFooterPage((prev) => ({ ...prev, isSaving: false }))
+      alert(SAVE_FAILED_HINT)
+    }
+  }
+
+  const handleUpdateFooterField = <K extends keyof FooterData>(field: K, value: FooterData[K]) => {
+    if (!footerPage.data) return
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data ? { ...prev.data, [field]: value } : prev.data,
+    }))
+  }
+
+  const handleAddFooterNavItem = () => {
+    if (!footerPage.data) return
+    const next: FooterLinkItem = { label: 'РќРѕРІС‹Р№ РїСѓРЅРєС‚', path: '/' }
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data ? { ...prev.data, navItems: [...prev.data.navItems, next] } : prev.data,
+    }))
+  }
+
+  const handleUpdateFooterNavItem = (index: number, field: keyof FooterLinkItem, value: string) => {
+    if (!footerPage.data) return
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data
+        ? {
+            ...prev.data,
+            navItems: prev.data.navItems.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+          }
+        : prev.data,
+    }))
+  }
+
+  const handleDeleteFooterNavItem = (index: number) => {
+    if (!footerPage.data) return
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data ? { ...prev.data, navItems: prev.data.navItems.filter((_, i) => i !== index) } : prev.data,
+    }))
+  }
+
+  const handleAddFooterPhone = () => {
+    if (!footerPage.data) return
+    const next: FooterPhoneItem = { text: '+7 (___) ___-__-__', href: 'tel:+7' }
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data ? { ...prev.data, phones: [...prev.data.phones, next] } : prev.data,
+    }))
+  }
+
+  const handleUpdateFooterPhone = (index: number, field: keyof FooterPhoneItem, value: string) => {
+    if (!footerPage.data) return
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data
+        ? {
+            ...prev.data,
+            phones: prev.data.phones.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+          }
+        : prev.data,
+    }))
+  }
+
+  const handleDeleteFooterPhone = (index: number) => {
+    if (!footerPage.data) return
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data ? { ...prev.data, phones: prev.data.phones.filter((_, i) => i !== index) } : prev.data,
+    }))
+  }
+
+  const handleAddFooterLegalLink = () => {
+    if (!footerPage.data) return
+    const next: FooterLinkItem = { label: 'РќРѕРІР°СЏ СЃСЃС‹Р»РєР°', path: '/' }
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data ? { ...prev.data, legalLinks: [...prev.data.legalLinks, next] } : prev.data,
+    }))
+  }
+
+  const handleUpdateFooterLegalLink = (index: number, field: keyof FooterLinkItem, value: string) => {
+    if (!footerPage.data) return
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data
+        ? {
+            ...prev.data,
+            legalLinks: prev.data.legalLinks.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+          }
+        : prev.data,
+    }))
+  }
+
+  const handleDeleteFooterLegalLink = (index: number) => {
+    if (!footerPage.data) return
+    setFooterPage((prev) => ({
+      ...prev,
+      data: prev.data ? { ...prev.data, legalLinks: prev.data.legalLinks.filter((_, i) => i !== index) } : prev.data,
+    }))
+  }
+
   const handleAddCategoryCatalog = () => {
     if (!catalogPage.data) return
     const newCategory: CatalogCategory = {
       id: `cat-${Date.now()}`,
-      name: 'Новая категория',
+      name: 'РќРѕРІР°СЏ РєР°С‚РµРіРѕСЂРёСЏ',
       icon: 'DoorOpen',
       subcategories: []
     }
@@ -596,7 +740,7 @@ export function AdminPage() {
 
   const handleAddMaterial = () => {
     if (!catalogPage.data) return
-    const updatedData = { ...catalogPage.data, materials: [...catalogPage.data.materials, 'Новый материал'] }
+    const updatedData = { ...catalogPage.data, materials: [...catalogPage.data.materials, 'РќРѕРІС‹Р№ РјР°С‚РµСЂРёР°Р»'] }
     setCatalogPage({ ...catalogPage, data: updatedData })
   }
 
@@ -618,7 +762,7 @@ export function AdminPage() {
     if (!catalogPage.data) return
     const newColor: CatalogColor = {
       id: `color-${Date.now()}`,
-      name: 'Новый цвет',
+      name: 'РќРѕРІС‹Р№ С†РІРµС‚',
       color: '#000000',
       border: '#000000'
     }
@@ -639,61 +783,174 @@ export function AdminPage() {
     setCatalogPage({ ...catalogPage, data: updatedData })
   }
 
-  // CRUD товаров
+  const persistCatalogSnapshot = async (next: CatalogPageData): Promise<CatalogPageData | null> => {
+    const updated = await updateCatalogPage(next)
+    if (updated) {
+      setCatalogPage((prev) => ({ ...prev, data: updated }))
+      return updated
+    }
+    return null
+  }
+
+  const handleQuickAddCatalogMaterialForProduct = async (name: string): Promise<boolean> => {
+    const t = name.trim()
+    if (!t) return false
+    const cur = catalogPage.data
+    if (!cur) {
+      alert('Каталог ещё не загружен')
+      return false
+    }
+    const existing = cur.materials.find((m) => m.toLowerCase() === t.toLowerCase())
+    if (existing) {
+      setProductForm((pf) => ({ ...pf, material: existing }))
+      return true
+    }
+    const next = { ...cur, materials: [...cur.materials, t] }
+    const saved = await persistCatalogSnapshot(next)
+    if (!saved) {
+      alert(SAVE_FAILED_HINT)
+      return false
+    }
+    setProductForm((pf) => ({ ...pf, material: t }))
+    return true
+  }
+
+  const handleQuickAddCatalogColorForProduct = async (name: string): Promise<boolean> => {
+    const t = name.trim()
+    if (!t) return false
+    const cur = catalogPage.data
+    if (!cur) {
+      alert('Каталог ещё не загружен')
+      return false
+    }
+    const dup = cur.colors.find((c) => c.name.toLowerCase() === t.toLowerCase())
+    if (dup) {
+      setProductForm((pf) => ({ ...pf, color: dup.name }))
+      return true
+    }
+    let id = transliterate(t).slice(0, 80)
+    if (!id) id = `color-${Date.now()}`
+    let uniqueId = id
+    let n = 0
+    while (cur.colors.some((c) => c.id === uniqueId)) {
+      n += 1
+      uniqueId = `${id}-${n}`
+    }
+    const newColor: CatalogColor = {
+      id: uniqueId,
+      name: t,
+      color: '#94A3B8',
+      border: '#64748B',
+    }
+    const next = { ...cur, colors: [...cur.colors, newColor] }
+    const saved = await persistCatalogSnapshot(next)
+    if (!saved) {
+      alert(SAVE_FAILED_HINT)
+      return false
+    }
+    setProductForm((pf) => ({ ...pf, color: t }))
+    return true
+  }
+
+  const handleQuickAddCatalogCategoryForProduct = async (name: string): Promise<boolean> => {
+    const t = name.trim()
+    if (!t) return false
+    const cur = catalogPage.data
+    if (!cur) {
+      alert('Каталог ещё не загружен')
+      return false
+    }
+    let id = transliterate(t).slice(0, 80)
+    if (!id) id = `cat-${Date.now()}`
+    let uniqueId = id
+    let n = 0
+    while (cur.categories.some((c) => c.id === uniqueId)) {
+      n += 1
+      uniqueId = `${id}-${n}`
+    }
+    const newCat: CatalogCategory = { id: uniqueId, name: t, icon: 'DoorOpen', subcategories: [] }
+    const next = { ...cur, categories: [...cur.categories, newCat] }
+    const saved = await persistCatalogSnapshot(next)
+    if (!saved) {
+      alert(SAVE_FAILED_HINT)
+      return false
+    }
+    setProductForm((pf) => ({ ...pf, category: uniqueId }))
+    return true
+  }
+
+  const openProductEditorForCreate = () => {
+    const d = catalogPage.data
+    setProductForm({
+      ...emptyProductForm(),
+      category: d?.categories[0]?.id ?? '',
+      material: d?.materials[0] ?? '',
+      color: d?.colors[0]?.name ?? '',
+    })
+    setIsEditing(true)
+  }
+
+  // CRUD С‚РѕРІР°СЂРѕРІ
   const handleAddProduct = async () => {
     if (!productForm.name?.trim()) {
-      alert('Укажите название товара')
+      alert('РЈРєР°Р¶РёС‚Рµ РЅР°Р·РІР°РЅРёРµ С‚РѕРІР°СЂР°')
       return
     }
-    const price = 0
-    const oldPrice: number | null = null
+    if (!productForm.category?.trim()) {
+      alert('Выберите или добавьте категорию из каталога')
+      return
+    }
+    if (!productForm.material?.trim()) {
+      alert('Выберите или добавьте материал из каталога')
+      return
+    }
+    if (!productForm.color?.trim()) {
+      alert('Выберите или добавьте цвет из каталога')
+      return
+    }
     let imageUrl = (productForm.image ?? '').trim()
     if (productForm.file) {
       const up = await uploadImage(productForm.file)
       if (!up) {
-        alert('Не удалось загрузить изображение')
+        alert('РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёРµ')
         return
       }
       imageUrl = up
     }
     if (!imageUrl || imageUrl.startsWith('blob:')) {
-      alert('Укажите URL изображения или загрузите файл')
+      alert('РЈРєР°Р¶РёС‚Рµ URL РёР·РѕР±СЂР°Р¶РµРЅРёСЏ РёР»Рё Р·Р°РіСЂСѓР·РёС‚Рµ С„Р°Р№Р»')
       return
     }
     const features = parseFeaturesText(productForm.featuresText)
-    const base = transliterate(`${productForm.name}-${productForm.material}-${productForm.color}`).slice(0, 400) || 'product'
-    const slugDraft = productForm.slug?.trim()
-    const slug = (slugDraft || `${base}-${Date.now()}`).slice(0, 500)
     const created = await createProduct({
       name: productForm.name!,
-      price,
-      oldPrice,
       description: productForm.description?.trim() || undefined,
       features,
-      material: productForm.material || '—',
-      color: productForm.color || '—',
+      material: productForm.material,
+      color: productForm.color,
       image: imageUrl,
-      category: productForm.category || 'interior',
-      slug,
+      category: productForm.category,
+      slug: 'new',
     })
     if (!created) {
       alert(SAVE_FAILED_HINT)
       return
     }
+    const slug = generateProductSlug(created.name, created.material, created.color, created.id).slice(0, 500)
+    const finalized = slug !== created.slug ? await updateProduct(created.id, { slug }) : created
+    const saved = finalized ?? created
     setProducts([
       ...products,
       {
-        id: created.id,
-        name: created.name,
-        price: created.price,
-        oldPrice: created.oldPrice ?? null,
-        description: created.description ?? '',
-        features: created.features ?? [],
-        material: created.material,
-        color: created.color,
-        image: created.image,
-        category: created.category,
-        slug: created.slug,
+        id: saved.id,
+        name: saved.name,
+        description: saved.description ?? '',
+        features: saved.features ?? [],
+        material: saved.material,
+        color: saved.color,
+        image: saved.image,
+        category: saved.category,
+        slug: saved.slug,
       },
     ])
     setIsEditing(false)
@@ -701,20 +958,27 @@ export function AdminPage() {
   }
 
   const handleDeleteProduct = async (id: number) => {
-    if (!confirm('Вы уверены, что хотите удалить этот товар?')) return
+    if (!confirm('Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ СЌС‚РѕС‚ С‚РѕРІР°СЂ?')) return
 
     const success = await deleteProduct(id)
 
     if (success) {
       setProducts(products.filter((p) => p.id !== id))
     } else {
-      alert('Не удалось удалить товар. Проверьте сессию и права.')
+      alert('РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ С‚РѕРІР°СЂ. РџСЂРѕРІРµСЂСЊС‚Рµ СЃРµСЃСЃРёСЋ Рё РїСЂР°РІР°.')
     }
   }
 
   const handleEditProduct = (product: ProductLocal) => {
     setProductForm({
-      ...product,
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      features: product.features,
+      material: product.material,
+      color: product.color,
+      image: product.image,
+      category: product.category,
       featuresText: product.features?.join('\n') ?? '',
       file: undefined,
     })
@@ -724,46 +988,47 @@ export function AdminPage() {
   const handleUpdateProduct = async () => {
     if (!productForm.id) return
 
-    const price = Number(productForm.price)
-    if (!Number.isFinite(price) || price < 0) {
-      alert('Укажите корректную цену')
+    if (!productForm.category?.trim()) {
+      alert('Выберите категорию')
       return
     }
-    let oldPrice: number | null = null
-    if (productForm.oldPrice !== undefined && productForm.oldPrice !== null) {
-      const o = Number(productForm.oldPrice)
-      if (Number.isFinite(o) && o >= 0) oldPrice = o
+    if (!productForm.material?.trim()) {
+      alert('Выберите материал')
+      return
+    }
+    if (!productForm.color?.trim()) {
+      alert('Выберите цвет')
+      return
     }
     let imageUrl = (productForm.image ?? '').trim()
     if (productForm.file) {
       const up = await uploadImage(productForm.file)
       if (!up) {
-        alert('Не удалось загрузить изображение')
+        alert('РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёРµ')
         return
       }
       imageUrl = up
     }
     if (!imageUrl || imageUrl.startsWith('blob:')) {
-      alert('Укажите URL изображения или загрузите файл')
+      alert('РЈРєР°Р¶РёС‚Рµ URL РёР·РѕР±СЂР°Р¶РµРЅРёСЏ РёР»Рё Р·Р°РіСЂСѓР·РёС‚Рµ С„Р°Р№Р»')
       return
     }
     const features = parseFeaturesText(productForm.featuresText)
-    const slug = (productForm.slug?.trim() || 'product').slice(0, 500)
-    if (!slug) {
-      alert('Укажите slug (латиница, дефисы)')
-      return
-    }
+    const slug = generateProductSlug(
+      productForm.name || '',
+      productForm.material || '',
+      productForm.color || '',
+      productForm.id
+    ).slice(0, 500)
 
     const updated = await updateProduct(productForm.id, {
       name: productForm.name || '',
-      price,
-      oldPrice,
       description: productForm.description?.trim() || undefined,
       features,
-      material: productForm.material || '',
-      color: productForm.color || '',
+      material: productForm.material,
+      color: productForm.color,
       image: imageUrl,
-      category: productForm.category || 'interior',
+      category: productForm.category,
       slug,
     })
 
@@ -774,8 +1039,6 @@ export function AdminPage() {
             ? {
                 id: updated.id,
                 name: updated.name,
-                price: updated.price,
-                oldPrice: updated.oldPrice ?? null,
                 description: updated.description ?? '',
                 features: updated.features ?? [],
                 material: updated.material,
@@ -795,7 +1058,7 @@ export function AdminPage() {
     setProductForm(emptyProductForm())
   }
 
-  // Отправка сообщения
+  // РћС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёСЏ
   const handleSendMessage = async (chatId: number, text: string) => {
     const newMessage = await sendMessage(chatId, text)
 
@@ -812,7 +1075,7 @@ export function AdminPage() {
         })
       )
     } else {
-      alert('Не удалось отправить сообщение')
+      alert('РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РїСЂР°РІРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ')
     }
   }
 
@@ -820,7 +1083,7 @@ export function AdminPage() {
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Выход
+  // Р’С‹С…РѕРґ
   const handleLogout = async () => {
     await adminLogout()
     navigate('/')
@@ -829,7 +1092,7 @@ export function AdminPage() {
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center text-muted-foreground">
-        Проверка сессии…
+        РџСЂРѕРІРµСЂРєР° СЃРµСЃСЃРёРёвЂ¦
       </div>
     )
   }
@@ -847,14 +1110,14 @@ export function AdminPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h1 className="text-xl font-bold text-primary">Админ-панель</h1>
+              <h1 className="text-xl font-bold text-primary">РђРґРјРёРЅ-РїР°РЅРµР»СЊ</h1>
             </div>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
             >
               <LogOut className="w-5 h-5" />
-              <span className="hidden sm:inline">Выйти</span>
+              <span className="hidden sm:inline">Р’С‹Р№С‚Рё</span>
             </button>
           </div>
         </div>
@@ -872,7 +1135,7 @@ export function AdminPage() {
             }`}
           >
             <Package className="w-5 h-5" />
-            Товары
+            РўРѕРІР°СЂС‹
           </button>
           <button
             onClick={() => setActiveTab('pages')}
@@ -883,7 +1146,7 @@ export function AdminPage() {
             }`}
           >
             <Settings className="w-5 h-5" />
-            Страницы
+            РЎС‚СЂР°РЅРёС†С‹
           </button>
           <button
             onClick={() => setActiveTab('messages')}
@@ -894,51 +1157,50 @@ export function AdminPage() {
             }`}
           >
             <MessageSquare className="w-5 h-5" />
-            Мессенджер
+            РњРµСЃСЃРµРЅРґР¶РµСЂ
           </button>
         </div>
 
-        {/* Товары */}
+        {/* РўРѕРІР°СЂС‹ */}
         {activeTab === 'products' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-primary">Управление товарами</h2>
+              <h2 className="text-xl font-bold text-primary">РЈРїСЂР°РІР»РµРЅРёРµ С‚РѕРІР°СЂР°РјРё</h2>
               <button
                 onClick={() => {
-                  setProductForm(emptyProductForm())
-                  setIsEditing(true)
+                  openProductEditorForCreate()
                 }}
                 className="flex items-center gap-2 px-6 py-2 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
               >
                 <Plus className="w-5 h-5" />
-                Добавить товар
+                Р”РѕР±Р°РІРёС‚СЊ С‚РѕРІР°СЂ
               </button>
             </div>
 
-            {/* Поиск */}
+            {/* РџРѕРёСЃРє */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Поиск товаров..."
+                placeholder="РџРѕРёСЃРє С‚РѕРІР°СЂРѕРІ..."
                 className="w-full pl-10 pr-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
-            {/* Таблица товаров */}
+            {/* РўР°Р±Р»РёС†Р° С‚РѕРІР°СЂРѕРІ */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Фото</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цена</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Материал</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цвет</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Действия</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Р¤РѕС‚Рѕ</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">РќР°Р·РІР°РЅРёРµ</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">РљР°С‚РµРіРѕСЂРёСЏ</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">РњР°С‚РµСЂРёР°Р»</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Р¦РІРµС‚</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Р”РµР№СЃС‚РІРёСЏ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -948,8 +1210,9 @@ export function AdminPage() {
                           <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
                         </td>
                         <td className="px-6 py-4 font-medium">{product.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {product.price.toLocaleString('ru-RU')} ₽
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                          {catalogPage.data?.categories.find((c) => c.id === product.category)?.name ??
+                            product.category}
                         </td>
                         <td className="px-6 py-4">{product.material}</td>
                         <td className="px-6 py-4">{product.color}</td>
@@ -978,7 +1241,7 @@ export function AdminPage() {
           </div>
         )}
 
-        {/* Страницы */}
+        {/* РЎС‚СЂР°РЅРёС†С‹ */}
         {activeTab === 'pages' && (
           <div className="space-y-6">
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -991,7 +1254,7 @@ export function AdminPage() {
                 }`}
               >
                 <Home className="w-5 h-5" />
-                Главная (Hero)
+                Р“Р»Р°РІРЅР°СЏ (Hero)
               </button>
               <button
                 onClick={() => setActivePage('catalog')}
@@ -1002,7 +1265,7 @@ export function AdminPage() {
                 }`}
               >
                 <ImageIcon className="w-5 h-5" />
-                Каталог
+                РљР°С‚Р°Р»РѕРі
               </button>
               <button
                 onClick={() => setActivePage('portfolio')}
@@ -1013,7 +1276,7 @@ export function AdminPage() {
                 }`}
               >
                 <FileText className="w-5 h-5" />
-                Портфолио
+                РџРѕСЂС‚С„РѕР»РёРѕ
               </button>
               <button
                 onClick={() => setActivePage('about')}
@@ -1024,7 +1287,7 @@ export function AdminPage() {
                 }`}
               >
                 <Settings className="w-5 h-5" />
-                О нас
+                Рћ РЅР°СЃ
               </button>
               <button
                 onClick={() => setActivePage('contacts')}
@@ -1035,7 +1298,7 @@ export function AdminPage() {
                 }`}
               >
                 <MapPin className="w-5 h-5" />
-                Контакты
+                РљРѕРЅС‚Р°РєС‚С‹
               </button>
               <button
                 onClick={() => setActivePage('header')}
@@ -1046,11 +1309,22 @@ export function AdminPage() {
                 }`}
               >
                 <PanelTop className="w-5 h-5" />
-                Шапка
+                РЁР°РїРєР°
+              </button>
+              <button
+                onClick={() => setActivePage('footer')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                  activePage === 'footer'
+                    ? 'bg-primary text-background'
+                    : 'bg-white text-foreground hover:bg-gray-100'
+                }`}
+              >
+                <PanelTop className="w-5 h-5" />
+                Footer
               </button>
             </div>
 
-            {/* Редаактор главной страницы */}
+            {/* Р РµРґР°Р°РєС‚РѕСЂ РіР»Р°РІРЅРѕР№ СЃС‚СЂР°РЅРёС†С‹ */}
             {activePage === 'home' && homePage.data && (
               <HomePageEditor
                 data={homePage.data}
@@ -1070,7 +1344,7 @@ export function AdminPage() {
               />
             )}
 
-            {/* Редактор каталога */}
+            {/* Р РµРґР°РєС‚РѕСЂ РєР°С‚Р°Р»РѕРіР° */}
             {activePage === 'catalog' && catalogPage.data && (
               <CatalogPageEditor
                 data={catalogPage.data}
@@ -1089,7 +1363,7 @@ export function AdminPage() {
               />
             )}
 
-            {/* Редактор портфолио */}
+            {/* Р РµРґР°РєС‚РѕСЂ РїРѕСЂС‚С„РѕР»РёРѕ */}
             {activePage === 'portfolio' && portfolioPage.data && (
               <PortfolioPageEditor
                 data={portfolioPage.data}
@@ -1103,13 +1377,14 @@ export function AdminPage() {
               />
             )}
 
-            {/* Редактор О нас */}
+            {/* Р РµРґР°РєС‚РѕСЂ Рћ РЅР°СЃ */}
             {activePage === 'about' && aboutPage.data && (
               <AboutPageEditor
                 data={aboutPage.data}
                 isLoading={aboutPage.isLoading}
                 isSaving={aboutPage.isSaving}
                 onSave={handleSaveAboutPage}
+                onUpdateIntro={handleUpdateAboutIntro}
                 onAddStat={handleAddStat}
                 onUpdateStat={handleUpdateStat}
                 onDeleteStat={handleDeleteStat}
@@ -1119,86 +1394,22 @@ export function AdminPage() {
               />
             )}
 
-            {/* Редактор Контакты */}
+            {/* Р РµРґР°РєС‚РѕСЂ РљРѕРЅС‚Р°РєС‚С‹ */}
             {activePage === 'contacts' && contactsPage.data && (
-              <div className="space-y-8">
-                <ContactsPageEditor
-                  data={contactsPage.data}
-                  isLoading={contactsPage.isLoading}
-                  isSaving={contactsPage.isSaving}
-                  onSave={handleSaveContactsPage}
-                  onAddLocation={handleAddLocation}
-                  onUpdateLocation={handleUpdateLocation}
-                  onDeleteLocation={handleDeleteLocation}
-                />
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border">
-                    <h2 className="text-lg font-bold text-primary">Заявки с формы на сайте</h2>
-                    <button
-                      type="button"
-                      onClick={() => void refreshContactLeads()}
-                      disabled={contactLeadsLoading}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-foreground hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${contactLeadsLoading ? 'animate-spin' : ''}`} />
-                      Обновить
-                    </button>
-                  </div>
-                  {contactLeadsLoading && contactLeads.length === 0 ? (
-                    <p className="px-6 py-8 text-muted-foreground text-center">Загрузка…</p>
-                  ) : contactLeads.length === 0 ? (
-                    <p className="px-6 py-8 text-muted-foreground text-center">Пока нет заявок</p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-3 text-left font-medium text-gray-600">Дата</th>
-                            <th className="px-4 py-3 text-left font-medium text-gray-600">Имя</th>
-                            <th className="px-4 py-3 text-left font-medium text-gray-600">Телефон</th>
-                            <th className="px-4 py-3 text-left font-medium text-gray-600">Email</th>
-                            <th className="px-4 py-3 text-left font-medium text-gray-600">Сообщение</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {contactLeads.map((lead) => (
-                            <tr key={lead.id} className="hover:bg-gray-50 align-top">
-                              <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                                {new Date(lead.createdAt).toLocaleString('ru-RU', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </td>
-                              <td className="px-4 py-3 font-medium">{lead.name}</td>
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <a href={`tel:${lead.phone.replace(/\s/g, '')}`} className="text-primary hover:underline">
-                                  {lead.phone}
-                                </a>
-                              </td>
-                              <td className="px-4 py-3 break-all max-w-[180px]">
-                                {lead.email ? (
-                                  <a href={`mailto:${lead.email}`} className="text-primary hover:underline">
-                                    {lead.email}
-                                  </a>
-                                ) : (
-                                  '—'
-                                )}
-                              </td>
-                              <td className="px-4 py-3 max-w-md whitespace-pre-wrap">{lead.message}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <ContactsPageEditor
+                data={contactsPage.data}
+                isLoading={contactsPage.isLoading}
+                isSaving={contactsPage.isSaving}
+                onSave={handleSaveContactsPage}
+                onUpdateGeneral={handleUpdateContactsGeneral}
+                onAddLocation={handleAddLocation}
+                onUpdateLocation={handleUpdateLocation}
+                onUpdateLocationCoords={handleUpdateLocationCoords}
+                onDeleteLocation={handleDeleteLocation}
+              />
             )}
 
-            {/* Редактор шапки */}
+            {/* Р РµРґР°РєС‚РѕСЂ С€Р°РїРєРё */}
             {activePage === 'header' && headerPage.data && (
               <HeaderPageEditor
                 data={headerPage.data}
@@ -1211,16 +1422,35 @@ export function AdminPage() {
                 onDeleteNavItem={handleDeleteHeaderNavItem}
               />
             )}
+
+            {activePage === 'footer' && footerPage.data && (
+              <FooterPageEditor
+                data={footerPage.data}
+                isLoading={footerPage.isLoading}
+                isSaving={footerPage.isSaving}
+                onSave={handleSaveFooterPage}
+                onUpdateField={handleUpdateFooterField}
+                onAddNavItem={handleAddFooterNavItem}
+                onUpdateNavItem={handleUpdateFooterNavItem}
+                onDeleteNavItem={handleDeleteFooterNavItem}
+                onAddPhone={handleAddFooterPhone}
+                onUpdatePhone={handleUpdateFooterPhone}
+                onDeletePhone={handleDeleteFooterPhone}
+                onAddLegalLink={handleAddFooterLegalLink}
+                onUpdateLegalLink={handleUpdateFooterLegalLink}
+                onDeleteLegalLink={handleDeleteFooterLegalLink}
+              />
+            )}
           </div>
         )}
 
-        {/* Мессенджер */}
+        {/* РњРµСЃСЃРµРЅРґР¶РµСЂ */}
         {activeTab === 'messages' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Список чатов */}
+            {/* РЎРїРёСЃРѕРє С‡Р°С‚РѕРІ */}
             <div className="lg:col-span-1 bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="p-4 border-b">
-                <h2 className="font-semibold text-primary">Чаты</h2>
+                <h2 className="font-semibold text-primary">Р§Р°С‚С‹</h2>
               </div>
               <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
                 {chats.map((chat) => (
@@ -1248,7 +1478,7 @@ export function AdminPage() {
               </div>
             </div>
 
-            {/* Окно чата */}
+            {/* РћРєРЅРѕ С‡Р°С‚Р° */}
             <div className="lg:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
               {selectedChat ? (
                 <>
@@ -1258,7 +1488,10 @@ export function AdminPage() {
                     </h2>
                   </div>
                   <div className="flex-1 p-4 overflow-y-auto space-y-4 max-h-[400px]">
-                    {chats.find(c => c.id === selectedChat)?.messages.map((msg) => (
+                    {(chats.find((c) => c.id === selectedChat)?.messages ?? [])
+                      .slice()
+                      .reverse()
+                      .map((msg) => (
                       <div
                         key={msg.id}
                         className={`flex ${msg.isUser ? 'justify-start' : 'justify-end'}`}
@@ -1291,7 +1524,7 @@ export function AdminPage() {
                       <input
                         name="message"
                         type="text"
-                        placeholder="Введите сообщение..."
+                        placeholder="Р’РІРµРґРёС‚Рµ СЃРѕРѕР±С‰РµРЅРёРµ..."
                         className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
                       />
                       <button
@@ -1305,7 +1538,7 @@ export function AdminPage() {
                 </>
               ) : (
                 <div className="flex-1 flex items-center justify-center text-gray-500">
-                  Выберите чат для начала общения
+                  Р’С‹Р±РµСЂРёС‚Рµ С‡Р°С‚ РґР»СЏ РЅР°С‡Р°Р»Р° РѕР±С‰РµРЅРёСЏ
                 </div>
               )}
             </div>
@@ -1313,7 +1546,7 @@ export function AdminPage() {
         )}
       </div>
 
-      {/* Модальное окно добавления/редактирования */}
+      {/* РњРѕРґР°Р»СЊРЅРѕРµ РѕРєРЅРѕ РґРѕР±Р°РІР»РµРЅРёСЏ/СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ */}
       {isEditing && (
         <>
           <div
@@ -1327,7 +1560,7 @@ export function AdminPage() {
             <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 pointer-events-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-primary">
-                  {productForm.id ? 'Редактировать' : 'Добавить товар'}
+                  {productForm.id ? 'Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ' : 'Р”РѕР±Р°РІРёС‚СЊ С‚РѕРІР°СЂ'}
                 </h2>
                 <button
                   type="button"
@@ -1343,6 +1576,11 @@ export function AdminPage() {
               <ProductEditForm
                 productForm={productForm}
                 setProductForm={setProductForm}
+                catalogData={catalogPage.data}
+                catalogLoading={catalogPage.isLoading}
+                onAddCatalogMaterial={handleQuickAddCatalogMaterialForProduct}
+                onAddCatalogColor={handleQuickAddCatalogColorForProduct}
+                onAddCatalogCategory={handleQuickAddCatalogCategoryForProduct}
                 onCancel={() => {
                   setIsEditing(false)
                   setProductForm(emptyProductForm())

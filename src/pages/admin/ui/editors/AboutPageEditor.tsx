@@ -22,6 +22,7 @@ interface AboutPageEditorProps {
   isLoading: boolean
   isSaving: boolean
   onSave: () => void
+  onUpdateIntro: (field: 'aboutTitle' | 'aboutDescription', value: string) => void
   onAddStat: () => void
   onUpdateStat: (id: number, field: keyof StatItem, value: string) => void
   onDeleteStat: (id: number) => void
@@ -35,6 +36,7 @@ export function AboutPageEditor({
   isLoading,
   isSaving,
   onSave,
+  onUpdateIntro,
   onAddStat,
   onUpdateStat,
   onDeleteStat,
@@ -71,8 +73,7 @@ export function AboutPageEditor({
           <input
             type="text"
             value={data.aboutTitle}
-            onChange={() => {}}
-            readOnly
+            onChange={(e) => onUpdateIntro('aboutTitle', e.target.value)}
             className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
           />
         </div>
@@ -80,8 +81,7 @@ export function AboutPageEditor({
           <label className="block text-sm font-medium text-foreground mb-2">Описание</label>
           <textarea
             value={data.aboutDescription}
-            onChange={() => {}}
-            readOnly
+            onChange={(e) => onUpdateIntro('aboutDescription', e.target.value)}
             rows={6}
             className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary resize-none"
           />

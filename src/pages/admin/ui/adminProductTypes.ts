@@ -1,8 +1,6 @@
 export interface ProductLocal {
   id: number
   name: string
-  price: number
-  oldPrice?: number | null
   description?: string
   features: string[]
   material: string
@@ -12,12 +10,8 @@ export interface ProductLocal {
   slug: string
 }
 
-export interface ProductCategoryOption {
-  value: string
-  label: string
-}
-
-export type ProductFormState = Partial<ProductLocal> & { file?: File; featuresText?: string }
+/** Поля формы без slug — URL-сегмент генерируется на сохранении */
+export type ProductFormState = Partial<Omit<ProductLocal, 'slug'>> & { file?: File; featuresText?: string }
 
 export function parseFeaturesText(text: string | undefined): string[] {
   if (!text?.trim()) return []
@@ -34,18 +28,9 @@ export function emptyProductForm(): ProductFormState {
     material: '',
     color: '',
     image: '',
-    price: 0,
-    oldPrice: null,
     description: '',
     features: [],
     featuresText: '',
-    category: 'interior',
-    slug: '',
+    category: '',
   }
 }
-
-export const PRODUCT_CATEGORIES: ProductCategoryOption[] = [
-  { value: 'interior', label: 'Межкомнатные' },
-  { value: 'entrance', label: 'Входные' },
-  { value: 'hardware', label: 'Фурнитура' },
-]

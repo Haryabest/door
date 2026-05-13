@@ -1,12 +1,16 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
-import { Save, X } from 'lucide-react'
-import { productsApi } from '@/shared/api/products'
-import type { ProductFormState, ProductCategoryOption } from './adminProductTypes'
-import { PRODUCT_CATEGORIES } from './adminProductTypes'
+import { type Dispatch, type SetStateAction } from 'react'
+import { Save, X, Plus } from 'lucide-react'
+import type { CatalogPageData } from '@/shared/api/catalog'
+import type { ProductFormState } from './adminProductTypes'
 
 interface ProductEditFormProps {
   productForm: ProductFormState
   setProductForm: Dispatch<SetStateAction<ProductFormState>>
+  catalogData: CatalogPageData | null
+  catalogLoading: boolean
+  onAddCatalogMaterial: (name: string) => Promise<boolean>
+  onAddCatalogColor: (name: string) => Promise<boolean>
+  onAddCatalogCategory: (name: string) => Promise<boolean>
   onCancel: () => void
   onSubmit: () => void
 }
@@ -14,32 +18,24 @@ interface ProductEditFormProps {
 export function ProductEditForm({
   productForm,
   setProductForm,
+  catalogData,
+  catalogLoading,
+  onAddCatalogMaterial,
+  onAddCatalogColor,
+  onAddCatalogCategory,
   onCancel,
   onSubmit,
 }: ProductEditFormProps) {
-  const isEdit = Boolean(productForm.id)
-  const [categories, setCategories] = useState<ProductCategoryOption[]>(PRODUCT_CATEGORIES)
+  const categories = catalogData?.categories ?? []
+  const materials = catalogData?.materials ?? []
+  const colors = catalogData?.colors ?? []
 
-  useEffect(() => {
-    let cancelled = false
-
-    productsApi.getProductCategories().then((data) => {
-      if (cancelled) return
-      if (!data || data.length === 0) return
-
-      const normalized = data
-        .filter((item) => item?.value?.trim() && item?.label?.trim())
-        .map((item) => ({ value: item.value.trim(), label: item.label.trim() }))
-
-      if (normalized.length > 0) {
-        setCategories(normalized)
-      }
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const promptAndAdd = async (label: string, fn: (name: string) => Promise<boolean>) => {
+    const name = window.prompt(`Название (${label})`)
+    if (!name?.trim()) return
+    const ok = await fn(name.trim())
+    if (!ok) return
+  }
 
   return (
     <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
@@ -49,81 +45,115 @@ export function ProductEditForm({
           type="text"
           value={productForm.name ?? ''}
           onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
           placeholder="Дверь Классик"
         />
       </div>
-      {isEdit && (
-        <div className="grid grid-cols-2 gap-4">
+
+      {catalogLoading ? (
+        <p className="text-sm text-muted-foreground">Загрузка данных каталога…</p>
+      ) : !catalogData ? (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Нет данных каталога. Откройте вкладку «Страницы» → «Каталог» и дождитесь загрузки.
+        </p>
+      ) : (
+        <>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Цена, ₽</label>
-            <input
-              type="number"
-              min={0}
-              step={100}
-              value={productForm.price === undefined || productForm.price === null ? '' : productForm.price}
-              onChange={(e) =>
-                setProductForm({
-                  ...productForm,
-                  price: e.target.value === '' ? 0 : Number(e.target.value),
-                })
-              }
-              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-            />
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-foreground">Категория</label>
+              <button
+                type="button"
+                onClick={() => void promptAndAdd('категория', onAddCatalogCategory)}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+              >
+                <Plus className="w-4 h-4" />
+                Добавить в каталог
+              </button>
+            </div>
+            <select
+              value={productForm.category ?? ''}
+              onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            >
+              {categories.length === 0 ? (
+                <option value="">— нет категорий —</option>
+              ) : (
+                categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              )}
+            </select>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Старая цена (опц.)</label>
-            <input
-              type="number"
-              min={0}
-              step={100}
-              value={
-                productForm.oldPrice === undefined || productForm.oldPrice === null ? '' : productForm.oldPrice
-              }
-              onChange={(e) =>
-                setProductForm({
-                  ...productForm,
-                  oldPrice: e.target.value === '' ? null : Number(e.target.value),
-                })
-              }
-              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-            />
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-foreground">Материал</label>
+              <button
+                type="button"
+                onClick={() => void promptAndAdd('материал', onAddCatalogMaterial)}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+              >
+                <Plus className="w-4 h-4" />
+                Добавить в каталог
+              </button>
+            </div>
+            <select
+              value={productForm.material ?? ''}
+              onChange={(e) => setProductForm({ ...productForm, material: e.target.value })}
+              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            >
+              {materials.length === 0 ? (
+                <option value="">— нет материалов —</option>
+              ) : (
+                materials.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))
+              )}
+            </select>
           </div>
-        </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-foreground">Цвет</label>
+              <button
+                type="button"
+                onClick={() => void promptAndAdd('цвет', onAddCatalogColor)}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+              >
+                <Plus className="w-4 h-4" />
+                Добавить в каталог
+              </button>
+            </div>
+            <select
+              value={productForm.color ?? ''}
+              onChange={(e) => setProductForm({ ...productForm, color: e.target.value })}
+              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            >
+              {colors.length === 0 ? (
+                <option value="">— нет цветов —</option>
+              ) : (
+                colors.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+        </>
       )}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Категория</label>
-          <select
-            value={productForm.category ?? 'interior'}
-            onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-          >
-            {categories.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Slug (URL)</label>
-          <input
-            type="text"
-            value={productForm.slug ?? ''}
-            onChange={(e) => setProductForm({ ...productForm, slug: e.target.value })}
-            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary font-mono text-sm"
-            placeholder="авто, если пусто при создании"
-          />
-        </div>
-      </div>
+
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">Описание</label>
         <textarea
           value={productForm.description ?? ''}
           onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
           rows={3}
-          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary resize-y"
+          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary resize-y bg-white text-foreground"
           placeholder="Краткое описание для карточки"
         />
       </div>
@@ -135,31 +165,9 @@ export function ProductEditForm({
           value={productForm.featuresText ?? ''}
           onChange={(e) => setProductForm({ ...productForm, featuresText: e.target.value })}
           rows={4}
-          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary resize-y font-mono text-sm"
+          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary resize-y font-mono text-sm bg-white text-foreground"
           placeholder={'Строка 1\nСтрока 2'}
         />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Материал</label>
-          <input
-            type="text"
-            value={productForm.material ?? ''}
-            onChange={(e) => setProductForm({ ...productForm, material: e.target.value })}
-            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-            placeholder="ПВХ"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Цвет</label>
-          <input
-            type="text"
-            value={productForm.color ?? ''}
-            onChange={(e) => setProductForm({ ...productForm, color: e.target.value })}
-            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
-            placeholder="Белый"
-          />
-        </div>
       </div>
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">Фото товара</label>
@@ -205,7 +213,7 @@ export function ProductEditForm({
             type="url"
             value={productForm.image ?? ''}
             onChange={(e) => setProductForm({ ...productForm, image: e.target.value, file: undefined })}
-            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
             placeholder="https://..."
           />
           {productForm.image && (
@@ -236,7 +244,7 @@ export function ProductEditForm({
           className="flex-1 py-2 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
         >
           <Save className="w-5 h-5" />
-          {isEdit ? 'Сохранить' : 'Добавить'}
+          {productForm.id ? 'Сохранить' : 'Добавить'}
         </button>
       </div>
     </form>

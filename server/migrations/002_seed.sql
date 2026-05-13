@@ -95,6 +95,33 @@ INSERT INTO site_content (key, data) VALUES
       {"label": "Контакты", "path": "/contacts"}
     ]
   }'::jsonb
+),
+(
+  'footer',
+  '{
+    "logoTitle": "От А до Я",
+    "logoSubtitle": "Двери и Фурнитура",
+    "description": "Широкий ассортимент межкомнатных и входных дверей, фурнитуры и комплектующих. Профессиональные консультации и гарантия качества.",
+    "navItems": [
+      {"label": "Каталог", "path": "/catalog"},
+      {"label": "Портфолио", "path": "/portfolio"},
+      {"label": "О нас", "path": "/about"},
+      {"label": "Контакты", "path": "/contacts"}
+    ],
+    "phones": [
+      {"text": "+7 (960) 166 30-30", "href": "tel:+79601663030"},
+      {"text": "+7 (831) 200-00-02", "href": "tel:+78312000002"},
+      {"text": "+7 (831) 200-00-03", "href": "tel:+78312000003"}
+    ],
+    "emailText": "otadoya@mail.ru",
+    "emailHref": "mailto:otadoya@mail.ru",
+    "address": "СЦ Бекетов, ул. Бекетова, д. 13а",
+    "copyright": "© 2026 От А до Я. Все права защищены.",
+    "legalLinks": [
+      {"label": "Политика конфиденциальности", "path": "/privacy"},
+      {"label": "Условия использования", "path": "/terms"}
+    ]
+  }'::jsonb
 )
 ON CONFLICT (key) DO NOTHING;
 

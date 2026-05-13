@@ -6,8 +6,10 @@ interface ContactsPageEditorProps {
   isLoading: boolean
   isSaving: boolean
   onSave: () => void
+  onUpdateGeneral: (field: 'phone' | 'email' | 'workHours' | 'address', value: string) => void
   onAddLocation: () => void
   onUpdateLocation: (id: number, field: keyof LocationItem, value: string) => void
+  onUpdateLocationCoords: (id: number, coordIndex: 0 | 1, value: string) => void
   onDeleteLocation: (id: number) => void
 }
 
@@ -16,8 +18,10 @@ export function ContactsPageEditor({
   isLoading,
   isSaving,
   onSave,
+  onUpdateGeneral,
   onAddLocation,
   onUpdateLocation,
+  onUpdateLocationCoords,
   onDeleteLocation,
 }: ContactsPageEditorProps) {
   if (isLoading) {
@@ -49,8 +53,9 @@ export function ContactsPageEditor({
           <input
             type="text"
             value={data.phone}
-            onChange={() => {}}
-            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+            onChange={(e) => onUpdateGeneral('phone', e.target.value)}
+            autoComplete="off"
+            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
           />
         </div>
         <div>
@@ -58,8 +63,9 @@ export function ContactsPageEditor({
           <input
             type="email"
             value={data.email}
-            onChange={() => {}}
-            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+            onChange={(e) => onUpdateGeneral('email', e.target.value)}
+            autoComplete="off"
+            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
           />
         </div>
         <div>
@@ -67,8 +73,9 @@ export function ContactsPageEditor({
           <input
             type="text"
             value={data.workHours}
-            onChange={() => {}}
-            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+            onChange={(e) => onUpdateGeneral('workHours', e.target.value)}
+            autoComplete="off"
+            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
           />
         </div>
         <div>
@@ -76,8 +83,9 @@ export function ContactsPageEditor({
           <input
             type="text"
             value={data.address}
-            onChange={() => {}}
-            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+            onChange={(e) => onUpdateGeneral('address', e.target.value)}
+            autoComplete="off"
+            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
           />
         </div>
       </div>
@@ -85,7 +93,7 @@ export function ContactsPageEditor({
       {/* Локации */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-primary">Салоны</h3>
+          <h3 className="text-lg font-bold text-primary">Наши магазины на карте</h3>
           <button
             onClick={onAddLocation}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
@@ -121,6 +129,22 @@ export function ContactsPageEditor({
                     type="text"
                     value={location.hours}
                     onChange={(e) => onUpdateLocation(location.id, 'hours', e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={String(location.coords[0] ?? '')}
+                    onChange={(e) => onUpdateLocationCoords(location.id, 0, e.target.value)}
+                    placeholder="Широта (lat)"
+                    className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+                  />
+                  <input
+                    type="text"
+                    value={String(location.coords[1] ?? '')}
+                    onChange={(e) => onUpdateLocationCoords(location.id, 1, e.target.value)}
+                    placeholder="Долгота (lng)"
                     className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
                   />
                 </div>

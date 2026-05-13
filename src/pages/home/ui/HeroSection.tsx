@@ -1,14 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { HeroSection as HeroSectionType } from '@/shared/api/home'
+import { defaultHeaderData, getHeader } from '@/shared/api/header'
 
 interface HeroSectionProps {
   hero: HeroSectionType
 }
 
+function toTelHref(phoneText: string): string {
+  const digits = phoneText.replace(/\D/g, '')
+  return digits ? `tel:+${digits}` : ''
+}
+
 export function HeroSection({ hero }: HeroSectionProps) {
   const [mediaMode, setMediaMode] = useState<'photo' | 'video' | 'slideshow'>('photo')
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [phoneHref, setPhoneHref] = useState(toTelHref(defaultHeaderData.phoneText))
 
   const slideshowImages = useMemo(
     () => [
@@ -40,6 +47,19 @@ export function HeroSection({ hero }: HeroSectionProps) {
 
     return () => window.clearInterval(timer)
   }, [mediaMode, slideshowImages.length])
+
+  useEffect(() => {
+    let isMounted = true
+
+    getHeader().then((data) => {
+      if (!isMounted || !data) return
+      setPhoneHref(toTelHref(data.phoneText) || data.phoneHref)
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   return (
     <div className="relative h-[100vh] w-full overflow-hidden">
@@ -165,7 +185,7 @@ export function HeroSection({ hero }: HeroSectionProps) {
               </svg>
             </a>
             <a
-              href="tel:+79601663030"
+              href={phoneHref}
               className="tap-click inline-flex items-center gap-2 px-8 py-4 bg-white text-primary font-semibold rounded-lg hover:bg-white/90 transition-colors cursor-pointer text-base sm:text-lg"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

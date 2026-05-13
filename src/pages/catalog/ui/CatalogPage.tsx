@@ -103,15 +103,13 @@ export function CatalogPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all')
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [expandedSections, setExpandedSections] = useState({
     catalog: true,
     material: false,
     color: false,
-    price: false,
   })
+  const [currentPage, setCurrentPage] = useState(1)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const itemsPerPage = 8
 
   useEffect(() => {
@@ -148,10 +146,8 @@ export function CatalogPage() {
       category: selectedCategory !== 'all' ? selectedCategory : undefined,
       materials: effectiveMaterialFilters.length > 0 ? effectiveMaterialFilters : undefined,
       colors: selectedColors.length > 0 ? selectedColors : undefined,
-      minPrice: priceRange[0],
-      maxPrice: priceRange[1],
     })
-  }, [debouncedSearchQuery, selectedCategory, effectiveMaterialFilters, selectedColors, priceRange])
+  }, [debouncedSearchQuery, selectedCategory, effectiveMaterialFilters, selectedColors])
 
   const loadCatalogData = async () => {
     const data = await getCatalogPage()
@@ -165,8 +161,6 @@ export function CatalogPage() {
     category?: string
     materials?: string[]
     colors?: string[]
-    minPrice?: number
-    maxPrice?: number
   }) => {
     setIsLoading(true)
     const data = await productsApi.getProducts(params)
@@ -226,7 +220,6 @@ export function CatalogPage() {
     setSelectedSubcategory('all')
     setSelectedMaterials([])
     setSelectedColors([])
-    setPriceRange([0, 50000])
     setSearchQuery('')
     setDebouncedSearchQuery('')
     setCurrentPage(1)
@@ -258,10 +251,9 @@ export function CatalogPage() {
           return productColor.includes(filterColor) || filterColor.includes(productColor)
         })
       ) return false
-      if (product.price < priceRange[0] || product.price > priceRange[1]) return false
       return true
     })
-  }, [products, searchQuery, selectedCategory, effectiveMaterialFilters, selectedColors, priceRange])
+  }, [products, searchQuery, selectedCategory, effectiveMaterialFilters, selectedColors])
 
   // Пагинация
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
@@ -637,14 +629,14 @@ export function CatalogPage() {
                         e.stopPropagation()
                         const params = new URLSearchParams()
                         params.set('chatMessage', `Меня заинтересовала дверь «${product.name}»`)
-                        params.set('leadType', 'price_clarification')
+                        params.set('leadType', 'chat_message')
                         params.set('productName', product.name)
                         params.set('productUrl', `${window.location.origin}/catalog/${product.slug}-${product.id}`)
                         navigate(`?${params.toString()}`)
                       }}
                       className="tap-click w-full py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
                     >
-                      Узнать цену
+                      Связаться с менеджером
                     </button>
                   </div>
                 </div>

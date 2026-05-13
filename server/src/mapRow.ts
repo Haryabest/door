@@ -4,8 +4,6 @@ export function mapProduct(row: QueryResultRow) {
   return {
     id: row.id as number,
     name: row.name as string,
-    price: Number(row.price),
-    oldPrice: row.old_price != null ? Number(row.old_price) : null,
     description: (row.description as string | null) ?? undefined,
     features: (row.features as string[] | null) ?? [],
     material: row.material as string,

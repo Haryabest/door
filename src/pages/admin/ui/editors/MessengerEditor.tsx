@@ -83,7 +83,10 @@ export function MessengerEditor({
               </h2>
             </div>
             <div className="flex-1 p-4 overflow-y-auto space-y-4 max-h-[400px]">
-              {chats.find(c => c.id === selectedChat)?.messages.map((msg) => (
+              {(chats.find((c) => c.id === selectedChat)?.messages ?? [])
+                .slice()
+                .reverse()
+                .map((msg) => (
                 <div
                   key={msg.id}
                   className={`flex ${!msg.isUser ? 'justify-end' : 'justify-start'}`}

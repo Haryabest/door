@@ -7,35 +7,36 @@ import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
 import { sanitizeInput, validateRequired, validateEmail, validatePhone, validateLength, formatPhoneInput } from "@/shared/lib/validation"
 import { submitContactLead } from "@/shared/api/contactLeads"
+import { getContactsPage, type ContactsPageData, type LocationItem } from "@/shared/api/contacts"
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
-const locations = [
-  {
-    id: 1,
-    name: "СЦ Бекетов",
-    address: "СЦ Бекетов, ул. Бекетова, д. 13а",
-    coords: [56.2906, 44.0024] as [number, number],
-    hours: "Ежедневно с 10:00 до 20:00",
-  },
-  {
-    id: 2,
-    name: "Салон на ул. Родионова",
-    address: "ул. Литвинова, 74Б",
-    coords: [56.2755, 43.9803] as [number, number],
-    hours: "Ежедневно с 09:00 до 17:00",
-  },
-  {
-    id: 3,
-    name: "Радиорынок (ГЕРЦ)",
-    address: "ул. Композитора Касьянова, 6Г, пав №3, места: 42, 43, 44, 45",
-    coords: [56.288743, 44.059329] as [number, number],
-    hours: "Ежедневно с 10:00 до 19:00",
-  },
-]
+const FALLBACK_MAP_CENTER: [number, number] = [56.285, 44.014]
 
-const defaultCenter: [number, number] = [56.285, 44.014]
+function normalizeMapLocations(raw: unknown): LocationItem[] {
+  if (!Array.isArray(raw)) return []
+  const out: LocationItem[] = []
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue
+    const o = item as Record<string, unknown>
+    const id = Number(o.id)
+    const coords = o.coords
+    if (!Number.isFinite(id) || !Array.isArray(coords) || coords.length < 2) continue
+    const lat = Number(coords[0])
+    const lng = Number(coords[1])
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
+    out.push({
+      id,
+      name: String(o.name ?? ""),
+      address: String(o.address ?? ""),
+      phone: String(o.phone ?? ""),
+      hours: String(o.hours ?? ""),
+      coords: [lat, lng],
+    })
+  }
+  return out
+}
 
 const activeLocationIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -69,26 +70,63 @@ function RecenterMap({ center }: { center: [number, number] }) {
 }
 
 export function ContactsPage() {
-  const [selectedLocation, setSelectedLocation] = useState<number>(1)
+  const [contactsPageData, setContactsPageData] = useState<ContactsPageData | null>(null)
+  const [contactsLoading, setContactsLoading] = useState(true)
+  const [selectedLocation, setSelectedLocation] = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      setContactsLoading(true)
+      const data = await getContactsPage()
+      if (cancelled) return
+      setContactsPageData(data)
+      setContactsLoading(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const locations = useMemo(
+    () => normalizeMapLocations(contactsPageData?.locations),
+    [contactsPageData?.locations]
+  )
+
+  useEffect(() => {
+    if (locations.length === 0) {
+      setSelectedLocation(null)
+      return
+    }
+    setSelectedLocation((prev) => {
+      if (prev !== null && locations.some((l) => l.id === prev)) return prev
+      return locations[0].id
+    })
+  }, [locations])
 
   const handlePrevLocation = () => {
     setSelectedLocation((prev) => {
+      if (prev == null || locations.length === 0) return prev
       const currentIndex = locations.findIndex((l) => l.id === prev)
-      const newIndex = currentIndex > 0 ? currentIndex - 1 : locations.length - 1
-      return locations[newIndex].id
+      const idx = currentIndex <= 0 ? locations.length - 1 : currentIndex - 1
+      return locations[idx].id
     })
   }
 
   const handleNextLocation = () => {
     setSelectedLocation((prev) => {
+      if (prev == null || locations.length === 0) return prev
       const currentIndex = locations.findIndex((l) => l.id === prev)
-      const newIndex = currentIndex < locations.length - 1 ? currentIndex + 1 : 0
-      return locations[newIndex].id
+      const idx = currentIndex >= locations.length - 1 ? 0 : currentIndex + 1
+      return locations[idx].id
     })
   }
 
-  const currentLocation = locations.find((l) => l.id === selectedLocation)
-  const currentCenter = useMemo<[number, number]>(() => currentLocation?.coords ?? defaultCenter, [currentLocation])
+  const currentLocation = selectedLocation != null ? locations.find((l) => l.id === selectedLocation) : undefined
+  const currentCenter = useMemo<[number, number]>(
+    () => currentLocation?.coords ?? locations[0]?.coords ?? FALLBACK_MAP_CENTER,
+    [currentLocation, locations]
+  )
 
   const [formData, setFormData] = useState({
     name: "",
@@ -398,8 +436,10 @@ export function ContactsPage() {
               `}</style>
 
               <button
+                type="button"
                 onClick={handlePrevLocation}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-[1000] w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-primary hover:bg-primary hover:text-background transition-all border-2 border-primary/20"
+                disabled={contactsLoading || locations.length <= 1}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-[1000] w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-primary hover:bg-primary hover:text-background transition-all border-2 border-primary/20 disabled:opacity-40 disabled:pointer-events-none"
                 aria-label="Предыдущий магазин"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -408,32 +448,44 @@ export function ContactsPage() {
               </button>
 
               <div className="contacts-map aspect-video bg-gray-100 rounded-2xl overflow-hidden shadow-lg">
-                <MapContainer
-                  center={currentCenter}
-                  zoom={15}
-                  scrollWheelZoom={false}
-                  attributionControl={false}
-                  zoomControl={true}
-                  className="w-full h-full"
-                >
-                  <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  <RecenterMap center={currentCenter} />
-                  {locations.map((location) => (
-                    <Marker
-                      key={location.id}
-                      position={location.coords}
-                      icon={selectedLocation === location.id ? activeLocationIcon : inactiveLocationIcon}
-                      eventHandlers={{
-                        click: () => setSelectedLocation(location.id),
-                      }}
-                    />
-                  ))}
-                </MapContainer>
+                {contactsLoading ? (
+                  <div className="w-full h-full min-h-[200px] flex items-center justify-center text-muted-foreground text-sm">
+                    Загрузка карты…
+                  </div>
+                ) : locations.length === 0 ? (
+                  <div className="w-full h-full min-h-[200px] flex items-center justify-center text-muted-foreground text-sm text-center px-4">
+                    Адреса магазинов не настроены. Добавьте точки в разделе админки «Контакты».
+                  </div>
+                ) : (
+                  <MapContainer
+                    center={currentCenter}
+                    zoom={15}
+                    scrollWheelZoom={false}
+                    attributionControl={false}
+                    zoomControl={true}
+                    className="w-full h-full"
+                  >
+                    <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <RecenterMap center={currentCenter} />
+                    {locations.map((location) => (
+                      <Marker
+                        key={location.id}
+                        position={location.coords}
+                        icon={selectedLocation === location.id ? activeLocationIcon : inactiveLocationIcon}
+                        eventHandlers={{
+                          click: () => setSelectedLocation(location.id),
+                        }}
+                      />
+                    ))}
+                  </MapContainer>
+                )}
               </div>
 
               <button
+                type="button"
                 onClick={handleNextLocation}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-[1000] w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-primary hover:bg-primary hover:text-background transition-all border-2 border-primary/20"
+                disabled={contactsLoading || locations.length <= 1}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-[1000] w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-primary hover:bg-primary hover:text-background transition-all border-2 border-primary/20 disabled:opacity-40 disabled:pointer-events-none"
                 aria-label="Следующий магазин"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -442,44 +494,52 @@ export function ContactsPage() {
               </button>
             </motion.div>
 
-            <motion.div
-              className="text-center mt-6"
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              <p className="text-lg font-semibold text-primary">{currentLocation?.name}</p>
-              <p className="text-sm text-muted-foreground">{currentLocation?.address}</p>
-            </motion.div>
+            {!contactsLoading && locations.length > 0 ? (
+              <>
+                <motion.div
+                  className="text-center mt-6"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <p className="text-lg font-semibold text-primary">{currentLocation?.name}</p>
+                  <p className="text-sm text-muted-foreground">{currentLocation?.address}</p>
+                </motion.div>
 
-            <motion.div
-              className="mt-8"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="flex gap-4 overflow-x-auto pb-4 snap-x justify-start md:justify-center">
-                {locations.map((location, index) => (
-                  <motion.button
-                    key={location.id}
-                    onClick={() => setSelectedLocation(location.id)}
-                    initial={{ opacity: 0, x: 20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className={`flex-shrink-0 w-72 p-4 rounded-xl border-2 text-left transition-all snap-start ${
-                      selectedLocation === location.id ? "border-primary bg-primary/5" : "border-border bg-white hover:border-primary/50"
-                    }`}
-                  >
-                    <h4 className="font-semibold text-primary mb-2">{location.name}</h4>
-                    <p className="text-sm text-muted-foreground mb-1">{location.address}</p>
-                    <p className="text-xs text-muted-foreground">{location.hours}</p>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
+                <motion.div
+                  className="mt-8"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <div className="flex gap-4 overflow-x-auto pb-4 snap-x justify-start md:justify-center">
+                    {locations.map((location, index) => (
+                      <motion.button
+                        key={location.id}
+                        type="button"
+                        onClick={() => setSelectedLocation(location.id)}
+                        initial={{ opacity: 0, x: 20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className={`flex-shrink-0 w-72 p-4 rounded-xl border-2 text-left transition-all snap-start ${
+                          selectedLocation === location.id ? "border-primary bg-primary/5" : "border-border bg-white hover:border-primary/50"
+                        }`}
+                      >
+                        <h4 className="font-semibold text-primary mb-2">{location.name}</h4>
+                        <p className="text-sm text-muted-foreground mb-1">{location.address}</p>
+                        {location.phone.trim() ? (
+                          <p className="text-sm text-primary/90 mb-1">{location.phone}</p>
+                        ) : null}
+                        <p className="text-xs text-muted-foreground">{location.hours}</p>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              </>
+            ) : null}
           </div>
         </motion.div>
       </main>

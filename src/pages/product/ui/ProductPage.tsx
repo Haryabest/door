@@ -145,7 +145,7 @@ export function ProductPage() {
     <div className="flex flex-col min-h-screen">
       <SEO
         title={product.name}
-        description={`${product.name} - ${product.description} Цена: ${product.price.toLocaleString()} ₽`}
+        description={`${product.name}. ${product.description ?? ''} Уточните условия у менеджера.`}
         canonicalUrl={`/catalog/${slug || ''}`}
         image={product.image}
         keywords={`${product.name}, ${product.material}, ${product.color}, купить дверь, двери Нижний Новгород`}
@@ -163,8 +163,6 @@ export function ProductPage() {
           },
           offers: {
             '@type': 'Offer',
-            priceCurrency: 'RUB',
-            price: product.price,
             availability: 'https://schema.org/InStock',
             url: `https://otadoya.ru/catalog/${slug || ''}`,
           },
@@ -237,14 +235,14 @@ export function ProductPage() {
                     onClick={() => {
                       const params = new URLSearchParams()
                       params.set('chatMessage', `Меня заинтересовала дверь «${product.name}»`)
-                      params.set('leadType', 'price_clarification')
+                      params.set('leadType', 'chat_message')
                       params.set('productName', product.name)
                       params.set('productUrl', window.location.href)
                       navigate(`?${params.toString()}`)
                     }}
                     className="tap-click flex-1 py-3 sm:py-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer text-sm sm:text-base"
                   >
-                    Узнать цену
+                    Связаться с менеджером
                   </button>
                   <div className="relative">
                     <button

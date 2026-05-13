@@ -38,11 +38,6 @@ productsRouter.get('/products', async (req, res) => {
   const materials = parseList(req.query.materials)
   const colors = parseList(req.query.colors)
 
-  const minPriceRaw = Number(req.query.minPrice)
-  const maxPriceRaw = Number(req.query.maxPrice)
-  const minPrice = Number.isFinite(minPriceRaw) ? minPriceRaw : null
-  const maxPrice = Number.isFinite(maxPriceRaw) ? maxPriceRaw : null
-
   const whereClauses: string[] = []
   const params: Array<string | number | string[]> = []
 
@@ -67,16 +62,6 @@ productsRouter.get('/products', async (req, res) => {
     whereClauses.push(`EXISTS (SELECT 1 FROM unnest($${params.length}::text[]) AS color_filter WHERE color ILIKE ('%' || color_filter || '%'))`)
   }
 
-  if (minPrice !== null) {
-    params.push(minPrice)
-    whereClauses.push(`price >= $${params.length}`)
-  }
-
-  if (maxPrice !== null) {
-    params.push(maxPrice)
-    whereClauses.push(`price <= $${params.length}`)
-  }
-
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : ''
   const { rows } = await pool.query(`SELECT * FROM products ${whereSql} ORDER BY id ASC`, params)
   res.json(rows.map(mapProduct))
@@ -99,13 +84,11 @@ productsRouter.get('/products/:id', async (req, res) => {
 productsRouter.post('/products', requireAdminToken, validateBody(productCreateSchema), async (req, res) => {
   const b = req.body as z.infer<typeof productCreateSchema>
   const { rows } = await pool.query(
-    `INSERT INTO products (name, price, old_price, description, features, material, color, image, category, slug)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO products (name, description, features, material, color, image, category, slug)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
     [
       b.name,
-      b.price,
-      b.oldPrice ?? null,
       b.description ?? null,
       b.features ?? [],
       b.material,
@@ -136,11 +119,6 @@ productsRouter.put(
     }
     const prev = mapProduct(cur[0])
     const name = b.name !== undefined ? b.name : prev.name
-    const price = b.price !== undefined ? b.price : prev.price
-    let oldPrice: number | null = prev.oldPrice ?? null
-    if (b.oldPrice !== undefined) {
-      oldPrice = b.oldPrice
-    }
     const description = b.description !== undefined ? b.description : prev.description ?? null
     const features = b.features !== undefined ? b.features : prev.features ?? []
     const material = b.material !== undefined ? b.material : prev.material
@@ -150,11 +128,11 @@ productsRouter.put(
     const slug = b.slug !== undefined ? b.slug : prev.slug
     const { rows } = await pool.query(
       `UPDATE products SET
-        name = $1, price = $2, old_price = $3, description = $4, features = $5,
-        material = $6, color = $7, image = $8, category = $9, slug = $10
-      WHERE id = $11
+        name = $1, description = $2, features = $3,
+        material = $4, color = $5, image = $6, category = $7, slug = $8
+      WHERE id = $9
       RETURNING *`,
-      [name, price, oldPrice, description, features, material, color, image, category, slug, id]
+      [name, description, features, material, color, image, category, slug, id]
     )
     res.json(mapProduct(rows[0]))
   }

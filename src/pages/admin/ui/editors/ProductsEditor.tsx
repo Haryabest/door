@@ -1,4 +1,5 @@
 import { Plus, Trash2, Edit, Search } from 'lucide-react'
+import type { CatalogPageData } from '@/shared/api/catalog'
 import type { ProductLocal, ProductFormState } from '../adminProductTypes'
 import { ProductEditForm } from '../ProductEditForm'
 
@@ -14,6 +15,11 @@ interface ProductsEditorProps {
   onProductFormChange: (form: ProductFormState) => void
   onSaveProduct: () => void
   onCancelEdit: () => void
+  catalogData?: CatalogPageData | null
+  catalogLoading?: boolean
+  onAddCatalogMaterial?: (name: string) => Promise<boolean>
+  onAddCatalogColor?: (name: string) => Promise<boolean>
+  onAddCatalogCategory?: (name: string) => Promise<boolean>
 }
 
 export function ProductsEditor({
@@ -28,6 +34,11 @@ export function ProductsEditor({
   onProductFormChange,
   onSaveProduct,
   onCancelEdit,
+  catalogData = null,
+  catalogLoading = false,
+  onAddCatalogMaterial = async () => false,
+  onAddCatalogColor = async () => false,
+  onAddCatalogCategory = async () => false,
 }: ProductsEditorProps) {
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -65,7 +76,7 @@ export function ProductsEditor({
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Фото</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цена</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Категория</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Материал</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цвет</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Действия</th>
@@ -78,7 +89,7 @@ export function ProductsEditor({
                     <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
                   </td>
                   <td className="px-6 py-4 font-medium">{product.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{product.price.toLocaleString('ru-RU')} ₽</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{product.category}</td>
                   <td className="px-6 py-4">{product.material}</td>
                   <td className="px-6 py-4">{product.color}</td>
                   <td className="px-6 py-4">
@@ -120,6 +131,11 @@ export function ProductsEditor({
                     onProductFormChange(action)
                   }
                 }}
+                catalogData={catalogData}
+                catalogLoading={catalogLoading}
+                onAddCatalogMaterial={onAddCatalogMaterial}
+                onAddCatalogColor={onAddCatalogColor}
+                onAddCatalogCategory={onAddCatalogCategory}
                 onCancel={onCancelEdit}
                 onSubmit={onSaveProduct}
               />

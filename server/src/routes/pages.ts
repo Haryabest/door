@@ -258,3 +258,18 @@ pagesRouter.put('/widgets/header', requireAdminToken, validateBody(jsonPageDocum
   await putSiteJson('header', req.body)
   res.json(req.body)
 })
+
+// --- Footer widget ---
+pagesRouter.get('/widgets/footer', async (_req, res) => {
+  const data = await getSiteJson('footer')
+  if (!data) {
+    res.status(404).json({ error: 'Not found', code: 'not_found' })
+    return
+  }
+  res.json(data)
+})
+
+pagesRouter.put('/widgets/footer', requireAdminToken, validateBody(jsonPageDocument), async (req, res) => {
+  await putSiteJson('footer', req.body)
+  res.json(req.body)
+})

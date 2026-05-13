@@ -8,7 +8,7 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<{ id: number; name: string; price: number; image: string; slug: string }[]>([])
+  const [searchResults, setSearchResults] = useState<{ id: number; name: string; image: string; slug: string }[]>([])
   const [headerData, setHeaderData] = useState<HeaderData>(defaultHeaderData)
   const location = useLocation()
   const navigate = useNavigate()
@@ -169,7 +169,6 @@ export function Header() {
                       <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded" />
                       <div className="flex-1">
                         <p className="font-medium text-primary">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">{item.price.toLocaleString()} ₽</p>
                       </div>
                     </div>
                   ))}
