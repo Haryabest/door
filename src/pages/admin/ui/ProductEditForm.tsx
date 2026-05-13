@@ -1,7 +1,7 @@
-import { type Dispatch, type SetStateAction } from 'react'
+import { type Dispatch, type SetStateAction, useState } from 'react'
 import { Save, X, Plus } from 'lucide-react'
 import type { CatalogPageData } from '@/shared/api/catalog'
-import type { ProductFormState } from './adminProductTypes'
+import type { ProductFormState, AddCatalogColorPayload } from './adminProductTypes'
 
 interface ProductEditFormProps {
   productForm: ProductFormState
@@ -9,7 +9,7 @@ interface ProductEditFormProps {
   catalogData: CatalogPageData | null
   catalogLoading: boolean
   onAddCatalogMaterial: (name: string) => Promise<boolean>
-  onAddCatalogColor: (name: string) => Promise<boolean>
+  onAddCatalogColor: (payload: AddCatalogColorPayload) => Promise<boolean>
   onAddCatalogCategory: (name: string) => Promise<boolean>
   onCancel: () => void
   onSubmit: () => void
@@ -29,6 +29,19 @@ export function ProductEditForm({
   const categories = catalogData?.categories ?? []
   const materials = catalogData?.materials ?? []
   const colors = catalogData?.colors ?? []
+
+  const [newColorOpen, setNewColorOpen] = useState(false)
+  const [newColorName, setNewColorName] = useState('')
+  const [newColorHex, setNewColorHex] = useState('#94A3B8')
+
+  const submitNewCatalogColor = async () => {
+    const ok = await onAddCatalogColor({ name: newColorName.trim(), color: newColorHex })
+    if (ok) {
+      setNewColorOpen(false)
+      setNewColorName('')
+      setNewColorHex('#94A3B8')
+    }
+  }
 
   const promptAndAdd = async (label: string, fn: (name: string) => Promise<boolean>) => {
     const name = window.prompt(`Название (${label})`)
@@ -121,13 +134,59 @@ export function ProductEditForm({
               <label className="block text-sm font-medium text-foreground">Цвет</label>
               <button
                 type="button"
-                onClick={() => void promptAndAdd('цвет', onAddCatalogColor)}
+                onClick={() => setNewColorOpen((v) => !v)}
                 className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
               >
                 <Plus className="w-4 h-4" />
                 Добавить в каталог
               </button>
             </div>
+            {newColorOpen && (
+              <div className="mb-3 p-3 border-2 border-gray-200 rounded-lg space-y-3 bg-gray-50">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Название цвета</label>
+                  <input
+                    type="text"
+                    value={newColorName}
+                    onChange={(e) => setNewColorName(e.target.value)}
+                    placeholder="Например: Графит"
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white text-sm text-foreground"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="text-sm font-medium text-foreground shrink-0">Цвет</label>
+                  <input
+                    type="color"
+                    value={newColorHex}
+                    onChange={(e) => setNewColorHex(e.target.value)}
+                    className="h-10 w-14 cursor-pointer rounded border-2 border-gray-300 bg-white p-0.5"
+                    title="Выберите цвет"
+                  />
+                  <code className="text-xs text-muted-foreground">{newColorHex}</code>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void submitNewCatalogColor()}
+                    disabled={!newColorName.trim()}
+                    className="flex-1 py-2 bg-primary text-background text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Сохранить в каталог
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewColorOpen(false)
+                      setNewColorName('')
+                      setNewColorHex('#94A3B8')
+                    }}
+                    className="px-4 py-2 border-2 border-gray-200 rounded-lg text-sm hover:bg-gray-100"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            )}
             <select
               value={productForm.color ?? ''}
               onChange={(e) => setProductForm({ ...productForm, color: e.target.value })}

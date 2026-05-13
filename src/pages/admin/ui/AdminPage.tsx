@@ -25,13 +25,14 @@ import { generateProductSlug, transliterate } from '@/shared/lib/slug'
 import {
   emptyProductForm,
   parseFeaturesText,
+  type AddCatalogColorPayload,
   type ProductFormState,
   type ProductLocal,
 } from './adminProductTypes'
 import { ProductEditForm } from './ProductEditForm'
 import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor, FooterPageEditor } from './editors'
 
-export type { ProductFormState, ProductLocal } from './adminProductTypes'
+export type { ProductFormState, ProductLocal, AddCatalogColorPayload } from './adminProductTypes'
 export { emptyProductForm } from './adminProductTypes'
 
 const SAVE_FAILED_HINT =
@@ -75,6 +76,21 @@ function sortMessagesNewestFirst(messages: MessageLocal[]): MessageLocal[] {
     if (tb !== ta) return tb - ta
     return b.id - a.id
   })
+}
+
+/** Обводка для свотча цвета в каталоге — темнее основной заливки */
+function catalogColorBorderHex(fill: string): string {
+  const raw = fill.trim().replace(/^#/, '')
+  if (!/^[0-9a-fA-F]{6}$/i.test(raw)) return '#64748B'
+  const factor = 0.62
+  const ch = (n: number) =>
+    Math.max(0, Math.min(255, Math.round(n * factor)))
+      .toString(16)
+      .padStart(2, '0')
+  const r = parseInt(raw.slice(0, 2), 16)
+  const g = parseInt(raw.slice(2, 4), 16)
+  const b = parseInt(raw.slice(4, 6), 16)
+  return `#${ch(r)}${ch(g)}${ch(b)}`
 }
 
 // Для страницы О нас
@@ -882,9 +898,15 @@ export function AdminPage() {
     return true
   }
 
-  const handleQuickAddCatalogColorForProduct = async (name: string): Promise<boolean> => {
-    const t = name.trim()
+  const handleQuickAddCatalogColorForProduct = async (
+    payload: AddCatalogColorPayload
+  ): Promise<boolean> => {
+    const t = payload.name.trim()
     if (!t) return false
+    let fill = payload.color.trim()
+    if (/^[0-9a-fA-F]{6}$/i.test(fill)) fill = `#${fill}`
+    if (!/^#[0-9a-fA-F]{6}$/i.test(fill)) fill = '#94A3B8'
+
     const cur = catalogPage.data
     if (!cur) {
       alert('Каталог ещё не загружен')
@@ -906,8 +928,8 @@ export function AdminPage() {
     const newColor: CatalogColor = {
       id: uniqueId,
       name: t,
-      color: '#94A3B8',
-      border: '#64748B',
+      color: fill,
+      border: catalogColorBorderHex(fill),
     }
     const next = { ...cur, colors: [...cur.colors, newColor] }
     const saved = await persistCatalogSnapshot(next)

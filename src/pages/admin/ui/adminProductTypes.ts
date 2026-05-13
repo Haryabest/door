@@ -1,3 +1,10 @@
+/** Новый цвет в каталоге (форма товара): сохраняется через PUT каталога */
+export interface AddCatalogColorPayload {
+  name: string
+  /** #RRGGBB */
+  color: string
+}
+
 export interface ProductLocal {
   id: number
   name: string

@@ -242,7 +242,7 @@ export function ProductPage() {
                     }}
                     className="tap-click flex-1 py-3 sm:py-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer text-sm sm:text-base"
                   >
-                    Связаться с менеджером
+                    Узнать цену
                   </button>
                   <div className="relative">
                     <button

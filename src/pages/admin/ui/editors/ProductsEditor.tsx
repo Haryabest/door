@@ -1,6 +1,6 @@
 import { Plus, Trash2, Edit, Search } from 'lucide-react'
 import type { CatalogPageData } from '@/shared/api/catalog'
-import type { ProductLocal, ProductFormState } from '../adminProductTypes'
+import type { ProductLocal, ProductFormState, AddCatalogColorPayload } from '../adminProductTypes'
 import { ProductEditForm } from '../ProductEditForm'
 
 interface ProductsEditorProps {
@@ -18,7 +18,7 @@ interface ProductsEditorProps {
   catalogData?: CatalogPageData | null
   catalogLoading?: boolean
   onAddCatalogMaterial?: (name: string) => Promise<boolean>
-  onAddCatalogColor?: (name: string) => Promise<boolean>
+  onAddCatalogColor?: (payload: AddCatalogColorPayload) => Promise<boolean>
   onAddCatalogCategory?: (name: string) => Promise<boolean>
 }
 
