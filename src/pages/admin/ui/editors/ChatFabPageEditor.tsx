@@ -40,8 +40,8 @@ export function ChatFabPageEditor({
 
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-4 max-w-xl">
         <p className="text-sm text-muted-foreground">
-          После нажатия на синюю кнопку появляются четыре круглые кнопки: чат на сайте, звонок, Telegram и почта.
-          Укажите значения ниже — они сохраняются в базе.
+          Синяя кнопка открывает чат: рядом появляются анимированно телефон, Telegram и почта. При закрытии чата они
+          скрываются. Укажите значения ниже — они сохраняются в базе.
         </p>
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">Телефон (для звонка)</label>

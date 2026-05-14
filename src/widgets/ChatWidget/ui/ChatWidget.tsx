@@ -66,43 +66,32 @@ function FabMailLogo({ className }: { className?: string }) {
   )
 }
 
-/** Каскад FAB: при row-reverse первая к главной — chat (она последняя в DOM). */
-const fabSubmenuVariants = {
-  collapsed: {
-    transition: {
-      staggerChildren: 0.055,
-      staggerDirection: 1,
-    },
+/** Каскад: от главной кнопке к внешним (DOM mail→tg→phone, row-reverse). */
+const fabContactsContainerVariants = {
+  hidden: {
+    transition: { staggerChildren: 0.05, staggerDirection: 1 },
   },
-  expanded: {
+  visible: {
     transition: {
       staggerChildren: 0.09,
-      delayChildren: 0.05,
+      delayChildren: 0.06,
       staggerDirection: -1,
     },
   },
 } as const
 
-const fabSubItemVariants = {
-  collapsed: {
+const fabContactsItemVariants = {
+  hidden: {
     opacity: 0,
-    scale: 0.45,
-    x: 40,
-    transition: {
-      duration: 0.2,
-      ease: [0.4, 0, 0.6, 1],
-    },
+    scale: 0.48,
+    x: 44,
+    transition: { duration: 0.2, ease: [0.4, 0, 0.65, 1] },
   },
-  expanded: {
+  visible: {
     opacity: 1,
     scale: 1,
     x: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 400,
-      damping: 22,
-      mass: 0.72,
-    },
+    transition: { type: 'spring', stiffness: 390, damping: 22, mass: 0.7 },
   },
 } as const
 
@@ -112,8 +101,6 @@ export function ChatWidget() {
   const navigate = useNavigate()
   const { isVpn } = useVpnDetection()
   const [isOpen, setIsOpen] = useState(false)
-  /** Меню из 4 кнопок до открытия чата */
-  const [fabMenuOpen, setFabMenuOpen] = useState(false)
   const [fabSettings, setFabSettings] = useState<ChatWidgetData>(defaultChatWidgetData)
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -184,10 +171,6 @@ export function ChatWidget() {
   useEffect(() => {
     void getChatWidget().then(setFabSettings)
   }, [])
-
-  useEffect(() => {
-    if (isOpen) setFabMenuOpen(false)
-  }, [isOpen])
 
   useEffect(() => {
     if (isVpn === true && !vpnWarningShown && messages.length > 0) {
@@ -407,18 +390,12 @@ export function ChatWidget() {
           >
             <motion.button
               type="button"
-              onClick={() => {
-                if (isOpen) {
-                  setIsOpen(false)
-                } else {
-                  setFabMenuOpen((v) => !v)
-                }
-              }}
+              onClick={() => setIsOpen((v) => !v)}
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.92 }}
               className="relative w-14 h-14 shrink-0 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
-              aria-expanded={fabMenuOpen}
-              aria-label={isOpen ? 'Закрыть чат' : fabMenuOpen ? 'Закрыть меню' : 'Связь и чат'}
+              aria-pressed={isOpen}
+              aria-label={isOpen ? 'Закрыть чат' : 'Открыть чат'}
             >
               {isOpen ? (
                 <X className="w-6 h-6" />
@@ -432,23 +409,21 @@ export function ChatWidget() {
               )}
             </motion.button>
 
-            <AnimatePresence initial={false}>
-              {fabMenuOpen && !isOpen && (
+            <AnimatePresence>
+              {isOpen && (
                 <motion.div
-                  key="fab-submenu"
+                  key="fab-contacts-row"
                   className="flex flex-row-reverse items-center gap-3"
-                  variants={fabSubmenuVariants}
-                  initial="collapsed"
-                  animate="expanded"
-                  exit="collapsed"
+                  variants={fabContactsContainerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
                 >
                   <motion.a
-                    key="fab-mail"
-                    variants={fabSubItemVariants}
                     href={mailHref === '#' ? undefined : mailHref}
+                    variants={fabContactsItemVariants}
                     onClick={(e) => {
                       if (mailHref === '#') e.preventDefault()
-                      setFabMenuOpen(false)
                     }}
                     className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-orange-600 text-white shadow-md hover:bg-orange-700 transition-colors"
                     aria-label="Почта"
@@ -457,14 +432,12 @@ export function ChatWidget() {
                     <FabMailLogo className="h-[30px] w-[30px] shrink-0" />
                   </motion.a>
                   <motion.button
-                    key="fab-tg"
                     type="button"
-                    variants={fabSubItemVariants}
+                    variants={fabContactsItemVariants}
                     disabled={!telegramHref}
                     onClick={() => {
                       if (!telegramHref) return
                       window.open(telegramHref, '_blank', 'noopener,noreferrer')
-                      setFabMenuOpen(false)
                     }}
                     className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full p-0 shadow-md ring-inset ring-2 ring-white/25 hover:brightness-95 transition-[filter] disabled:opacity-40 disabled:pointer-events-none"
                     aria-label="Telegram"
@@ -480,12 +453,10 @@ export function ChatWidget() {
                     />
                   </motion.button>
                   <motion.a
-                    key="fab-phone"
-                    variants={fabSubItemVariants}
                     href={phoneHref === '#' ? undefined : phoneHref}
+                    variants={fabContactsItemVariants}
                     onClick={(e) => {
                       if (phoneHref === '#') e.preventDefault()
-                      setFabMenuOpen(false)
                     }}
                     className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md hover:bg-emerald-700 transition-colors"
                     aria-label="Телефон"
@@ -493,20 +464,6 @@ export function ChatWidget() {
                   >
                     <Phone className="h-[30px] w-[30px] shrink-0" strokeWidth={2.25} />
                   </motion.a>
-                  <motion.button
-                    key="fab-chat"
-                    type="button"
-                    variants={fabSubItemVariants}
-                    onClick={() => {
-                      setIsOpen(true)
-                      setFabMenuOpen(false)
-                    }}
-                    className="flex h-14 w-14 shrink-0 flex-col items-center justify-center px-1.5 rounded-full bg-primary text-white text-[11px] font-semibold leading-tight text-center shadow-md hover:bg-primary/90 transition-colors"
-                    aria-label="Чат на сайте"
-                    title="Чат"
-                  >
-                    Чат
-                  </motion.button>
                 </motion.div>
               )}
             </AnimatePresence>
