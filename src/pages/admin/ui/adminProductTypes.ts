@@ -15,6 +15,7 @@ export interface ProductLocal {
   image: string
   category: string
   slug: string
+  subcategoryIds?: string[]
 }
 
 /** Поля формы без slug — URL-сегмент генерируется на сохранении */
@@ -39,5 +40,6 @@ export function emptyProductForm(): ProductFormState {
     features: [],
     featuresText: '',
     category: '',
+    subcategoryIds: [],
   }
 }

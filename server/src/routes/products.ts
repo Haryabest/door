@@ -36,6 +36,7 @@ productsRouter.get('/products', async (req, res) => {
   const q = String(req.query.q ?? '').trim()
   const categoryLegacy = String(req.query.category ?? '').trim()
   const categoriesMulti = parseList(req.query.categories)
+  const subcategoriesMulti = parseList(req.query.subcategories)
   const materials = parseList(req.query.materials)
   const colors = parseList(req.query.colors)
 
@@ -58,6 +59,11 @@ productsRouter.get('/products', async (req, res) => {
   if (categoryFilters.length > 0) {
     params.push(categoryFilters)
     whereClauses.push(`category = ANY($${params.length}::text[])`)
+  }
+
+  if (subcategoriesMulti.length > 0) {
+    params.push(subcategoriesMulti)
+    whereClauses.push(`subcategory_ids && $${params.length}::text[]`)
   }
 
   if (materials.length > 0) {
@@ -92,8 +98,8 @@ productsRouter.get('/products/:id', async (req, res) => {
 productsRouter.post('/products', requireAdminToken, validateBody(productCreateSchema), async (req, res) => {
   const b = req.body as z.infer<typeof productCreateSchema>
   const { rows } = await pool.query(
-    `INSERT INTO products (name, description, features, material, color, image, category, slug)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO products (name, description, features, material, color, image, category, slug, subcategory_ids)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING *`,
     [
       b.name,
@@ -104,6 +110,7 @@ productsRouter.post('/products', requireAdminToken, validateBody(productCreateSc
       b.image,
       b.category,
       b.slug,
+      b.subcategoryIds ?? [],
     ]
   )
   res.status(201).json(mapProduct(rows[0]))
@@ -134,13 +141,16 @@ productsRouter.put(
     const image = b.image !== undefined ? b.image : prev.image
     const category = b.category !== undefined ? b.category : prev.category
     const slug = b.slug !== undefined ? b.slug : prev.slug
+    const subcategoryIds =
+      b.subcategoryIds !== undefined ? b.subcategoryIds : prev.subcategoryIds ?? []
     const { rows } = await pool.query(
       `UPDATE products SET
         name = $1, description = $2, features = $3,
-        material = $4, color = $5, image = $6, category = $7, slug = $8
-      WHERE id = $9
+        material = $4, color = $5, image = $6, category = $7, slug = $8,
+        subcategory_ids = $9
+      WHERE id = $10
       RETURNING *`,
-      [name, description, features, material, color, image, category, slug, id]
+      [name, description, features, material, color, image, category, slug, subcategoryIds, id]
     )
     res.json(mapProduct(rows[0]))
   }

@@ -273,3 +273,18 @@ pagesRouter.put('/widgets/footer', requireAdminToken, validateBody(jsonPageDocum
   await putSiteJson('footer', req.body)
   res.json(req.body)
 })
+
+// --- Плавающая кнопка связи (чат, телефон, Telegram, почта) ---
+pagesRouter.get('/widgets/chat-widget', async (_req, res) => {
+  const data = await getSiteJson('chat_widget')
+  if (!data) {
+    res.status(404).json({ error: 'Not found', code: 'not_found' })
+    return
+  }
+  res.json(data)
+})
+
+pagesRouter.put('/widgets/chat-widget', requireAdminToken, validateBody(jsonPageDocument), async (req, res) => {
+  await putSiteJson('chat_widget', req.body)
+  res.json(req.body)
+})

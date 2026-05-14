@@ -87,7 +87,6 @@ INSERT INTO site_content (key, data) VALUES
     "logoTitle": "От А до Я",
     "logoSubtitle": "Двери и Фурнитура",
     "phoneText": "+7 (960) 166 30-30",
-    "phoneHref": "tel:+79991234567",
     "navItems": [
       {"label": "Каталог", "path": "/catalog"},
       {"label": "Портфолио", "path": "/portfolio"},
@@ -109,9 +108,9 @@ INSERT INTO site_content (key, data) VALUES
       {"label": "Контакты", "path": "/contacts"}
     ],
     "phones": [
-      {"text": "+7 (960) 166 30-30", "href": "tel:+79601663030"},
-      {"text": "+7 (831) 200-00-02", "href": "tel:+78312000002"},
-      {"text": "+7 (831) 200-00-03", "href": "tel:+78312000003"}
+      {"text": "+7 (960) 166 30-30"},
+      {"text": "+7 (831) 200-00-02"},
+      {"text": "+7 (831) 200-00-03"}
     ],
     "emailText": "otadoya@mail.ru",
     "emailHref": "mailto:otadoya@mail.ru",

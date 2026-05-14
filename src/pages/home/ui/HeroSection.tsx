@@ -2,20 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { HeroSection as HeroSectionType } from '@/shared/api/home'
 import { defaultHeaderData, getHeader } from '@/shared/api/header'
+import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 
 interface HeroSectionProps {
   hero: HeroSectionType
 }
 
-function toTelHref(phoneText: string): string {
-  const digits = phoneText.replace(/\D/g, '')
-  return digits ? `tel:+${digits}` : ''
-}
-
 export function HeroSection({ hero }: HeroSectionProps) {
   const [mediaMode, setMediaMode] = useState<'photo' | 'video' | 'slideshow'>('photo')
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [phoneHref, setPhoneHref] = useState(toTelHref(defaultHeaderData.phoneText))
+  const [phoneHref, setPhoneHref] = useState(() => telHrefFromPhoneText(defaultHeaderData.phoneText))
 
   const slideshowImages = useMemo(
     () => [
@@ -53,7 +49,7 @@ export function HeroSection({ hero }: HeroSectionProps) {
 
     getHeader().then((data) => {
       if (!isMounted || !data) return
-      setPhoneHref(toTelHref(data.phoneText) || data.phoneHref)
+      setPhoneHref(telHrefFromPhoneText(data.phoneText))
     })
 
     return () => {

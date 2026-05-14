@@ -1,5 +1,6 @@
 import { type Dispatch, type SetStateAction, useState } from 'react'
 import { Save, X, Plus } from 'lucide-react'
+import { Checkbox } from '@/shared/ui/checkbox'
 import type { CatalogPageData } from '@/shared/api/catalog'
 import type { ProductFormState, AddCatalogColorPayload } from './adminProductTypes'
 
@@ -29,6 +30,14 @@ export function ProductEditForm({
   const categories = catalogData?.categories ?? []
   const materials = catalogData?.materials ?? []
   const colors = catalogData?.colors ?? []
+  const categoryModel = categories.find((c) => c.id === productForm.category)
+  const subcatsForCategory = categoryModel?.subcategories ?? []
+
+  const toggleSubcategory = (subId: string) => {
+    const cur = productForm.subcategoryIds ?? []
+    const next = cur.includes(subId) ? cur.filter((id) => id !== subId) : [...cur, subId]
+    setProductForm({ ...productForm, subcategoryIds: next })
+  }
 
   const [newColorOpen, setNewColorOpen] = useState(false)
   const [newColorName, setNewColorName] = useState('')
@@ -85,7 +94,13 @@ export function ProductEditForm({
             </div>
             <select
               value={productForm.category ?? ''}
-              onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+              onChange={(e) =>
+                setProductForm({
+                  ...productForm,
+                  category: e.target.value,
+                  subcategoryIds: [],
+                })
+              }
               className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
             >
               {categories.length === 0 ? (
@@ -99,6 +114,31 @@ export function ProductEditForm({
               )}
             </select>
           </div>
+
+          {subcatsForCategory.length > 0 ? (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Подкатегории каталога</label>
+              <div className="rounded-lg border-2 border-gray-200 divide-y divide-gray-100 bg-gray-50/80">
+                {subcatsForCategory.map((sub) => (
+                  <label
+                    key={sub.id}
+                    className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-white transition-colors"
+                  >
+                    <Checkbox
+                      checked={(productForm.subcategoryIds ?? []).includes(sub.id)}
+                      onCheckedChange={() => toggleSubcategory(sub.id)}
+                    />
+                    <span className="text-sm text-foreground">{sub.name}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5">Можно выбрать несколько привязок к фильтрам каталога.</p>
+            </div>
+          ) : productForm.category ? (
+            <p className="text-xs text-muted-foreground rounded-lg border border-dashed border-gray-200 px-3 py-2 bg-gray-50">
+              У выбранной категории пока нет подкатегорий — задайте их во вкладке «Каталог» или выберите другую категорию.
+            </p>
+          ) : null}
 
           <div>
             <div className="flex items-center justify-between mb-2">

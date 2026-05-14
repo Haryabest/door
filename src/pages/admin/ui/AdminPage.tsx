@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Package, MessageSquare, LogOut, Plus, Trash2, Edit, X,
   Search, Send, ChevronLeft, Home, Image as ImageIcon, FileText, Settings, MapPin, PanelTop,
+  MessageCircle,
 } from 'lucide-react'
 import { updateProduct, deleteProduct, productsApi, createProduct, uploadImage } from '@/shared/api/products'
 import { sendMessage, getChats, markChatAsRead } from '@/shared/api/chats'
@@ -25,9 +26,16 @@ import {
   type CatalogCategory,
   type CatalogColor,
   type CatalogPutFailure,
+  type CatalogSubcategory,
 } from '@/shared/api/catalog'
 import { defaultHeaderData, getHeader, updateHeader, type HeaderData, type HeaderNavItem } from '@/shared/api/header'
 import { defaultFooterData, getFooter, updateFooter, type FooterData, type FooterLinkItem, type FooterPhoneItem } from '@/shared/api/footer'
+import {
+  defaultChatWidgetData,
+  getChatWidgetEditable,
+  updateChatWidget,
+  type ChatWidgetData,
+} from '@/shared/api/chatWidget'
 import { adminLogout, adminMe } from '@/shared/api/auth'
 import { formatAdminSaveFailureMessage } from '@/shared/api/adminApiFailure'
 import { generateProductSlug, transliterate } from '@/shared/lib/slug'
@@ -39,7 +47,7 @@ import {
   type ProductLocal,
 } from './adminProductTypes'
 import { ProductEditForm } from './ProductEditForm'
-import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor, FooterPageEditor } from './editors'
+import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor, FooterPageEditor, ChatFabPageEditor } from './editors'
 
 export type { ProductFormState, ProductLocal, AddCatalogColorPayload } from './adminProductTypes'
 export { emptyProductForm } from './adminProductTypes'
@@ -150,12 +158,18 @@ interface FooterPageState {
   data: FooterData | null
 }
 
+interface ChatFabPageState {
+  isLoading: boolean
+  isSaving: boolean
+  data: ChatWidgetData | null
+}
+
 export function AdminPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [authChecked, setAuthChecked] = useState(false)
   const [activeTab, setActiveTab] = useState<'products' | 'pages' | 'messages'>('products')
-  const [activePage, setActivePage] = useState<'home' | 'catalog' | 'portfolio' | 'about' | 'contacts' | 'header' | 'footer'>('home')
+  const [activePage, setActivePage] = useState<'home' | 'catalog' | 'portfolio' | 'about' | 'contacts' | 'header' | 'footer' | 'chatFab'>('home')
   const [products, setProducts] = useState<ProductLocal[]>([])
   const [chats, setChats] = useState<ChatLocal[]>([])
   const [selectedChat, setSelectedChat] = useState<number | null>(null)
@@ -215,6 +229,11 @@ export function AdminPage() {
     isSaving: false,
     data: null,
   })
+  const [chatFabPage, setChatFabPage] = useState<ChatFabPageState>({
+    isLoading: false,
+    isSaving: false,
+    data: null,
+  })
 
   const [productForm, setProductForm] = useState<ProductFormState>(emptyProductForm)
 
@@ -246,6 +265,7 @@ export function AdminPage() {
     loadCatalogPage()
     loadHeaderPage()
     loadFooterPage()
+    loadChatFabPage()
   }, [authChecked])
 
   const loadProducts = async () => {
@@ -261,6 +281,7 @@ export function AdminPage() {
         image: p.image,
         category: p.category,
         slug: p.slug,
+        subcategoryIds: p.subcategoryIds ?? [],
       }))
     )
   }
@@ -694,6 +715,36 @@ export function AdminPage() {
     setFooterPage({ isLoading: false, isSaving: false, data: data ?? defaultFooterData })
   }
 
+  const loadChatFabPage = async () => {
+    setChatFabPage((prev) => ({ ...prev, isLoading: true }))
+    const data = await getChatWidgetEditable()
+    setChatFabPage({
+      isLoading: false,
+      isSaving: false,
+      data: data ?? defaultChatWidgetData,
+    })
+  }
+
+  const handleSaveChatFabPage = async () => {
+    if (!chatFabPage.data) return
+    setChatFabPage((prev) => ({ ...prev, isSaving: true }))
+    const updated = await updateChatWidget(chatFabPage.data)
+    if (updated) {
+      setChatFabPage({ isLoading: false, isSaving: false, data: updated })
+      alert('Кнопки связи сохранены!')
+    } else {
+      setChatFabPage((prev) => ({ ...prev, isSaving: false }))
+      alert(SAVE_FAILED_HINT)
+    }
+  }
+
+  const handleUpdateChatFabField = <K extends keyof ChatWidgetData>(field: K, value: ChatWidgetData[K]) => {
+    setChatFabPage((prev) => ({
+      ...prev,
+      data: prev.data ? { ...prev.data, [field]: value } : prev.data,
+    }))
+  }
+
   const handleSaveFooterPage = async () => {
     if (!footerPage.data) return
     setFooterPage((prev) => ({ ...prev, isSaving: true }))
@@ -747,21 +798,21 @@ export function AdminPage() {
 
   const handleAddFooterPhone = () => {
     if (!footerPage.data) return
-    const next: FooterPhoneItem = { text: '+7 (___) ___-__-__', href: 'tel:+7' }
+    const next: FooterPhoneItem = { text: '+7 (___) ___-__-__' }
     setFooterPage((prev) => ({
       ...prev,
       data: prev.data ? { ...prev.data, phones: [...prev.data.phones, next] } : prev.data,
     }))
   }
 
-  const handleUpdateFooterPhone = (index: number, field: keyof FooterPhoneItem, value: string) => {
+  const handleUpdateFooterPhone = (index: number, text: string) => {
     if (!footerPage.data) return
     setFooterPage((prev) => ({
       ...prev,
       data: prev.data
         ? {
             ...prev.data,
-            phones: prev.data.phones.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+            phones: prev.data.phones.map((item, i) => (i === index ? { text } : item)),
           }
         : prev.data,
     }))
@@ -828,6 +879,39 @@ export function AdminPage() {
     const updatedCategories = catalogPage.data.categories.map(c => c.id === id ? { ...c, [field]: value } : c)
     const updatedData = { ...catalogPage.data, categories: updatedCategories }
     setCatalogPage({ ...catalogPage, data: updatedData })
+  }
+
+  const handleAddSubcategoryCatalog = (categoryId: string) => {
+    if (!catalogPage.data) return
+    const newSub: CatalogSubcategory = {
+      id: `sub-${Date.now()}`,
+      name: 'Новая подкатегория',
+    }
+    const updated = catalogPage.data.categories.map((c) =>
+      c.id === categoryId ? { ...c, subcategories: [...(c.subcategories ?? []), newSub] } : c
+    )
+    setCatalogPage({ ...catalogPage, data: { ...catalogPage.data, categories: updated } })
+  }
+
+  const handleUpdateSubcategoryCatalog = (categoryId: string, subId: string, name: string) => {
+    if (!catalogPage.data) return
+    const updated = catalogPage.data.categories.map((c) =>
+      c.id === categoryId
+        ? {
+            ...c,
+            subcategories: (c.subcategories ?? []).map((s) => (s.id === subId ? { ...s, name } : s)),
+          }
+        : c
+    )
+    setCatalogPage({ ...catalogPage, data: { ...catalogPage.data, categories: updated } })
+  }
+
+  const handleDeleteSubcategoryCatalog = (categoryId: string, subId: string) => {
+    if (!catalogPage.data) return
+    const updated = catalogPage.data.categories.map((c) =>
+      c.id === categoryId ? { ...c, subcategories: (c.subcategories ?? []).filter((s) => s.id !== subId) } : c
+    )
+    setCatalogPage({ ...catalogPage, data: { ...catalogPage.data, categories: updated } })
   }
 
   const handleAddMaterial = () => {
@@ -984,6 +1068,7 @@ export function AdminPage() {
     setProductForm({
       ...emptyProductForm(),
       category: d?.categories[0]?.id ?? '',
+      subcategoryIds: [],
       material: d?.materials[0] ?? '',
       color: d?.colors[0]?.name ?? '',
     })
@@ -1031,6 +1116,7 @@ export function AdminPage() {
       image: imageUrl,
       category: productForm.category,
       slug: 'new',
+      subcategoryIds: productForm.subcategoryIds ?? [],
     })
     if (!createdResult.ok) {
       alert(formatAdminSaveFailureMessage(createdResult.failure, { action: 'Создание товара' }))
@@ -1050,9 +1136,10 @@ export function AdminPage() {
         material: saved.material,
         color: saved.color,
         image: saved.image,
-        category: saved.category,
-        slug: saved.slug,
-      },
+                category: saved.category,
+                slug: saved.slug,
+                subcategoryIds: saved.subcategoryIds ?? [],
+              },
     ])
     setIsEditing(false)
     setProductForm(emptyProductForm())
@@ -1080,6 +1167,7 @@ export function AdminPage() {
       color: product.color,
       image: product.image,
       category: product.category,
+      subcategoryIds: product.subcategoryIds ? [...product.subcategoryIds] : [],
       featuresText: product.features?.join('\n') ?? '',
       file: undefined,
     })
@@ -1131,6 +1219,7 @@ export function AdminPage() {
       image: imageUrl,
       category: productForm.category,
       slug,
+      subcategoryIds: productForm.subcategoryIds ?? [],
     })
 
     if (updated) {
@@ -1147,6 +1236,7 @@ export function AdminPage() {
                 image: updated.image,
                 category: updated.category,
                 slug: updated.slug,
+                subcategoryIds: updated.subcategoryIds ?? [],
               }
             : p
         )
@@ -1423,6 +1513,18 @@ export function AdminPage() {
                 <PanelTop className="w-5 h-5" />
                 Футер
               </button>
+              <button
+                type="button"
+                onClick={() => setActivePage('chatFab')}
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap shrink-0 ${
+                  activePage === 'chatFab'
+                    ? 'bg-primary text-background'
+                    : 'bg-white text-foreground hover:bg-gray-100'
+                }`}
+              >
+                <MessageCircle className="w-5 h-5" />
+                Кнопки связи
+              </button>
             </div>
 
             {/* Редактор главной страницы */}
@@ -1455,6 +1557,9 @@ export function AdminPage() {
                 onAddCategory={handleAddCategoryCatalog}
                 onUpdateCategory={handleUpdateCategoryCatalog}
                 onDeleteCategory={handleDeleteCategoryCatalog}
+                onAddSubcategory={handleAddSubcategoryCatalog}
+                onUpdateSubcategory={handleUpdateSubcategoryCatalog}
+                onDeleteSubcategory={handleDeleteSubcategoryCatalog}
                 onAddMaterial={handleAddMaterial}
                 onUpdateMaterial={handleUpdateMaterial}
                 onDeleteMaterial={handleDeleteMaterial}
@@ -1541,6 +1646,16 @@ export function AdminPage() {
                 onAddLegalLink={handleAddFooterLegalLink}
                 onUpdateLegalLink={handleUpdateFooterLegalLink}
                 onDeleteLegalLink={handleDeleteFooterLegalLink}
+              />
+            )}
+
+            {activePage === 'chatFab' && chatFabPage.data && (
+              <ChatFabPageEditor
+                data={chatFabPage.data}
+                isLoading={chatFabPage.isLoading}
+                isSaving={chatFabPage.isSaving}
+                onSave={handleSaveChatFabPage}
+                onUpdateField={handleUpdateChatFabField}
               />
             )}
           </div>

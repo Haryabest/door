@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useContext, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, X, MessageCircle, AlertTriangle } from 'lucide-react'
+import { Send, X, MessageCircle, AlertTriangle, Phone } from 'lucide-react'
 import { FiltersContext } from '@/App'
 import { sanitizeInput, validateRequired } from '@/shared/lib/validation'
 import { containsProfanity } from '@/shared/lib/profanity'
@@ -12,7 +12,15 @@ import {
   setStoredChatSession,
   type PublicChatMeta,
 } from '@/shared/api/chats'
+import {
+  defaultChatWidgetData,
+  getChatWidget,
+  mailtoHrefFromChatEmail,
+  type ChatWidgetData,
+} from '@/shared/api/chatWidget'
+import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 import { useVpnDetection } from '@/shared/lib/vpnDetection'
+import telegramIcon from '@/assets/telegram.jpg'
 
 interface Message {
   id: number
@@ -40,12 +48,33 @@ const VPN_WARNING: Message = {
   timestamp: new Date(),
 }
 
+function FabMailLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <rect width="18" height="14" x="3" y="5" rx="2" ry="2" />
+      <path d="m3 7 9 7 9-7" />
+    </svg>
+  )
+}
+
 export function ChatWidget() {
   const { isFiltersOpen, isChatWidgetHidden } = useContext(FiltersContext)
   const location = useLocation()
   const navigate = useNavigate()
   const { isVpn } = useVpnDetection()
   const [isOpen, setIsOpen] = useState(false)
+  /** Меню из 4 кнопок до открытия чата */
+  const [fabMenuOpen, setFabMenuOpen] = useState(false)
+  const [fabSettings, setFabSettings] = useState<ChatWidgetData>(defaultChatWidgetData)
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [validationError, setValidationError] = useState('')
@@ -111,6 +140,14 @@ export function ChatWidget() {
   useEffect(() => {
     void loadHistory()
   }, [loadHistory])
+
+  useEffect(() => {
+    void getChatWidget().then(setFabSettings)
+  }, [])
+
+  useEffect(() => {
+    if (isOpen) setFabMenuOpen(false)
+  }, [isOpen])
 
   useEffect(() => {
     if (isVpn === true && !vpnWarningShown && messages.length > 0) {
@@ -312,32 +349,133 @@ export function ChatWidget() {
     navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
   }, [location.pathname, location.search, navigate])
 
+  const phoneHref = telHrefFromPhoneText(fabSettings.phoneText)
+  const mailHref = mailtoHrefFromChatEmail(fabSettings.emailText)
+  const tgUrlRaw = fabSettings.telegramUrl.trim()
+  const telegramHref =
+    tgUrlRaw && !/^https?:\/\//i.test(tgUrlRaw) ? `https://${tgUrlRaw}` : tgUrlRaw
+
   return (
     <>
       <AnimatePresence>
         {!isFiltersOpen && !isChatWidgetHidden && (
-          <motion.button
-            onClick={() => setIsOpen(!isOpen)}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center z-[2147483647] hover:bg-primary/90 transition-colors"
-            aria-label="Открыть чат"
+          <motion.div
+            className="fixed bottom-6 right-6 z-[2147483647] flex flex-row-reverse items-center gap-3"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
           >
-            {isOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <MessageCircle className="w-6 h-6" />
-            )}
-            {/* Индикатор VPN на кнопке чата */}
-            {isVpn && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-2.5 h-2.5 text-amber-900" />
-              </span>
-            )}
-          </motion.button>
+            <motion.button
+              type="button"
+              onClick={() => {
+                if (isOpen) {
+                  setIsOpen(false)
+                } else {
+                  setFabMenuOpen((v) => !v)
+                }
+              }}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              className="relative w-14 h-14 shrink-0 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+              aria-expanded={fabMenuOpen}
+              aria-label={isOpen ? 'Закрыть чат' : fabMenuOpen ? 'Закрыть меню' : 'Связь и чат'}
+            >
+              {isOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <MessageCircle className="w-6 h-6" />
+              )}
+              {isVpn && !isOpen && (
+                <span className="pointer-events-none absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-2.5 h-2.5 text-amber-900" />
+                </span>
+              )}
+            </motion.button>
+
+            <AnimatePresence initial={false}>
+              {fabMenuOpen && !isOpen && (
+                <>
+                  <motion.a
+                    key="fab-mail"
+                    href={mailHref === '#' ? undefined : mailHref}
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 16 }}
+                    transition={{ duration: 0.15, delay: 0.06 }}
+                    onClick={(e) => {
+                      if (mailHref === '#') e.preventDefault()
+                      setFabMenuOpen(false)
+                    }}
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-orange-600 text-white shadow-md hover:bg-orange-700 transition-colors"
+                    aria-label="Почта"
+                    title="Почта"
+                  >
+                    <FabMailLogo className="h-[30px] w-[30px] shrink-0" />
+                  </motion.a>
+                  <motion.button
+                    key="fab-tg"
+                    type="button"
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 16 }}
+                    transition={{ duration: 0.15, delay: 0.04 }}
+                    disabled={!telegramHref}
+                    onClick={() => {
+                      if (!telegramHref) return
+                      window.open(telegramHref, '_blank', 'noopener,noreferrer')
+                      setFabMenuOpen(false)
+                    }}
+                    className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full p-0 shadow-md ring-inset ring-2 ring-white/25 hover:brightness-95 transition-[filter] disabled:opacity-40 disabled:pointer-events-none"
+                    aria-label="Telegram"
+                    title="Telegram"
+                  >
+                    <img
+                      src={telegramIcon}
+                      alt=""
+                      width={112}
+                      height={112}
+                      draggable={false}
+                      className="absolute inset-0 h-full w-full object-cover select-none pointer-events-none"
+                    />
+                  </motion.button>
+                  <motion.a
+                    key="fab-phone"
+                    href={phoneHref === '#' ? undefined : phoneHref}
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 16 }}
+                    transition={{ duration: 0.15, delay: 0.02 }}
+                    onClick={(e) => {
+                      if (phoneHref === '#') e.preventDefault()
+                      setFabMenuOpen(false)
+                    }}
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md hover:bg-emerald-700 transition-colors"
+                    aria-label="Телефон"
+                    title="Телефон"
+                  >
+                    <Phone className="h-[30px] w-[30px] shrink-0" strokeWidth={2.25} />
+                  </motion.a>
+                  <motion.button
+                    key="fab-chat"
+                    type="button"
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 16 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={() => {
+                      setIsOpen(true)
+                      setFabMenuOpen(false)
+                    }}
+                    className="flex h-14 w-14 shrink-0 flex-col items-center justify-center px-1.5 rounded-full bg-primary text-white text-[11px] font-semibold leading-tight text-center shadow-md hover:bg-primary/90 transition-colors"
+                    aria-label="Чат на сайте"
+                    title="Чат"
+                  >
+                    Чат
+                  </motion.button>
+                </>
+              )}
+            </AnimatePresence>
+          </motion.div>
         )}
       </AnimatePresence>
 

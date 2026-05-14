@@ -19,6 +19,7 @@ export const productCreateSchema = z.object({
   image: urlOrPath,
   category: str(100).default('interior'),
   slug: str(500).min(1),
+  subcategoryIds: z.array(z.string().max(120)).max(40).optional().default([]),
 })
 
 export const productUpdateSchema = productCreateSchema.partial().refine((o) => Object.keys(o).length > 0, {

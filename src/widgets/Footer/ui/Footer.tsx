@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getFooter, defaultFooterData } from '@/shared/api/footer'
+import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 
 export function Footer() {
   const [footerData, setFooterData] = useState(defaultFooterData)
@@ -50,7 +51,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-white/80">
               {footerData.phones.map((phone, index) => (
                 <li key={index}>
-                  <a href={phone.href} className="hover:underline hover:text-white">
+                  <a href={telHrefFromPhoneText(phone.text)} className="hover:underline hover:text-white">
                     {phone.text}
                   </a>
                 </li>

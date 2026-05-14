@@ -13,6 +13,8 @@ export interface Product {
   image: string
   category: string
   slug: string
+  /** Id подкатегорий из данных страницы «Каталог» */
+  subcategoryIds?: string[]
 }
 
 export interface ProductListParams {
@@ -21,6 +23,8 @@ export interface ProductListParams {
   category?: string
   /** Несколько категорий (id из каталога) */
   categories?: string[]
+  /** Несколько подкатегорий (id); товар попадает, если есть пересечение с его subcategoryIds */
+  subcategories?: string[]
   materials?: string[]
   colors?: string[]
 }
@@ -39,6 +43,8 @@ export const productsApi = {
     else if (params?.category?.trim()) searchParams.set('category', params.category.trim())
     if (params?.materials && params.materials.length > 0) searchParams.set('materials', params.materials.join(','))
     if (params?.colors && params.colors.length > 0) searchParams.set('colors', params.colors.join(','))
+    if (params?.subcategories && params.subcategories.length > 0)
+      searchParams.set('subcategories', params.subcategories.join(','))
 
     const query = searchParams.toString()
     const response = await apiFetch(`/api/products${query ? `?${query}` : ''}`)

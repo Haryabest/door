@@ -65,7 +65,7 @@ export function HeaderPageEditor({
               className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
             />
           </div>
-          <div>
+          <div className="lg:col-span-2">
             <label className="block text-sm font-medium text-foreground mb-2">Телефон (текст)</label>
             <input
               type="text"
@@ -74,16 +74,9 @@ export function HeaderPageEditor({
               className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
               placeholder="+7 (960) 166 30-30"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Телефон (ссылка)</label>
-            <input
-              type="text"
-              value={data.phoneHref}
-              onChange={(e) => onUpdateField('phoneHref', e.target.value)}
-              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
-              placeholder="tel:+79991234567"
-            />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Ссылка для звонка подставляется из номера автоматически (формат tel:+7…).
+            </p>
           </div>
         </div>
       </div>

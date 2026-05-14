@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { productsApi } from "@/shared/api/products"
 import { defaultHeaderData, getHeader, type HeaderData } from '@/shared/api/header'
+import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -86,7 +87,7 @@ export function Header() {
             </svg>
           </button>
           <a
-            href={headerData.phoneHref}
+            href={telHrefFromPhoneText(headerData.phoneText)}
             className="hidden lg:flex items-center gap-2 text-base font-medium text-foreground hover:underline"
           >
             <svg

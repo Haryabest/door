@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useContext } from 'react'
+import { useState, useMemo, useEffect, useContext, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiltersContext } from '@/App'
 import { Header } from "@/widgets/Header"
@@ -58,6 +58,9 @@ export function CatalogPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([])
+  /** Подкатегории под каждой группой в «Каталог»; true по умолчанию (раскрыто) */
+  const [expandedCategorySubs, setExpandedCategorySubs] = useState<Record<string, boolean>>({})
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [expandedSections, setExpandedSections] = useState({
@@ -85,10 +88,11 @@ export function CatalogPage() {
     void loadProducts({
       q: debouncedSearchQuery,
       categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+      subcategories: selectedSubcategories.length > 0 ? selectedSubcategories : undefined,
       materials: selectedMaterials.length > 0 ? selectedMaterials : undefined,
       colors: selectedColors.length > 0 ? selectedColors : undefined,
     })
-  }, [debouncedSearchQuery, selectedCategories, selectedMaterials, selectedColors])
+  }, [debouncedSearchQuery, selectedCategories, selectedSubcategories, selectedMaterials, selectedColors])
 
   const loadCatalogData = async () => {
     const data = await getCatalogPage()
@@ -100,6 +104,7 @@ export function CatalogPage() {
   const loadProducts = async (params?: {
     q?: string
     categories?: string[]
+    subcategories?: string[]
     materials?: string[]
     colors?: string[]
   }) => {
@@ -122,10 +127,28 @@ export function CatalogPage() {
     setIsFiltersOpen(newState)
   }
 
+  const closeFilters = useCallback(() => {
+    setShowFilters(false)
+    setIsFiltersOpen(false)
+  }, [setIsFiltersOpen])
+
   const toggleCatalogCategory = (catId: string) => {
     setSelectedCategories((prev) =>
       prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
     )
+  }
+
+  const toggleCatalogSubcategory = (subId: string) => {
+    setSelectedSubcategories((prev) =>
+      prev.includes(subId) ? prev.filter((id) => id !== subId) : [...prev, subId]
+    )
+  }
+
+  const toggleCategorySublist = (catId: string) => {
+    setExpandedCategorySubs((prev) => ({
+      ...prev,
+      [catId]: !(prev[catId] ?? true),
+    }))
   }
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -149,6 +172,7 @@ export function CatalogPage() {
 
   const resetFilters = () => {
     setSelectedCategories([])
+    setSelectedSubcategories([])
     setSelectedMaterials([])
     setSelectedColors([])
     setSearchQuery('')
@@ -157,7 +181,10 @@ export function CatalogPage() {
   }
 
   const selectedCount =
-    selectedCategories.length + selectedMaterials.length + selectedColors.length
+    selectedCategories.length +
+    selectedSubcategories.length +
+    selectedMaterials.length +
+    selectedColors.length
 
   // Фильтрация товаров
   const filteredProducts = useMemo(() => {
@@ -170,6 +197,10 @@ export function CatalogPage() {
         selectedCategories.length > 0 &&
         !selectedCategories.includes(product.category)
       ) return false
+      if (selectedSubcategories.length > 0) {
+        const prodSubs = product.subcategoryIds ?? []
+        if (!selectedSubcategories.some((sid) => prodSubs.includes(sid))) return false
+      }
       if (
         selectedMaterials.length > 0 &&
         !selectedMaterials.some((materialFilter) => {
@@ -188,7 +219,7 @@ export function CatalogPage() {
       ) return false
       return true
     })
-  }, [products, searchQuery, selectedCategories, selectedMaterials, selectedColors])
+  }, [products, searchQuery, selectedCategories, selectedSubcategories, selectedMaterials, selectedColors])
 
   // Пагинация
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
@@ -200,7 +231,7 @@ export function CatalogPage() {
   // Сброс на первую страницу при изменении фильтров
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedCategories, selectedMaterials, selectedColors])
+  }, [searchQuery, selectedCategories, selectedSubcategories, selectedMaterials, selectedColors])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -305,6 +336,15 @@ export function CatalogPage() {
           <AnimatePresence>
             {showFilters && (
               <>
+                <motion.div
+                  role="presentation"
+                  className="fixed inset-0 z-[49] cursor-pointer bg-black/35"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={closeFilters}
+                />
                 {/* Панель фильтров */}
                 <motion.div
                   className="fixed right-0 top-0 z-50 h-full w-full max-w-md bg-background shadow-2xl overflow-y-auto"
@@ -326,10 +366,7 @@ export function CatalogPage() {
                         </button>
                       )}
                       <button 
-                        onClick={() => {
-                          setShowFilters(false)
-                          setIsFiltersOpen(false)
-                        }} 
+                        onClick={closeFilters} 
                         className="text-primary p-2 cursor-pointer"
                       >
                         <X className="w-6 h-6" />
@@ -358,7 +395,7 @@ export function CatalogPage() {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            <div className="p-3 space-y-2 bg-background">
+                            <div className="p-3 space-y-3 bg-background">
                               {categoriesList.length === 0 ? (
                                 <p className="text-sm text-muted-foreground px-2 py-1">
                                   Загрузка категорий…
@@ -370,22 +407,58 @@ export function CatalogPage() {
                                     IconComponent && typeof IconComponent !== 'string' ? (
                                       <IconComponent className="w-4 h-4 shrink-0 text-primary" />
                                     ) : null
+                                  const subs = cat.subcategories ?? []
+                                  const subListOpen = expandedCategorySubs[cat.id] ?? true
                                   return (
-                                    <label
-                                      key={cat.id}
-                                      className="flex items-center gap-3 cursor-pointer group px-2 py-2 rounded-lg hover:bg-primary/5"
-                                    >
-                                      <Checkbox
-                                        checked={selectedCategories.includes(cat.id)}
-                                        onCheckedChange={() => toggleCatalogCategory(cat.id)}
-                                      />
-                                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                                        {IconEl}
-                                        <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">
-                                          {cat.name}
-                                        </span>
+                                    <div key={cat.id} className="rounded-lg border border-border/70 overflow-hidden">
+                                      <div className="flex items-stretch gap-0 min-h-[2.75rem]">
+                                        <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer group px-2 py-2.5 hover:bg-primary/5">
+                                          <Checkbox
+                                            checked={selectedCategories.includes(cat.id)}
+                                            onCheckedChange={() => toggleCatalogCategory(cat.id)}
+                                          />
+                                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                                            {IconEl}
+                                            <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                                              {cat.name}
+                                            </span>
+                                          </div>
+                                        </label>
+                                        {subs.length > 0 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => toggleCategorySublist(cat.id)}
+                                            className="shrink-0 px-3 flex items-center justify-center border-l border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors"
+                                            aria-expanded={subListOpen}
+                                            aria-label={subListOpen ? 'Скрыть подкатегории' : 'Показать подкатегории'}
+                                          >
+                                            <ChevronRight
+                                              className={`w-5 h-5 text-primary transition-transform ${
+                                                subListOpen ? 'rotate-90' : ''
+                                              }`}
+                                            />
+                                          </button>
+                                        )}
                                       </div>
-                                    </label>
+                                      {subs.length > 0 && subListOpen && (
+                                        <div className="border-t border-border/60 bg-muted/30 px-2 py-2 pl-4 sm:pl-8 space-y-1">
+                                          {subs.map((sub) => (
+                                            <label
+                                              key={sub.id}
+                                              className="flex items-center gap-3 cursor-pointer group py-2 px-2 rounded-md hover:bg-background/80"
+                                            >
+                                              <Checkbox
+                                                checked={selectedSubcategories.includes(sub.id)}
+                                                onCheckedChange={() => toggleCatalogSubcategory(sub.id)}
+                                              />
+                                              <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">
+                                                {sub.name}
+                                              </span>
+                                            </label>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
                                   )
                                 })
                               )}
@@ -506,7 +579,7 @@ export function CatalogPage() {
                   {/* Кнопка применения */}
                   <div className="sticky bottom-0 bg-background border-t p-4">
                     <button
-                      onClick={() => setShowFilters(false)}
+                      onClick={closeFilters}
                       className="w-full py-3 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
                     >
                       Показать {filteredProducts.length} товаров

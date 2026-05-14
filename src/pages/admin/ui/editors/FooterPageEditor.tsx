@@ -1,5 +1,5 @@
 import { Plus, Save, Trash2 } from 'lucide-react'
-import type { FooterData, FooterLinkItem, FooterPhoneItem } from '@/shared/api/footer'
+import type { FooterData, FooterLinkItem } from '@/shared/api/footer'
 
 interface FooterPageEditorProps {
   data: FooterData
@@ -11,7 +11,7 @@ interface FooterPageEditorProps {
   onUpdateNavItem: (index: number, field: keyof FooterLinkItem, value: string) => void
   onDeleteNavItem: (index: number) => void
   onAddPhone: () => void
-  onUpdatePhone: (index: number, field: keyof FooterPhoneItem, value: string) => void
+  onUpdatePhone: (index: number, text: string) => void
   onDeletePhone: (index: number) => void
   onAddLegalLink: () => void
   onUpdateLegalLink: (index: number, field: keyof FooterLinkItem, value: string) => void
@@ -171,21 +171,17 @@ export function FooterPageEditor({
         </div>
         <div className="space-y-3">
           {data.phones.map((item, index) => (
-            <div key={`footer-phone-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 p-4 border-2 border-border rounded-lg">
-              <input
-                type="text"
-                value={item.text}
-                onChange={(e) => onUpdatePhone(index, 'text', e.target.value)}
-                placeholder="+7 (960) 166 30-30"
-                className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
-              />
-              <input
-                type="text"
-                value={item.href}
-                onChange={(e) => onUpdatePhone(index, 'href', e.target.value)}
-                placeholder="tel:+79601663030"
-                className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
-              />
+            <div key={`footer-phone-${index}`} className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-center p-4 border-2 border-border rounded-lg">
+              <div>
+                <input
+                  type="text"
+                  value={item.text}
+                  onChange={(e) => onUpdatePhone(index, e.target.value)}
+                  placeholder="+7 (960) 166 30-30"
+                  className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Ссылка tel: подставляется из номера.</p>
+              </div>
               <button type="button" onClick={() => onDeletePhone(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
                 <Trash2 className="w-5 h-5" />
               </button>

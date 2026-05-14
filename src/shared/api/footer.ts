@@ -7,7 +7,6 @@ export interface FooterLinkItem {
 
 export interface FooterPhoneItem {
   text: string
-  href: string
 }
 
 export interface FooterData {
@@ -35,9 +34,9 @@ export const defaultFooterData: FooterData = {
     { label: 'Контакты', path: '/contacts' },
   ],
   phones: [
-    { text: '+7 (960) 166 30-30', href: 'tel:+79601663030' },
-    { text: '+7 (831) 200-00-02', href: 'tel:+78312000002' },
-    { text: '+7 (831) 200-00-03', href: 'tel:+78312000003' },
+    { text: '+7 (960) 166 30-30' },
+    { text: '+7 (831) 200-00-02' },
+    { text: '+7 (831) 200-00-03' },
   ],
   emailText: 'otadoya@mail.ru',
   emailHref: 'mailto:otadoya@mail.ru',
@@ -49,13 +48,49 @@ export const defaultFooterData: FooterData = {
   ],
 }
 
+function parseFooterLinkItems(raw: unknown): FooterLinkItem[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object')
+    .map((x) => ({
+      label: typeof x.label === 'string' ? x.label : '',
+      path: typeof x.path === 'string' ? x.path : '/',
+    }))
+}
+
+/** Телефоны: только текст; поле href из старых записей игнорируется. */
+function parseFooterPhones(raw: unknown): FooterPhoneItem[] {
+  if (!Array.isArray(raw)) return defaultFooterData.phones
+  return raw
+    .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object')
+    .map((x) => ({
+      text: typeof x.text === 'string' ? x.text : '',
+    }))
+}
+
+export function normalizeFooterData(raw: unknown): FooterData {
+  const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  return {
+    logoTitle: typeof r.logoTitle === 'string' ? r.logoTitle : defaultFooterData.logoTitle,
+    logoSubtitle: typeof r.logoSubtitle === 'string' ? r.logoSubtitle : defaultFooterData.logoSubtitle,
+    description: typeof r.description === 'string' ? r.description : defaultFooterData.description,
+    navItems: Array.isArray(r.navItems) ? parseFooterLinkItems(r.navItems) : defaultFooterData.navItems,
+    phones: Array.isArray(r.phones) ? parseFooterPhones(r.phones) : defaultFooterData.phones,
+    emailText: typeof r.emailText === 'string' ? r.emailText : defaultFooterData.emailText,
+    emailHref: typeof r.emailHref === 'string' ? r.emailHref : defaultFooterData.emailHref,
+    address: typeof r.address === 'string' ? r.address : defaultFooterData.address,
+    copyright: typeof r.copyright === 'string' ? r.copyright : defaultFooterData.copyright,
+    legalLinks: Array.isArray(r.legalLinks) ? parseFooterLinkItems(r.legalLinks) : defaultFooterData.legalLinks,
+  }
+}
+
 export async function getFooter(): Promise<FooterData | null> {
   try {
     const response = await apiFetch('/api/widgets/footer')
     if (!response.ok) throw new Error('Failed to fetch footer')
-    const data = (await response.json()) as FooterData | null
-    if (!data) return null
-    return data
+    const raw = await response.json()
+    if (!raw || typeof raw !== 'object') return null
+    return normalizeFooterData(raw)
   } catch (error) {
     console.error('Error fetching footer:', error)
     return null
@@ -72,7 +107,8 @@ export async function updateFooter(data: FooterData): Promise<FooterData | null>
       body: JSON.stringify(data),
     })
     if (!response.ok) throw new Error('Failed to update footer')
-    return (await response.json()) as FooterData
+    const raw = await response.json()
+    return normalizeFooterData(raw)
   } catch (error) {
     console.error('Error updating footer:', error)
     return null

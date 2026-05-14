@@ -1,6 +1,7 @@
 import type { QueryResultRow } from 'pg'
 
 export function mapProduct(row: QueryResultRow) {
+  const subRaw = row.subcategory_ids as string[] | null | undefined
   return {
     id: row.id as number,
     name: row.name as string,
@@ -11,6 +12,7 @@ export function mapProduct(row: QueryResultRow) {
     image: row.image as string,
     category: row.category as string,
     slug: row.slug as string,
+    subcategoryIds: Array.isArray(subRaw) ? subRaw : [],
   }
 }
 
