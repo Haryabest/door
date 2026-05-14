@@ -6,7 +6,17 @@ import { Footer } from "@/widgets/Footer"
 import { ProductSkeleton } from "@/shared/ui/product-skeleton"
 import { Image } from "@/shared/ui/Image"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
-import { Filter, X, Search, DoorOpen, Home, Settings, PanelLeft, Square } from 'lucide-react'
+import {
+  Filter,
+  X,
+  Search,
+  DoorOpen,
+  Home,
+  Settings,
+  PanelLeft,
+  Square,
+  ChevronDown,
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SEO } from "@/shared/ui/SEO"
 import { productsApi } from "@/shared/api/products"
@@ -268,8 +278,12 @@ export function CatalogPage() {
       const subsOfCat = categoriesList.find((c) => c.id === categoryId)?.subcategories ?? []
       const subIdsSet = new Set(subsOfCat.map((s) => s.id))
       setSelectedSubcategories((prev) => prev.filter((sid) => !subIdsSet.has(sid)))
-      setSelectedCategories((cats) => cats.filter((id) => id !== categoryId))
-      setExpandedCategorySubs((prev) => ({ ...prev, [categoryId]: false }))
+      // Родительская категория остаётся в фильтре (показываются все товары категории), сбрасываются только подпункты
+      setSelectedCategories((cats) =>
+        cats.includes(categoryId) ? cats : [...cats, categoryId]
+      )
+      setExpandedCategorySubs((prev) => ({ ...prev, [categoryId]: true }))
+      setExpandedSections((s) => ({ ...s, catalog: true }))
     },
     [categoriesList]
   )
@@ -496,13 +510,20 @@ export function CatalogPage() {
                         <button
                           type="button"
                           onClick={() => toggleSection('catalog')}
-                          className="flex flex-1 min-w-0 items-center px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                          className="flex flex-1 min-w-0 items-center justify-between gap-2 px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
                           aria-expanded={expandedSections.catalog}
                           aria-label={
                             expandedSections.catalog ? 'Свернуть раздел Каталог' : 'Развернуть раздел Каталог'
                           }
                         >
                           <span className="font-medium text-primary truncate">Каталог</span>
+                          <ChevronDown
+                            className={cn(
+                              'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200',
+                              expandedSections.catalog && 'rotate-180'
+                            )}
+                            aria-hidden
+                          />
                         </button>
                         {catalogSectionHasSelection ? (
                           <button
@@ -651,13 +672,20 @@ export function CatalogPage() {
                         <button
                           type="button"
                           onClick={() => toggleSection('material')}
-                          className="flex flex-1 min-w-0 items-center px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                          className="flex flex-1 min-w-0 items-center justify-between gap-2 px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
                           aria-expanded={expandedSections.material}
                           aria-label={
                             expandedSections.material ? 'Свернуть раздел Материал' : 'Развернуть раздел Материал'
                           }
                         >
                           <span className="font-medium text-primary truncate">Материал</span>
+                          <ChevronDown
+                            className={cn(
+                              'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200',
+                              expandedSections.material && 'rotate-180'
+                            )}
+                            aria-hidden
+                          />
                         </button>
                         {selectedMaterials.length > 0 ? (
                           <button
@@ -713,11 +741,18 @@ export function CatalogPage() {
                         <button
                           type="button"
                           onClick={() => toggleSection('color')}
-                          className="flex flex-1 min-w-0 items-center px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                          className="flex flex-1 min-w-0 items-center justify-between gap-2 px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
                           aria-expanded={expandedSections.color}
                           aria-label={expandedSections.color ? 'Свернуть раздел Цвет' : 'Развернуть раздел Цвет'}
                         >
                           <span className="font-medium text-primary truncate">Цвет</span>
+                          <ChevronDown
+                            className={cn(
+                              'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200',
+                              expandedSections.color && 'rotate-180'
+                            )}
+                            aria-hidden
+                          />
                         </button>
                         {selectedColors.length > 0 ? (
                           <button
