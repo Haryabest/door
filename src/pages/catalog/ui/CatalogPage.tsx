@@ -508,20 +508,13 @@ export function CatalogPage() {
                         <button
                           type="button"
                           onClick={() => toggleSection('catalog')}
-                          className="flex flex-1 min-w-0 items-center justify-between gap-2 px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                          className="flex min-h-10 min-w-0 flex-1 items-center px-2 py-2 text-left transition-colors hover:bg-muted/30 rounded-lg cursor-pointer"
                           aria-expanded={expandedSections.catalog}
                           aria-label={
                             expandedSections.catalog ? 'Свернуть раздел Каталог' : 'Развернуть раздел Каталог'
                           }
                         >
-                          <span className="font-medium text-primary truncate">Каталог</span>
-                          <ChevronDown
-                            className={cn(
-                              'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200',
-                              expandedSections.catalog && 'rotate-180'
-                            )}
-                            aria-hidden
-                          />
+                          <span className="truncate font-medium text-primary">Каталог</span>
                         </button>
                         {catalogSectionHasSelection ? (
                           <button
@@ -535,6 +528,24 @@ export function CatalogPage() {
                             Сбросить
                           </button>
                         ) : null}
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('catalog')}
+                          className={cn(
+                            'inline-flex shrink-0 items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted/30 cursor-pointer'
+                          )}
+                          aria-expanded={expandedSections.catalog}
+                          aria-label={
+                            expandedSections.catalog ? 'Свернуть раздел Каталог' : 'Развернуть раздел Каталог'
+                          }
+                        >
+                          <ChevronDown
+                            className={cn(
+                              'h-5 w-5 transition-transform duration-200',
+                              expandedSections.catalog && 'rotate-180'
+                            )}
+                          />
+                        </button>
                       </div>
                       <AnimatePresence initial={false}>
                         {expandedSections.catalog && (
@@ -673,20 +684,13 @@ export function CatalogPage() {
                         <button
                           type="button"
                           onClick={() => toggleSection('material')}
-                          className="flex flex-1 min-w-0 items-center justify-between gap-2 px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                          className="flex min-h-10 min-w-0 flex-1 items-center px-2 py-2 text-left transition-colors hover:bg-muted/30 rounded-lg cursor-pointer"
                           aria-expanded={expandedSections.material}
                           aria-label={
                             expandedSections.material ? 'Свернуть раздел Материал' : 'Развернуть раздел Материал'
                           }
                         >
-                          <span className="font-medium text-primary truncate">Материал</span>
-                          <ChevronDown
-                            className={cn(
-                              'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200',
-                              expandedSections.material && 'rotate-180'
-                            )}
-                            aria-hidden
-                          />
+                          <span className="truncate font-medium text-primary">Материал</span>
                         </button>
                         {selectedMaterials.length > 0 ? (
                           <button
@@ -700,6 +704,24 @@ export function CatalogPage() {
                             Сбросить
                           </button>
                         ) : null}
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('material')}
+                          className={cn(
+                            'inline-flex shrink-0 items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted/30 cursor-pointer'
+                          )}
+                          aria-expanded={expandedSections.material}
+                          aria-label={
+                            expandedSections.material ? 'Свернуть раздел Материал' : 'Развернуть раздел Материал'
+                          }
+                        >
+                          <ChevronDown
+                            className={cn(
+                              'h-5 w-5 transition-transform duration-200',
+                              expandedSections.material && 'rotate-180'
+                            )}
+                          />
+                        </button>
                       </div>
                       <AnimatePresence initial={false}>
                         {expandedSections.material && (
@@ -742,18 +764,11 @@ export function CatalogPage() {
                         <button
                           type="button"
                           onClick={() => toggleSection('color')}
-                          className="flex flex-1 min-w-0 items-center justify-between gap-2 px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                          className="flex min-h-10 min-w-0 flex-1 items-center px-2 py-2 text-left transition-colors hover:bg-muted/30 rounded-lg cursor-pointer"
                           aria-expanded={expandedSections.color}
                           aria-label={expandedSections.color ? 'Свернуть раздел Цвет' : 'Развернуть раздел Цвет'}
                         >
-                          <span className="font-medium text-primary truncate">Цвет</span>
-                          <ChevronDown
-                            className={cn(
-                              'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200',
-                              expandedSections.color && 'rotate-180'
-                            )}
-                            aria-hidden
-                          />
+                          <span className="truncate font-medium text-primary">Цвет</span>
                         </button>
                         {selectedColors.length > 0 ? (
                           <button
@@ -767,6 +782,22 @@ export function CatalogPage() {
                             Сбросить
                           </button>
                         ) : null}
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('color')}
+                          className={cn(
+                            'inline-flex shrink-0 items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted/30 cursor-pointer'
+                          )}
+                          aria-expanded={expandedSections.color}
+                          aria-label={expandedSections.color ? 'Свернуть раздел Цвет' : 'Развернуть раздел Цвет'}
+                        >
+                          <ChevronDown
+                            className={cn(
+                              'h-5 w-5 transition-transform duration-200',
+                              expandedSections.color && 'rotate-180'
+                            )}
+                          />
+                        </button>
                       </div>
                       <AnimatePresence initial={false}>
                         {expandedSections.color && (
