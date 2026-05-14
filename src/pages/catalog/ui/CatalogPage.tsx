@@ -177,7 +177,7 @@ export function CatalogPage() {
     setSelectedCategories((prev) => [...prev, catId])
   }
 
-  /** Родитель с подкатегориями: клик — открыть/закрыть список. Каталог: можно включить несколько категорий; при первом добавлении категории её подварианты из фильтра снимаются (весь класс целиком), повторное раскрытие сохраняет уже выбранные подпункты. */
+  /** Родитель с подкатегориями: клик — открыть/закрыть список. Каталог: можно включить несколько категорий; при первом добавлении категории её подварианты из фильтра снимаются (весь класс целиком); при сворачивании списка фильтр и подсветка по этой ветке сбрасываются. */
   const toggleParentCategoryOpenAndFilter = (catId: string) => {
     const cat = categoriesList.find((c) => c.id === catId)
     const subs = cat?.subcategories ?? []
@@ -201,6 +201,9 @@ export function CatalogPage() {
     }
 
     setExpandedCategorySubs((prev) => ({ ...prev, [catId]: false }))
+    // При сворачивании блока подкатегорий убираем подсветку и сам фильтр по этой ветке
+    setSelectedCategories((prev) => prev.filter((id) => id !== catId))
+    setSelectedSubcategories((prev) => prev.filter((sid) => !subIdsSet.has(sid)))
   }
 
   const toggleCatalogSubcategory = (subId: string, categoryId: string) => {
@@ -214,12 +217,7 @@ export function CatalogPage() {
           cats.includes(categoryId) ? cats : [...cats, categoryId]
         )
       } else {
-        const siblings = categoriesList.find((c) => c.id === categoryId)?.subcategories ?? []
-        const siblingSet = new Set(siblings.map((s) => s.id))
-        const stillHasSubOfThisCat = next.some((sid) => siblingSet.has(sid))
-        if (!stillHasSubOfThisCat) {
-          setSelectedCategories((cats) => cats.filter((id) => id !== categoryId))
-        }
+        // После снятия всех подкатегорий родительская категория остаётся в фильтре (режим «вся категория»), как после «Сбросить» у строки категории
       }
 
       return next
@@ -573,10 +571,13 @@ export function CatalogPage() {
                                     subs.length > 0 &&
                                     (catSelected ||
                                       subs.some((s) => selectedSubcategories.includes(s.id)))
+                                  /** «Сбросить» только при выбранных подпунктах; если выбрана только родительская категория — без кнопки */
+                                  const categoryShowResetSubs =
+                                    subs.some((s) => selectedSubcategories.includes(s.id))
 
                                   return (
                                     <div key={cat.id} className="overflow-hidden rounded-lg space-y-0.5">
-                                      <div className="flex items-stretch gap-2 min-w-0">
+                                      <div className="relative z-10 flex min-w-0 items-stretch gap-2 rounded-lg bg-background">
                                         <button
                                           type="button"
                                           aria-expanded={isLeafCategory ? undefined : subsPanelOpen}
@@ -606,7 +607,7 @@ export function CatalogPage() {
                                           )}
                                           <span className="truncate">{cat.name}</span>
                                         </button>
-                                        {categoryHasCatalogFilter ? (
+                                        {categoryShowResetSubs ? (
                                           <button
                                             type="button"
                                             onClick={(e) => {
