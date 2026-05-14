@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Package, MessageSquare, LogOut, Plus, Trash2, Edit, X,
@@ -47,7 +47,7 @@ import {
   type ProductLocal,
 } from './adminProductTypes'
 import { ProductEditForm } from './ProductEditForm'
-import { formatProductSubcategoriesLine } from './formatProductCatalogLabels'
+import { formatProductSubcategoriesLine } from '@/shared/lib/formatProductCatalogLabels'
 import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor, FooterPageEditor, ChatFabPageEditor } from './editors'
 
 export type { ProductFormState, ProductLocal, AddCatalogColorPayload } from './adminProductTypes'

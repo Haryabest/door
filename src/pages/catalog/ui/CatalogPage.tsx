@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { FiltersContext } from '@/App'
 import { Header } from "@/widgets/Header"
 import { Footer } from "@/widgets/Footer"
-import { Checkbox } from "@/shared/ui/checkbox"
 import { ProductSkeleton } from "@/shared/ui/product-skeleton"
 import { Image } from "@/shared/ui/Image"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
@@ -14,6 +13,8 @@ import { productsApi } from "@/shared/api/products"
 import type { Product } from "@/shared/api/products"
 import { getCatalogPage, type CatalogPageData } from "@/shared/api/catalog"
 import { generateProductSlug } from "@/shared/lib/slug"
+import { formatProductSubcategoriesLine } from '@/shared/lib/formatProductCatalogLabels'
+import { cn } from '@/shared/lib/utils'
 
 const iconMap: Record<string, any> = {
   'DoorOpen': DoorOpen,
@@ -22,6 +23,19 @@ const iconMap: Record<string, any> = {
   'PanelLeft': PanelLeft,
   'Square': Square,
 }
+
+function filterRowSelectedClass(active: boolean, extra?: string, opts?: { inFlexRow?: boolean }) {
+  return cn(
+    opts?.inFlexRow ? 'flex-1 min-w-0' : 'w-full min-w-0',
+    'rounded-lg px-3 py-2.5 text-left text-sm transition-colors duration-150',
+    active ? 'bg-primary/12 text-primary font-medium' : 'text-foreground hover:bg-muted/35',
+    extra
+  )
+}
+
+/** Кнопки «Сбросить» в панели: подчёркивание при наведении, без заливки */
+const filterDrawerResetLinkClass =
+  'text-sm text-primary cursor-pointer bg-transparent underline-offset-4 decoration-primary/60 hover:underline'
 
 function normalizeFilterValue(value: string): string {
   return value
@@ -59,10 +73,11 @@ export function CatalogPage() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([])
-  /** Подкатегории под каждой группой в «Каталог»; true по умолчанию (раскрыто) */
-  const [expandedCategorySubs, setExpandedCategorySubs] = useState<Record<string, boolean>>({})
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
+  /** Список подкатегорий под каждой категорией; по умолчанию везде свёрнут */
+  const [expandedCategorySubs, setExpandedCategorySubs] = useState<Record<string, boolean>>({})
+  /** Раскрытие блока каталог / материал / цвет по умолчанию: только «Каталог» */
   const [expandedSections, setExpandedSections] = useState({
     catalog: true,
     material: false,
@@ -132,23 +147,52 @@ export function CatalogPage() {
     setIsFiltersOpen(false)
   }, [setIsFiltersOpen])
 
-  const toggleCatalogCategory = (catId: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
-    )
+  /** Категория без подкатегорий: включаем/выключаем фильтр по категории */
+  const toggleLeafCatalogCategoryFilter = (catId: string) => {
+    const subsOfCat = categoriesList.find((c) => c.id === catId)?.subcategories ?? []
+    if (subsOfCat.length > 0) return
+
+    const isSelected = selectedCategories.includes(catId)
+    if (isSelected) {
+      setSelectedCategories((prev) => prev.filter((id) => id !== catId))
+      return
+    }
+
+    setExpandedSections((sec) => ({ ...sec, catalog: true }))
+    setSelectedCategories((prev) => [...prev, catId])
   }
 
-  const toggleCatalogSubcategory = (subId: string) => {
-    setSelectedSubcategories((prev) =>
-      prev.includes(subId) ? prev.filter((id) => id !== subId) : [...prev, subId]
-    )
-  }
-
-  const toggleCategorySublist = (catId: string) => {
+  /** Категория с подкатегориями: клик по строке только открывает/закрывает список (без стрелки) */
+  const toggleCategorySubsVisibility = (catId: string) => {
     setExpandedCategorySubs((prev) => ({
       ...prev,
-      [catId]: !(prev[catId] ?? true),
+      [catId]: !(prev[catId] ?? false),
     }))
+    setExpandedSections((sec) => ({ ...sec, catalog: true }))
+  }
+
+  const toggleCatalogSubcategory = (subId: string, categoryId: string) => {
+    setSelectedSubcategories((prev) => {
+      const adding = !prev.includes(subId)
+      const next = adding ? [...prev, subId] : prev.filter((id) => id !== subId)
+
+      if (adding) {
+        setExpandedSections((s) => ({ ...s, catalog: true }))
+        setExpandedCategorySubs((exp) => ({ ...exp, [categoryId]: true }))
+        setSelectedCategories((cats) =>
+          cats.includes(categoryId) ? cats : [...cats, categoryId]
+        )
+      } else {
+        const siblings = categoriesList.find((c) => c.id === categoryId)?.subcategories ?? []
+        const siblingSet = new Set(siblings.map((s) => s.id))
+        const stillHasSubOfThisCat = next.some((sid) => siblingSet.has(sid))
+        if (!stillHasSubOfThisCat) {
+          setSelectedCategories((cats) => cats.filter((id) => id !== categoryId))
+        }
+      }
+
+      return next
+    })
   }
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -179,6 +223,33 @@ export function CatalogPage() {
     setDebouncedSearchQuery('')
     setCurrentPage(1)
   }
+
+  const resetColorSectionFilters = useCallback(() => {
+    setSelectedColors([])
+  }, [])
+
+  const resetCatalogSectionFilters = useCallback(() => {
+    setSelectedCategories([])
+    setSelectedSubcategories([])
+    setExpandedCategorySubs({})
+  }, [])
+
+  const resetMaterialSectionFilters = useCallback(() => {
+    setSelectedMaterials([])
+  }, [])
+
+  const catalogSectionHasSelection =
+    selectedCategories.length > 0 || selectedSubcategories.length > 0
+
+  const resetSubcategoriesForCategory = useCallback(
+    (categoryId: string) => {
+      const subsOfCat = categoriesList.find((c) => c.id === categoryId)?.subcategories ?? []
+      const subIdsSet = new Set(subsOfCat.map((s) => s.id))
+      setSelectedSubcategories((prev) => prev.filter((sid) => !subIdsSet.has(sid)))
+      setSelectedCategories((cats) => cats.filter((id) => id !== categoryId))
+    },
+    [categoriesList]
+  )
 
   const selectedCount =
     selectedCategories.length +
@@ -347,7 +418,7 @@ export function CatalogPage() {
                 />
                 {/* Панель фильтров */}
                 <motion.div
-                  className="fixed right-0 top-0 z-50 h-full w-full max-w-md bg-background shadow-2xl overflow-y-auto"
+                  className="fixed right-0 top-0 z-50 h-full w-full max-w-md bg-background border-l border-border/25 shadow-none overflow-y-auto"
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
@@ -360,7 +431,7 @@ export function CatalogPage() {
                       {selectedCount > 0 && (
                         <button
                           onClick={resetFilters}
-                          className="text-sm text-primary hover:underline cursor-pointer"
+                          className={filterDrawerResetLinkClass}
                         >
                           Сбросить
                         </button>
@@ -374,30 +445,55 @@ export function CatalogPage() {
                     </div>
                   </div>
 
-                  <div className="p-4 space-y-4">
+                  <div className="p-4 space-y-0">
                     {/* Категории каталога */}
-                    <div className="border border-border rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('catalog')}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors cursor-pointer"
-                      >
-                        <span className="font-medium text-primary">Каталог</span>
-                        <ChevronRight className={`w-5 h-5 text-primary transition-transform ${
-                          expandedSections.catalog ? 'rotate-90' : ''
-                        }`} />
-                      </button>
-                      <AnimatePresence>
+                    <div className="border-b border-border/25 pb-5 mb-5 last:border-0 last:pb-0 last:mb-0">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('catalog')}
+                          className="flex flex-1 min-w-0 items-center px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                        >
+                          <span className="font-medium text-primary truncate">Каталог</span>
+                        </button>
+                        {catalogSectionHasSelection ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              resetCatalogSectionFilters()
+                            }}
+                            className={cn(filterDrawerResetLinkClass, 'shrink-0')}
+                          >
+                            Сбросить
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('catalog')}
+                          className="shrink-0 p-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer"
+                          aria-expanded={expandedSections.catalog}
+                          aria-label={expandedSections.catalog ? 'Свернуть раздел Каталог' : 'Развернуть раздел Каталог'}
+                        >
+                          <ChevronRight
+                            className={`w-5 h-5 text-primary transition-transform duration-300 ease-out ${
+                              expandedSections.catalog ? 'rotate-90' : ''
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <AnimatePresence initial={false}>
                         {expandedSections.catalog && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
+                            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                             className="overflow-hidden"
                           >
-                            <div className="p-3 space-y-3 bg-background">
+                            <div className="mt-2 space-y-3 pl-1 pr-1">
                               {categoriesList.length === 0 ? (
-                                <p className="text-sm text-muted-foreground px-2 py-1">
+                                <p className="text-sm text-muted-foreground px-2 py-2">
                                   Загрузка категорий…
                                 </p>
                               ) : (
@@ -405,58 +501,81 @@ export function CatalogPage() {
                                   const IconComponent = iconMap[cat.icon]
                                   const IconEl =
                                     IconComponent && typeof IconComponent !== 'string' ? (
-                                      <IconComponent className="w-4 h-4 shrink-0 text-primary" />
+                                      <IconComponent className="w-4 h-4 shrink-0 opacity-70" />
                                     ) : null
                                   const subs = cat.subcategories ?? []
-                                  const subListOpen = expandedCategorySubs[cat.id] ?? true
+                                  const catSelected = selectedCategories.includes(cat.id)
+                                  const subListOpen = expandedCategorySubs[cat.id] ?? false
+                                  const isLeafCategory = subs.length === 0
+
+                                  const categoryHasCatalogFilter =
+                                    subs.length > 0 &&
+                                    (catSelected ||
+                                      subs.some((s) => selectedSubcategories.includes(s.id)))
+
                                   return (
-                                    <div key={cat.id} className="rounded-lg border border-border/70 overflow-hidden">
-                                      <div className="flex items-stretch gap-0 min-h-[2.75rem]">
-                                        <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer group px-2 py-2.5 hover:bg-primary/5">
-                                          <Checkbox
-                                            checked={selectedCategories.includes(cat.id)}
-                                            onCheckedChange={() => toggleCatalogCategory(cat.id)}
-                                          />
-                                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                                            {IconEl}
-                                            <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                                              {cat.name}
-                                            </span>
-                                          </div>
-                                        </label>
-                                        {subs.length > 0 && (
+                                    <div key={cat.id} className="overflow-hidden rounded-lg space-y-0.5">
+                                      <div className="flex items-stretch gap-2 min-w-0">
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            isLeafCategory
+                                              ? toggleLeafCatalogCategoryFilter(cat.id)
+                                              : toggleCategorySubsVisibility(cat.id)
+                                          }
+                                          aria-expanded={!isLeafCategory ? subListOpen : undefined}
+                                          className={filterRowSelectedClass(catSelected, 'flex min-h-[2.75rem] items-center gap-2', {
+                                            inFlexRow: categoryHasCatalogFilter,
+                                          })}
+                                        >
+                                          {IconEl && (
+                                            <span className={catSelected ? 'text-primary opacity-90' : 'text-primary/70'}>{IconEl}</span>
+                                          )}
+                                          <span className="truncate">{cat.name}</span>
+                                        </button>
+                                        {categoryHasCatalogFilter ? (
                                           <button
                                             type="button"
-                                            onClick={() => toggleCategorySublist(cat.id)}
-                                            className="shrink-0 px-3 flex items-center justify-center border-l border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors"
-                                            aria-expanded={subListOpen}
-                                            aria-label={subListOpen ? 'Скрыть подкатегории' : 'Показать подкатегории'}
+                                            onClick={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                              resetSubcategoriesForCategory(cat.id)
+                                            }}
+                                            className={cn(filterDrawerResetLinkClass, 'shrink-0 self-center')}
                                           >
-                                            <ChevronRight
-                                              className={`w-5 h-5 text-primary transition-transform ${
-                                                subListOpen ? 'rotate-90' : ''
-                                              }`}
-                                            />
+                                            Сбросить
                                           </button>
-                                        )}
+                                        ) : null}
                                       </div>
-                                      {subs.length > 0 && subListOpen && (
-                                        <div className="border-t border-border/60 bg-muted/30 px-2 py-2 pl-4 sm:pl-8 space-y-1">
-                                          {subs.map((sub) => (
-                                            <label
-                                              key={sub.id}
-                                              className="flex items-center gap-3 cursor-pointer group py-2 px-2 rounded-md hover:bg-background/80"
+                                      {subs.length > 0 && (
+                                        <AnimatePresence initial={false}>
+                                          {subListOpen && (
+                                            <motion.div
+                                              key={`subs-${cat.id}`}
+                                              initial={{ height: 0, opacity: 0 }}
+                                              animate={{ height: 'auto', opacity: 1 }}
+                                              exit={{ height: 0, opacity: 0 }}
+                                              transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+                                              className="overflow-hidden"
                                             >
-                                              <Checkbox
-                                                checked={selectedSubcategories.includes(sub.id)}
-                                                onCheckedChange={() => toggleCatalogSubcategory(sub.id)}
-                                              />
-                                              <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">
-                                                {sub.name}
-                                              </span>
-                                            </label>
-                                          ))}
-                                        </div>
+                                              <div className="pl-2 sm:pl-5 pt-1 space-y-0.5">
+                                                {subs.map((sub) => {
+                                                  const subSel = selectedSubcategories.includes(sub.id)
+                                                  return (
+                                                    <button
+                                                      key={sub.id}
+                                                      type="button"
+                                                      onClick={() => toggleCatalogSubcategory(sub.id, cat.id)}
+                                                      className={filterRowSelectedClass(subSel)}
+                                                    >
+                                                      {sub.name}
+                                                    </button>
+                                                  )
+                                                })}
+                                              </div>
+                                            </motion.div>
+                                          )}
+                                        </AnimatePresence>
                                       )}
                                     </div>
                                   )
@@ -469,42 +588,69 @@ export function CatalogPage() {
                     </div>
 
                     {/* Материал */}
-                    <div className="border border-border rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('material')}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors cursor-pointer"
-                      >
-                        <span className="font-medium text-primary">Материал</span>
-                        <ChevronRight className={`w-5 h-5 text-primary transition-transform ${
-                          expandedSections.material ? 'rotate-90' : ''
-                        }`} />
-                      </button>
-                      <AnimatePresence>
+                    <div className="border-b border-border/25 pb-5 mb-5 last:border-0 last:pb-0 last:mb-0">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('material')}
+                          className="flex flex-1 min-w-0 items-center px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                        >
+                          <span className="font-medium text-primary truncate">Материал</span>
+                        </button>
+                        {selectedMaterials.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              resetMaterialSectionFilters()
+                            }}
+                            className={cn(filterDrawerResetLinkClass, 'shrink-0')}
+                          >
+                            Сбросить
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('material')}
+                          className="shrink-0 p-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer"
+                          aria-expanded={expandedSections.material}
+                          aria-label={expandedSections.material ? 'Свернуть раздел Материал' : 'Развернуть раздел Материал'}
+                        >
+                          <ChevronRight
+                            className={`w-5 h-5 text-primary transition-transform duration-300 ease-out ${
+                              expandedSections.material ? 'rotate-90' : ''
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <AnimatePresence initial={false}>
                         {expandedSections.material && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
+                            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                             className="overflow-hidden"
                           >
-                            <div className="p-3 space-y-2 bg-background">
+                            <div className="mt-2 space-y-0.5 pl-1 pr-1">
                               {materials.length === 0 ? (
                                 <p className="text-sm text-muted-foreground px-2 py-1">
                                   Нет материалов в каталоге (настройте в админке).
                                 </p>
                               ) : (
-                                materials.map((mat) => (
-                                  <label key={mat} className="flex items-center gap-3 cursor-pointer group">
-                                    <Checkbox
-                                      checked={selectedMaterials.includes(mat)}
-                                      onCheckedChange={() => toggleMaterial(mat)}
-                                    />
-                                    <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">
+                                materials.map((mat) => {
+                                  const sel = selectedMaterials.includes(mat)
+                                  return (
+                                    <button
+                                      key={mat}
+                                      type="button"
+                                      onClick={() => toggleMaterial(mat)}
+                                      className={filterRowSelectedClass(sel)}
+                                    >
                                       {mat}
-                                    </span>
-                                  </label>
-                                ))
+                                    </button>
+                                  )
+                                })
                               )}
                             </div>
                           </motion.div>
@@ -513,59 +659,90 @@ export function CatalogPage() {
                     </div>
 
                     {/* Цвет */}
-                    <div className="border border-border rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('color')}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors cursor-pointer"
-                      >
-                        <span className="font-medium text-primary">Цвет</span>
-                        <ChevronRight className={`w-5 h-5 text-primary transition-transform ${
-                          expandedSections.color ? 'rotate-90' : ''
-                        }`} />
-                      </button>
-                      <AnimatePresence>
+                    <div className="border-b border-border/25 pb-5 mb-5 last:border-0 last:pb-0 last:mb-0">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('color')}
+                          className="flex flex-1 min-w-0 items-center px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                        >
+                          <span className="font-medium text-primary truncate">Цвет</span>
+                        </button>
+                        {selectedColors.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              resetColorSectionFilters()
+                            }}
+                            className={cn(filterDrawerResetLinkClass, 'shrink-0')}
+                          >
+                            Сбросить
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('color')}
+                          className="shrink-0 p-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer"
+                          aria-expanded={expandedSections.color}
+                          aria-label={expandedSections.color ? 'Свернуть раздел Цвет' : 'Развернуть раздел Цвет'}
+                        >
+                          <ChevronRight
+                            className={`w-5 h-5 text-primary transition-transform duration-300 ease-out ${
+                              expandedSections.color ? 'rotate-90' : ''
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <AnimatePresence initial={false}>
                         {expandedSections.color && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
+                            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                             className="overflow-hidden"
                           >
-                            <div className="p-3 bg-background">
+                            <div className="mt-2 px-1 pb-1">
                               {colors.length === 0 ? (
                                 <p className="text-sm text-muted-foreground px-2 py-1">
                                   Нет цветов в каталоге (настройте в админке).
                                 </p>
                               ) : (
-                                <div className="grid grid-cols-3 gap-3">
-                                  {colors.map((color) => (
-                                    <label
-                                      key={color.id ?? color.name}
-                                      className="flex flex-col items-center gap-2 cursor-pointer group"
-                                    >
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleColor(color.name)}
-                                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
-                                        selectedColors.includes(color.name)
-                                          ? 'ring-2 ring-primary ring-offset-2'
-                                          : ''
-                                      }`}
-                                      style={{ 
-                                        backgroundColor: color.color,
-                                        borderColor: color.border
-                                      }}
-                                    >
-                                      {selectedColors.includes(color.name) && (
-                                        <svg className="w-4 h-4 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <polyline points="20 6 9 17 4 12" strokeWidth="3" />
-                                        </svg>
-                                      )}
-                                    </button>
-                                    <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">{color.name}</span>
-                                  </label>
-                                  ))}
+                                <div className="grid grid-cols-3 gap-2">
+                                  {colors.map((color) => {
+                                    const sel = selectedColors.includes(color.name)
+                                    return (
+                                      <button
+                                        key={color.id ?? color.name}
+                                        type="button"
+                                        onClick={() => toggleColor(color.name)}
+                                        className={cn(
+                                          'flex flex-col items-center gap-2 rounded-xl py-2.5 px-1 transition-colors duration-150',
+                                          sel ? 'bg-primary/12' : 'hover:bg-muted/35'
+                                        )}
+                                      >
+                                        <span
+                                          className={cn(
+                                            'w-10 h-10 rounded-full transition-transform duration-150',
+                                            sel ? 'scale-105 brightness-105' : 'opacity-85'
+                                          )}
+                                          style={{
+                                            backgroundColor: color.color,
+                                          }}
+                                          aria-hidden
+                                        />
+                                        <span
+                                          className={cn(
+                                            'text-xs transition-colors truncate max-w-full px-1',
+                                            sel ? 'text-primary font-medium' : 'text-muted-foreground'
+                                          )}
+                                        >
+                                          {color.name}
+                                        </span>
+                                      </button>
+                                    )
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -577,7 +754,7 @@ export function CatalogPage() {
                   </div>
 
                   {/* Кнопка применения */}
-                  <div className="sticky bottom-0 bg-background border-t p-4">
+                  <div className="sticky bottom-0 bg-background border-t border-border/20 pt-3 pb-4 px-4">
                     <button
                       onClick={closeFilters}
                       className="w-full py-3 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
@@ -602,7 +779,15 @@ export function CatalogPage() {
                 <ProductSkeleton key={index} />
               ))
             ) : paginatedProducts.length > 0 ? (
-              paginatedProducts.map((product) => (
+              paginatedProducts.map((product) => {
+                const subcatsLine = formatProductSubcategoriesLine(
+                  catalogData,
+                  product.category,
+                  product.subcategoryIds
+                )
+                const hasSubcats = subcatsLine !== '—'
+
+                return (
                 <div
                   key={product.id}
                   onClick={() => navigate(`/catalog/${product.slug}-${product.id}`)}
@@ -625,8 +810,22 @@ export function CatalogPage() {
                     <h3 className="font-medium text-primary mb-2 line-clamp-2 min-h-[2.5rem]">
                       {product.name}
                     </h3>
+                    {hasSubcats ? (
+                      <p
+                        className="text-sm text-muted-foreground mb-1 line-clamp-2"
+                        title={subcatsLine}
+                      >
+                        {subcatsLine}
+                      </p>
+                    ) : null}
                     <p className="text-sm text-muted-foreground mb-4">
-                      {product.material}
+                      <span>{product.material}</span>
+                      {product.color.trim() ? (
+                        <>
+                          <span className="mx-1.5 text-border">·</span>
+                          <span>{product.color}</span>
+                        </>
+                      ) : null}
                     </p>
                     <button
                       onClick={(e) => {
@@ -644,7 +843,8 @@ export function CatalogPage() {
                     </button>
                   </div>
                 </div>
-              ))
+                )
+              })
             ) : (
               <div className="col-span-full flex items-center justify-center min-h-[400px]">
                 <div className="text-center">

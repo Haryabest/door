@@ -3,7 +3,7 @@ import { Save, X, Plus, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/shared/ui/checkbox'
 import type { CatalogPageData } from '@/shared/api/catalog'
 import type { ProductFormState, AddCatalogColorPayload } from './adminProductTypes'
-import { formatProductSubcategoriesLine } from './formatProductCatalogLabels'
+import { formatProductSubcategoriesLine } from '@/shared/lib/formatProductCatalogLabels'
 
 interface ProductEditFormProps {
   productForm: ProductFormState

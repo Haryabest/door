@@ -2,7 +2,7 @@ import { Plus, Trash2, Edit, Search } from 'lucide-react'
 import type { CatalogPageData } from '@/shared/api/catalog'
 import type { ProductLocal, ProductFormState, AddCatalogColorPayload } from '../adminProductTypes'
 import { ProductEditForm } from '../ProductEditForm'
-import { formatProductSubcategoriesLine } from '../formatProductCatalogLabels'
+import { formatProductSubcategoriesLine } from '@/shared/lib/formatProductCatalogLabels'
 
 interface ProductsEditorProps {
   products: ProductLocal[]

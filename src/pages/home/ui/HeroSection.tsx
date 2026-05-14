@@ -1,48 +1,44 @@
-import { useEffect, useMemo, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import type { HeroSection as HeroSectionType } from '@/shared/api/home'
 import { defaultHeaderData, getHeader } from '@/shared/api/header'
+import { preloadImages } from '@/shared/lib/preloadImages'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
+import { HERO_SLIDE_ASSET_URLS } from '../heroSlideshowUrls'
 
 interface HeroSectionProps {
   hero: HeroSectionType
 }
 
+const SLIDE_FADE_S = 1
+/** После затухания 1 с — 8 с в полной непрозрачности, затем кроссфейд 1 с (без паузы между картинками) */
+const SLIDE_HOLD_FULL_MS = 8000
+/** Интервал с начала активного момента слайда: 1 с появление + 8 с показ */
+const SLIDE_CYCLE_MS = SLIDE_HOLD_FULL_MS + SLIDE_FADE_S * 1000
+
 export function HeroSection({ hero }: HeroSectionProps) {
-  const [mediaMode, setMediaMode] = useState<'photo' | 'video' | 'slideshow'>('photo')
   const [currentSlide, setCurrentSlide] = useState(0)
   const [phoneHref, setPhoneHref] = useState(() => telHrefFromPhoneText(defaultHeaderData.phoneText))
 
-  const slideshowImages = useMemo(
-    () => [
-      hero.backgroundImage,
-      'https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1616593969747-4797dc75033e?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1600210492486-724fe5c67fb3?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?auto=format&fit=crop&w=1920&q=80',
-      'https://images.unsplash.com/photo-1617104551722-3b2d513664c8?auto=format&fit=crop&w=1920&q=80',
-    ],
-    [hero.backgroundImage]
-  )
+  /** Только локальные файлы из `src/assets/hero-slides/`, без URL из админки и без внешних ссылок. */
+  const slideshowImages = HERO_SLIDE_ASSET_URLS
 
   useEffect(() => {
-    if (mediaMode !== 'slideshow') {
-      setCurrentSlide(0)
-      return
-    }
+    setCurrentSlide(0)
+  }, [slideshowImages])
 
+  useEffect(() => {
+    void preloadImages(slideshowImages)
+  }, [slideshowImages])
+
+  useEffect(() => {
+    if (slideshowImages.length === 0) return
     const timer = window.setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slideshowImages.length)
-    }, 4000)
+    }, SLIDE_CYCLE_MS)
 
     return () => window.clearInterval(timer)
-  }, [mediaMode, slideshowImages.length])
+  }, [slideshowImages.length])
 
   useEffect(() => {
     let isMounted = true
@@ -58,85 +54,34 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [])
 
   return (
-    <div className="relative h-[100vh] w-full overflow-hidden">
-      {/* Переключатель фото/видео/слайдшоу */}
-      <div className="absolute top-6 right-6 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full p-1">
-        <button
-          onClick={() => setMediaMode('photo')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
-            mediaMode === 'photo'
-              ? 'bg-white text-primary'
-              : 'text-white/80 hover:text-white'
-          }`}
-        >
-          Фото
-        </button>
-        <button
-          onClick={() => setMediaMode('video')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
-            mediaMode === 'video'
-              ? 'bg-white text-primary'
-              : 'text-white/80 hover:text-white'
-          }`}
-        >
-          Видео
-        </button>
-        <button
-          onClick={() => setMediaMode('slideshow')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
-            mediaMode === 'slideshow'
-              ? 'bg-white text-primary'
-              : 'text-white/80 hover:text-white'
-          }`}
-        >
-          Слайдшоу
-        </button>
+    <div className="relative z-0 h-[100vh] w-full overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        {slideshowImages.map((src, index) => (
+          <motion.div
+            key={`${src}-${index}`}
+            aria-hidden={index !== currentSlide}
+            className="pointer-events-none absolute inset-0 bg-cover bg-center"
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: index === currentSlide ? 1 : 0,
+            }}
+            transition={{
+              duration: SLIDE_FADE_S,
+              ease: 'easeInOut',
+            }}
+            style={{
+              backgroundImage: `url('${src}')`,
+              zIndex: index === currentSlide ? 2 : 1,
+            }}
+          />
+        ))}
       </div>
 
-      {/* Фон: фото, видео или слайдшоу */}
-      <AnimatePresence mode="wait">
-        {mediaMode === 'photo' ? (
-          <motion.div
-            key="photo"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url('${hero.backgroundImage}')` }}
-          />
-        ) : mediaMode === 'video' ? (
-          <motion.video
-            key="video"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="absolute inset-0 w-full h-full object-cover"
-            src="/video.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-          />
-        ) : (
-          <motion.div
-            key={`slideshow-${currentSlide}`}
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.7, ease: 'easeInOut' }}
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url('${slideshowImages[currentSlide]}')` }}
-          />
-        )}
-      </AnimatePresence>
+      {/* Затемнение — между фоном и текстом */}
+      <div className="absolute inset-0 z-[1] bg-black/50" />
 
-      {/* Затемнение */}
-      <div className="absolute inset-0 bg-black/50" />
-
-      {/* Контент */}
-      <div className="relative h-full flex flex-col items-center justify-center px-4">
+      {/* Контент: заголовки и кнопки не анимируются со слайдами */}
+      <div className="relative z-10 flex h-full flex-col items-center justify-center px-4">
         <div className="text-center text-white max-w-4xl mx-auto">
           <motion.h1
             className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-4 tracking-tight"
@@ -195,7 +140,7 @@ export function HeroSection({ hero }: HeroSectionProps) {
 
       {/* Стрелка вниз */}
       <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
