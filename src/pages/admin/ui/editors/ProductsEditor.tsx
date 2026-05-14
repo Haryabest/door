@@ -2,6 +2,7 @@ import { Plus, Trash2, Edit, Search } from 'lucide-react'
 import type { CatalogPageData } from '@/shared/api/catalog'
 import type { ProductLocal, ProductFormState, AddCatalogColorPayload } from '../adminProductTypes'
 import { ProductEditForm } from '../ProductEditForm'
+import { formatProductSubcategoriesLine } from '../formatProductCatalogLabels'
 
 interface ProductsEditorProps {
   products: ProductLocal[]
@@ -20,6 +21,9 @@ interface ProductsEditorProps {
   onAddCatalogMaterial?: (name: string) => Promise<boolean>
   onAddCatalogColor?: (payload: AddCatalogColorPayload) => Promise<boolean>
   onAddCatalogCategory?: (name: string) => Promise<boolean>
+  onAddCatalogSubcategory?: (categoryId: string, name: string) => Promise<boolean>
+  onUpdateCatalogSubcategory?: (categoryId: string, subId: string, name: string) => Promise<boolean>
+  onDeleteCatalogSubcategory?: (categoryId: string, subId: string) => Promise<boolean>
 }
 
 export function ProductsEditor({
@@ -39,6 +43,9 @@ export function ProductsEditor({
   onAddCatalogMaterial = async () => false,
   onAddCatalogColor = async () => false,
   onAddCatalogCategory = async () => false,
+  onAddCatalogSubcategory = async () => false,
+  onUpdateCatalogSubcategory = async () => false,
+  onDeleteCatalogSubcategory = async () => false,
 }: ProductsEditorProps) {
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -77,6 +84,9 @@ export function ProductsEditor({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Фото</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Категория</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase max-w-[220px]">
+                  Подкатегория
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Материал</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цвет</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Действия</th>
@@ -89,7 +99,17 @@ export function ProductsEditor({
                     <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
                   </td>
                   <td className="px-6 py-4 font-medium">{product.name}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{product.category}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">
+                    {catalogData?.categories.find((c) => c.id === product.category)?.name ?? product.category}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground max-w-[220px]">
+                    <span
+                      className="line-clamp-2"
+                      title={formatProductSubcategoriesLine(catalogData, product.category, product.subcategoryIds)}
+                    >
+                      {formatProductSubcategoriesLine(catalogData, product.category, product.subcategoryIds)}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">{product.material}</td>
                   <td className="px-6 py-4">{product.color}</td>
                   <td className="px-6 py-4">
@@ -136,6 +156,9 @@ export function ProductsEditor({
                 onAddCatalogMaterial={onAddCatalogMaterial}
                 onAddCatalogColor={onAddCatalogColor}
                 onAddCatalogCategory={onAddCatalogCategory}
+                onAddCatalogSubcategory={onAddCatalogSubcategory}
+                onUpdateCatalogSubcategory={onUpdateCatalogSubcategory}
+                onDeleteCatalogSubcategory={onDeleteCatalogSubcategory}
                 onCancel={onCancelEdit}
                 onSubmit={onSaveProduct}
               />

@@ -1,8 +1,9 @@
-import { type Dispatch, type SetStateAction, useState } from 'react'
-import { Save, X, Plus } from 'lucide-react'
+import { type Dispatch, type SetStateAction, useState, useEffect } from 'react'
+import { Save, X, Plus, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/shared/ui/checkbox'
 import type { CatalogPageData } from '@/shared/api/catalog'
 import type { ProductFormState, AddCatalogColorPayload } from './adminProductTypes'
+import { formatProductSubcategoriesLine } from './formatProductCatalogLabels'
 
 interface ProductEditFormProps {
   productForm: ProductFormState
@@ -12,6 +13,9 @@ interface ProductEditFormProps {
   onAddCatalogMaterial: (name: string) => Promise<boolean>
   onAddCatalogColor: (payload: AddCatalogColorPayload) => Promise<boolean>
   onAddCatalogCategory: (name: string) => Promise<boolean>
+  onAddCatalogSubcategory: (categoryId: string, name: string) => Promise<boolean>
+  onUpdateCatalogSubcategory: (categoryId: string, subId: string, name: string) => Promise<boolean>
+  onDeleteCatalogSubcategory: (categoryId: string, subId: string) => Promise<boolean>
   onCancel: () => void
   onSubmit: () => void
 }
@@ -24,6 +28,9 @@ export function ProductEditForm({
   onAddCatalogMaterial,
   onAddCatalogColor,
   onAddCatalogCategory,
+  onAddCatalogSubcategory,
+  onUpdateCatalogSubcategory,
+  onDeleteCatalogSubcategory,
   onCancel,
   onSubmit,
 }: ProductEditFormProps) {
@@ -42,6 +49,22 @@ export function ProductEditForm({
   const [newColorOpen, setNewColorOpen] = useState(false)
   const [newColorName, setNewColorName] = useState('')
   const [newColorHex, setNewColorHex] = useState('#94A3B8')
+  const [newSubcategoryOpen, setNewSubcategoryOpen] = useState(false)
+  const [newSubcategoryName, setNewSubcategoryName] = useState('')
+
+  useEffect(() => {
+    setNewSubcategoryOpen(false)
+    setNewSubcategoryName('')
+  }, [productForm.category])
+
+  const submitNewSubcategory = async () => {
+    if (!productForm.category) return
+    const ok = await onAddCatalogSubcategory(productForm.category, newSubcategoryName.trim())
+    if (ok) {
+      setNewSubcategoryOpen(false)
+      setNewSubcategoryName('')
+    }
+  }
 
   const submitNewCatalogColor = async () => {
     const ok = await onAddCatalogColor({ name: newColorName.trim(), color: newColorHex })
@@ -115,29 +138,118 @@ export function ProductEditForm({
             </select>
           </div>
 
-          {subcatsForCategory.length > 0 ? (
+          {productForm.category ? (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Подкатегории каталога</label>
-              <div className="rounded-lg border-2 border-gray-200 divide-y divide-gray-100 bg-gray-50/80">
-                {subcatsForCategory.map((sub) => (
-                  <label
-                    key={sub.id}
-                    className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-white transition-colors"
-                  >
-                    <Checkbox
-                      checked={(productForm.subcategoryIds ?? []).includes(sub.id)}
-                      onCheckedChange={() => toggleSubcategory(sub.id)}
-                    />
-                    <span className="text-sm text-foreground">{sub.name}</span>
-                  </label>
-                ))}
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <label className="block text-sm font-medium text-foreground">Подкатегории каталога</label>
+                <button
+                  type="button"
+                  onClick={() => setNewSubcategoryOpen((v) => !v)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                >
+                  <Plus className="w-4 h-4" />
+                  Добавить в каталог
+                </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5">Можно выбрать несколько привязок к фильтрам каталога.</p>
+              <p className="text-xs text-muted-foreground mb-2 rounded-md bg-gray-50 border border-gray-100 px-2.5 py-1.5">
+                Привязка к фильтру:{' '}
+                <span className="font-medium text-foreground">
+                  {formatProductSubcategoriesLine(catalogData, productForm.category, productForm.subcategoryIds)}
+                </span>
+                <span className="text-muted-foreground"> — отметьте или снимите галочки ниже.</span>
+              </p>
+
+              {newSubcategoryOpen && (
+                <div className="mb-3 p-3 border-2 border-gray-200 rounded-lg space-y-3 bg-gray-50">
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">
+                      Название подкатегории ({categoryModel?.name ?? 'категория'})
+                    </label>
+                    <input
+                      type="text"
+                      value={newSubcategoryName}
+                      onChange={(e) => setNewSubcategoryName(e.target.value)}
+                      placeholder="Например: ПВХ"
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white text-sm text-foreground"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void submitNewSubcategory()}
+                      disabled={!newSubcategoryName.trim()}
+                      className="flex-1 py-2 bg-primary text-background text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Сохранить в каталог
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewSubcategoryOpen(false)
+                        setNewSubcategoryName('')
+                      }}
+                      className="px-4 py-2 border-2 border-gray-200 rounded-lg text-sm hover:bg-gray-100"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {subcatsForCategory.length > 0 ? (
+                <div className="rounded-lg border-2 border-gray-200 divide-y divide-gray-100 bg-gray-50/80">
+                  {subcatsForCategory.map((sub) => (
+                    <div
+                      key={sub.id}
+                      className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:gap-3 hover:bg-white transition-colors"
+                    >
+                      <Checkbox
+                        checked={(productForm.subcategoryIds ?? []).includes(sub.id)}
+                        onCheckedChange={() => toggleSubcategory(sub.id)}
+                        className="shrink-0"
+                        aria-label={`Привязать к подкатегории «${sub.name}»`}
+                      />
+                      <input
+                        type="text"
+                        key={`${sub.id}-${sub.name}`}
+                        defaultValue={sub.name}
+                        onBlur={(e) => {
+                          const v = e.target.value.trim()
+                          if (!v) {
+                            e.target.value = sub.name
+                            return
+                          }
+                          if (v !== sub.name && productForm.category) {
+                            void onUpdateCatalogSubcategory(productForm.category, sub.id, v)
+                          }
+                        }}
+                        className="flex-1 min-w-0 px-2 py-1.5 border border-gray-200 rounded-md text-sm text-foreground bg-white focus:outline-none focus:border-primary"
+                        title="Название в каталоге (сохранится при уходе с поля)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (productForm.category) {
+                            void onDeleteCatalogSubcategory(productForm.category, sub.id)
+                          }
+                        }}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                        aria-label="Удалить подкатегорию из каталога"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground rounded-lg border border-dashed border-gray-200 px-3 py-2 bg-gray-50">
+                  Подкатегорий пока нет — добавьте через «Добавить в каталог» выше.
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Галочка привязывает товар к фильтру. Изменения названия и удаление сразу сохраняются в каталог (как на странице «Каталог»).
+              </p>
             </div>
-          ) : productForm.category ? (
-            <p className="text-xs text-muted-foreground rounded-lg border border-dashed border-gray-200 px-3 py-2 bg-gray-50">
-              У выбранной категории пока нет подкатегорий — задайте их во вкладке «Каталог» или выберите другую категорию.
-            </p>
           ) : null}
 
           <div>

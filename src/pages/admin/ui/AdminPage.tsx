@@ -47,6 +47,7 @@ import {
   type ProductLocal,
 } from './adminProductTypes'
 import { ProductEditForm } from './ProductEditForm'
+import { formatProductSubcategoriesLine } from './formatProductCatalogLabels'
 import { HomePageEditor, CatalogPageEditor, PortfolioPageEditor, AboutPageEditor, ContactsPageEditor, HeaderPageEditor, FooterPageEditor, ChatFabPageEditor } from './editors'
 
 export type { ProductFormState, ProductLocal, AddCatalogColorPayload } from './adminProductTypes'
@@ -970,6 +971,131 @@ export function AdminPage() {
     return { ok: false, failure: result.failure }
   }
 
+  const nextUniqueSubcategoryId = (rawName: string, cur: CatalogPageData): string => {
+    let base = transliterate(rawName.trim()).slice(0, 80)
+    if (!base) base = `sub-${Date.now()}`
+    const taken = new Set(
+      cur.categories.flatMap((c) => (c.subcategories ?? []).map((s) => s.id))
+    )
+    let unique = base
+    let n = 0
+    while (taken.has(unique)) {
+      n += 1
+      unique = `${base}-${n}`
+    }
+    return unique
+  }
+
+  const handleQuickAddCatalogSubcategoryForProduct = async (
+    categoryId: string,
+    name: string
+  ): Promise<boolean> => {
+    const t = name.trim()
+    if (!t) return false
+    const cur = catalogPage.data
+    if (!cur) {
+      alert('Каталог ещё не загружен')
+      return false
+    }
+    const exists = cur.categories
+      .find((c) => c.id === categoryId)
+      ?.subcategories?.some((s) => s.name.toLowerCase() === t.toLowerCase())
+    if (exists) {
+      alert('Подкатегория с таким названием уже есть в этой категории')
+      return false
+    }
+    const subId = nextUniqueSubcategoryId(t, cur)
+    const newSub: CatalogSubcategory = { id: subId, name: t }
+    const next: CatalogPageData = {
+      ...cur,
+      categories: cur.categories.map((c) =>
+        c.id === categoryId ? { ...c, subcategories: [...(c.subcategories ?? []), newSub] } : c
+      ),
+    }
+    const saved = await persistCatalogSnapshot(next)
+    if (!saved.ok) {
+      alert(formatCatalogSaveFailureMessage(saved.failure))
+      return false
+    }
+    setProductForm((pf) =>
+      pf.category === categoryId
+        ? { ...pf, subcategoryIds: [...(pf.subcategoryIds ?? []), subId] }
+        : pf
+    )
+    return true
+  }
+
+  const handleQuickUpdateCatalogSubcategoryForProduct = async (
+    categoryId: string,
+    subId: string,
+    name: string
+  ): Promise<boolean> => {
+    const t = name.trim()
+    if (!t) return false
+    const cur = catalogPage.data
+    if (!cur) {
+      alert('Каталог ещё не загружен')
+      return false
+    }
+    const cat = cur.categories.find((c) => c.id === categoryId)
+    const subs = cat?.subcategories ?? []
+    if (!subs.some((s) => s.id === subId)) return false
+    const dup = subs.some((s) => s.id !== subId && s.name.toLowerCase() === t.toLowerCase())
+    if (dup) {
+      alert('Другоя подкатегория в этой категории уже с таким названием')
+      return false
+    }
+    const next: CatalogPageData = {
+      ...cur,
+      categories: cur.categories.map((c) =>
+        c.id !== categoryId
+          ? c
+          : {
+              ...c,
+              subcategories: (c.subcategories ?? []).map((s) => (s.id === subId ? { ...s, name: t } : s)),
+            }
+      ),
+    }
+    const saved = await persistCatalogSnapshot(next)
+    if (!saved.ok) {
+      alert(formatCatalogSaveFailureMessage(saved.failure))
+      return false
+    }
+    return true
+  }
+
+  const handleQuickDeleteCatalogSubcategoryForProduct = async (
+    categoryId: string,
+    subId: string
+  ): Promise<boolean> => {
+    if (!window.confirm('Удалить эту подкатегорию из каталога? Она перестанет отображаться в фильтрах и у товаров без этой привязки.')) {
+      return false
+    }
+    const cur = catalogPage.data
+    if (!cur) {
+      alert('Каталог ещё не загружен')
+      return false
+    }
+    const next: CatalogPageData = {
+      ...cur,
+      categories: cur.categories.map((c) =>
+        c.id !== categoryId
+          ? c
+          : { ...c, subcategories: (c.subcategories ?? []).filter((s) => s.id !== subId) }
+      ),
+    }
+    const saved = await persistCatalogSnapshot(next)
+    if (!saved.ok) {
+      alert(formatCatalogSaveFailureMessage(saved.failure))
+      return false
+    }
+    setProductForm((pf) => ({
+      ...pf,
+      subcategoryIds: (pf.subcategoryIds ?? []).filter((id) => id !== subId),
+    }))
+    return true
+  }
+
   const handleQuickAddCatalogMaterialForProduct = async (name: string): Promise<boolean> => {
     const t = name.trim()
     if (!t) return false
@@ -1389,6 +1515,9 @@ export function AdminPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Фото</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Категория</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase max-w-[220px]">
+                        Подкатегория
+                      </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Материал</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цвет</th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Действия</th>
@@ -1404,6 +1533,21 @@ export function AdminPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                           {catalogPage.data?.categories.find((c) => c.id === product.category)?.name ??
                             product.category}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-muted-foreground max-w-[220px]">
+                          <span className="line-clamp-2" title={
+                            formatProductSubcategoriesLine(
+                              catalogPage.data,
+                              product.category,
+                              product.subcategoryIds
+                            )
+                          }>
+                            {formatProductSubcategoriesLine(
+                              catalogPage.data,
+                              product.category,
+                              product.subcategoryIds
+                            )}
+                          </span>
                         </td>
                         <td className="px-6 py-4">{product.material}</td>
                         <td className="px-6 py-4">{product.color}</td>
@@ -1800,6 +1944,9 @@ export function AdminPage() {
                 onAddCatalogMaterial={handleQuickAddCatalogMaterialForProduct}
                 onAddCatalogColor={handleQuickAddCatalogColorForProduct}
                 onAddCatalogCategory={handleQuickAddCatalogCategoryForProduct}
+                onAddCatalogSubcategory={handleQuickAddCatalogSubcategoryForProduct}
+                onUpdateCatalogSubcategory={handleQuickUpdateCatalogSubcategoryForProduct}
+                onDeleteCatalogSubcategory={handleQuickDeleteCatalogSubcategoryForProduct}
                 onCancel={() => {
                   setIsEditing(false)
                   setProductForm(emptyProductForm())
