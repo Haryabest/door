@@ -6,7 +6,7 @@ import { Footer } from "@/widgets/Footer"
 import { ProductSkeleton } from "@/shared/ui/product-skeleton"
 import { Image } from "@/shared/ui/Image"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
-import { Filter, X, Search, ChevronRight, DoorOpen, Home, Settings, PanelLeft, Square } from 'lucide-react'
+import { Filter, X, Search, DoorOpen, Home, Settings, PanelLeft, Square } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SEO } from "@/shared/ui/SEO"
 import { productsApi } from "@/shared/api/products"
@@ -28,7 +28,9 @@ function filterRowSelectedClass(active: boolean, extra?: string, opts?: { inFlex
   return cn(
     opts?.inFlexRow ? 'flex-1 min-w-0' : 'w-full min-w-0',
     'rounded-lg px-3 py-2.5 text-left text-sm transition-colors duration-150',
-    active ? 'bg-primary/12 text-primary font-medium' : 'text-foreground hover:bg-muted/35',
+    active
+      ? 'bg-primary/15 text-primary font-semibold'
+      : 'text-foreground hover:bg-muted/35',
     extra
   )
 }
@@ -75,7 +77,7 @@ export function CatalogPage() {
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([])
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
-  /** Список подкатегорий под каждой категорией; по умолчанию везде свёрнут */
+  /** Подкатегории видны только после клика по родителю; по умолчанию свёрнуто */
   const [expandedCategorySubs, setExpandedCategorySubs] = useState<Record<string, boolean>>({})
   /** Раскрытие блока каталог / материал / цвет по умолчанию: только «Каталог» */
   const [expandedSections, setExpandedSections] = useState({
@@ -162,13 +164,30 @@ export function CatalogPage() {
     setSelectedCategories((prev) => [...prev, catId])
   }
 
-  /** Категория с подкатегориями: клик по строке только открывает/закрывает список (без стрелки) */
-  const toggleCategorySubsVisibility = (catId: string) => {
-    setExpandedCategorySubs((prev) => ({
-      ...prev,
-      [catId]: !(prev[catId] ?? false),
-    }))
+  /** Родитель с подкатегориями: клик — открыть/закрыть список. Каталог: можно включить несколько категорий; при первом добавлении категории её подварианты из фильтра снимаются (весь класс целиком), повторное раскрытие сохраняет уже выбранные подпункты. */
+  const toggleParentCategoryOpenAndFilter = (catId: string) => {
+    const cat = categoriesList.find((c) => c.id === catId)
+    const subs = cat?.subcategories ?? []
+    if (subs.length === 0) {
+      toggleLeafCatalogCategoryFilter(catId)
+      return
+    }
+
+    const subIdsSet = new Set(subs.map((s) => s.id))
+    const wasOpen = expandedCategorySubs[catId] ?? false
     setExpandedSections((sec) => ({ ...sec, catalog: true }))
+
+    if (!wasOpen) {
+      setExpandedCategorySubs((prev) => ({ ...prev, [catId]: true }))
+      const alreadySelected = selectedCategories.includes(catId)
+      setSelectedCategories((prev) => (alreadySelected ? prev : [...prev, catId]))
+      if (!alreadySelected) {
+        setSelectedSubcategories((prev) => prev.filter((sid) => !subIdsSet.has(sid)))
+      }
+      return
+    }
+
+    setExpandedCategorySubs((prev) => ({ ...prev, [catId]: false }))
   }
 
   const toggleCatalogSubcategory = (subId: string, categoryId: string) => {
@@ -178,7 +197,6 @@ export function CatalogPage() {
 
       if (adding) {
         setExpandedSections((s) => ({ ...s, catalog: true }))
-        setExpandedCategorySubs((exp) => ({ ...exp, [categoryId]: true }))
         setSelectedCategories((cats) =>
           cats.includes(categoryId) ? cats : [...cats, categoryId]
         )
@@ -217,6 +235,7 @@ export function CatalogPage() {
   const resetFilters = () => {
     setSelectedCategories([])
     setSelectedSubcategories([])
+    setExpandedCategorySubs({})
     setSelectedMaterials([])
     setSelectedColors([])
     setSearchQuery('')
@@ -247,6 +266,7 @@ export function CatalogPage() {
       const subIdsSet = new Set(subsOfCat.map((s) => s.id))
       setSelectedSubcategories((prev) => prev.filter((sid) => !subIdsSet.has(sid)))
       setSelectedCategories((cats) => cats.filter((id) => id !== categoryId))
+      setExpandedCategorySubs((prev) => ({ ...prev, [categoryId]: false }))
     },
     [categoriesList]
   )
@@ -259,16 +279,29 @@ export function CatalogPage() {
 
   // Фильтрация товаров
   const filteredProducts = useMemo(() => {
+    const categoryIdsRefinedBySub = new Set<string>()
+    if (selectedSubcategories.length > 0) {
+      for (const sid of selectedSubcategories) {
+        const parent = categoriesList.find((c) => c.subcategories?.some((s) => s.id === sid))
+        if (parent) categoryIdsRefinedBySub.add(parent.id)
+      }
+    }
+
     return products.filter(product => {
       if (
-        searchQuery &&
-        !`${product.name} ${product.material}`.toLowerCase().includes(searchQuery.toLowerCase())
+        debouncedSearchQuery &&
+        !`${product.name} ${product.material}`
+          .toLowerCase()
+          .includes(debouncedSearchQuery.toLowerCase())
       ) return false
       if (
         selectedCategories.length > 0 &&
         !selectedCategories.includes(product.category)
       ) return false
-      if (selectedSubcategories.length > 0) {
+      if (
+        selectedSubcategories.length > 0 &&
+        categoryIdsRefinedBySub.has(product.category)
+      ) {
         const prodSubs = product.subcategoryIds ?? []
         if (!selectedSubcategories.some((sid) => prodSubs.includes(sid))) return false
       }
@@ -290,7 +323,15 @@ export function CatalogPage() {
       ) return false
       return true
     })
-  }, [products, searchQuery, selectedCategories, selectedSubcategories, selectedMaterials, selectedColors])
+  }, [
+    products,
+    debouncedSearchQuery,
+    selectedCategories,
+    selectedSubcategories,
+    selectedMaterials,
+    selectedColors,
+    categoriesList,
+  ])
 
   // Пагинация
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
@@ -302,7 +343,7 @@ export function CatalogPage() {
   // Сброс на первую страницу при изменении фильтров
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedCategories, selectedSubcategories, selectedMaterials, selectedColors])
+  }, [debouncedSearchQuery, selectedCategories, selectedSubcategories, selectedMaterials, selectedColors])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -453,6 +494,10 @@ export function CatalogPage() {
                           type="button"
                           onClick={() => toggleSection('catalog')}
                           className="flex flex-1 min-w-0 items-center px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                          aria-expanded={expandedSections.catalog}
+                          aria-label={
+                            expandedSections.catalog ? 'Свернуть раздел Каталог' : 'Развернуть раздел Каталог'
+                          }
                         >
                           <span className="font-medium text-primary truncate">Каталог</span>
                         </button>
@@ -468,19 +513,6 @@ export function CatalogPage() {
                             Сбросить
                           </button>
                         ) : null}
-                        <button
-                          type="button"
-                          onClick={() => toggleSection('catalog')}
-                          className="shrink-0 p-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer"
-                          aria-expanded={expandedSections.catalog}
-                          aria-label={expandedSections.catalog ? 'Свернуть раздел Каталог' : 'Развернуть раздел Каталог'}
-                        >
-                          <ChevronRight
-                            className={`w-5 h-5 text-primary transition-transform duration-300 ease-out ${
-                              expandedSections.catalog ? 'rotate-90' : ''
-                            }`}
-                          />
-                        </button>
                       </div>
                       <AnimatePresence initial={false}>
                         {expandedSections.catalog && (
@@ -505,8 +537,13 @@ export function CatalogPage() {
                                     ) : null
                                   const subs = cat.subcategories ?? []
                                   const catSelected = selectedCategories.includes(cat.id)
-                                  const subListOpen = expandedCategorySubs[cat.id] ?? false
+                                  const subsPanelOpen = subs.length > 0 && (expandedCategorySubs[cat.id] ?? false)
                                   const isLeafCategory = subs.length === 0
+                                  /** Подсветка строки категории: лист или выбрана целиком / по подпунктам */
+                                  const catalogRowFiltersActive =
+                                    subs.length === 0
+                                      ? catSelected
+                                      : catSelected || subs.some((s) => selectedSubcategories.includes(s.id))
 
                                   const categoryHasCatalogFilter =
                                     subs.length > 0 &&
@@ -518,18 +555,30 @@ export function CatalogPage() {
                                       <div className="flex items-stretch gap-2 min-w-0">
                                         <button
                                           type="button"
+                                          aria-expanded={isLeafCategory ? undefined : subsPanelOpen}
                                           onClick={() =>
                                             isLeafCategory
                                               ? toggleLeafCatalogCategoryFilter(cat.id)
-                                              : toggleCategorySubsVisibility(cat.id)
+                                              : toggleParentCategoryOpenAndFilter(cat.id)
                                           }
-                                          aria-expanded={!isLeafCategory ? subListOpen : undefined}
-                                          className={filterRowSelectedClass(catSelected, 'flex min-h-[2.75rem] items-center gap-2', {
-                                            inFlexRow: categoryHasCatalogFilter,
-                                          })}
+                                          className={filterRowSelectedClass(
+                                            catalogRowFiltersActive,
+                                            'flex min-h-[2.75rem] min-w-0 flex-1 items-center gap-2',
+                                            {
+                                              inFlexRow: categoryHasCatalogFilter,
+                                            }
+                                          )}
                                         >
                                           {IconEl && (
-                                            <span className={catSelected ? 'text-primary opacity-90' : 'text-primary/70'}>{IconEl}</span>
+                                            <span
+                                              className={
+                                                catalogRowFiltersActive
+                                                  ? 'text-primary opacity-90'
+                                                  : 'text-primary/70'
+                                              }
+                                            >
+                                              {IconEl}
+                                            </span>
                                           )}
                                           <span className="truncate">{cat.name}</span>
                                         </button>
@@ -547,25 +596,31 @@ export function CatalogPage() {
                                           </button>
                                         ) : null}
                                       </div>
-                                      {subs.length > 0 && (
+                                      {subs.length > 0 ? (
                                         <AnimatePresence initial={false}>
-                                          {subListOpen && (
+                                          {subsPanelOpen ? (
                                             <motion.div
                                               key={`subs-${cat.id}`}
                                               initial={{ height: 0, opacity: 0 }}
                                               animate={{ height: 'auto', opacity: 1 }}
                                               exit={{ height: 0, opacity: 0 }}
-                                              transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+                                              transition={{
+                                                duration: 0.32,
+                                                ease: [0.4, 0, 0.2, 1],
+                                              }}
                                               className="overflow-hidden"
                                             >
-                                              <div className="pl-2 sm:pl-5 pt-1 space-y-0.5">
+                                              <div className="pl-2 pt-1 sm:pl-4 space-y-0.5">
                                                 {subs.map((sub) => {
-                                                  const subSel = selectedSubcategories.includes(sub.id)
+                                                  const subSel =
+                                                    selectedSubcategories.includes(sub.id)
                                                   return (
                                                     <button
                                                       key={sub.id}
                                                       type="button"
-                                                      onClick={() => toggleCatalogSubcategory(sub.id, cat.id)}
+                                                      onClick={() =>
+                                                        toggleCatalogSubcategory(sub.id, cat.id)
+                                                      }
                                                       className={filterRowSelectedClass(subSel)}
                                                     >
                                                       {sub.name}
@@ -574,9 +629,9 @@ export function CatalogPage() {
                                                 })}
                                               </div>
                                             </motion.div>
-                                          )}
+                                          ) : null}
                                         </AnimatePresence>
-                                      )}
+                                      ) : null}
                                     </div>
                                   )
                                 })
@@ -594,6 +649,10 @@ export function CatalogPage() {
                           type="button"
                           onClick={() => toggleSection('material')}
                           className="flex flex-1 min-w-0 items-center px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                          aria-expanded={expandedSections.material}
+                          aria-label={
+                            expandedSections.material ? 'Свернуть раздел Материал' : 'Развернуть раздел Материал'
+                          }
                         >
                           <span className="font-medium text-primary truncate">Материал</span>
                         </button>
@@ -609,19 +668,6 @@ export function CatalogPage() {
                             Сбросить
                           </button>
                         ) : null}
-                        <button
-                          type="button"
-                          onClick={() => toggleSection('material')}
-                          className="shrink-0 p-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer"
-                          aria-expanded={expandedSections.material}
-                          aria-label={expandedSections.material ? 'Свернуть раздел Материал' : 'Развернуть раздел Материал'}
-                        >
-                          <ChevronRight
-                            className={`w-5 h-5 text-primary transition-transform duration-300 ease-out ${
-                              expandedSections.material ? 'rotate-90' : ''
-                            }`}
-                          />
-                        </button>
                       </div>
                       <AnimatePresence initial={false}>
                         {expandedSections.material && (
@@ -665,6 +711,8 @@ export function CatalogPage() {
                           type="button"
                           onClick={() => toggleSection('color')}
                           className="flex flex-1 min-w-0 items-center px-2 py-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer text-left"
+                          aria-expanded={expandedSections.color}
+                          aria-label={expandedSections.color ? 'Свернуть раздел Цвет' : 'Развернуть раздел Цвет'}
                         >
                           <span className="font-medium text-primary truncate">Цвет</span>
                         </button>
@@ -680,19 +728,6 @@ export function CatalogPage() {
                             Сбросить
                           </button>
                         ) : null}
-                        <button
-                          type="button"
-                          onClick={() => toggleSection('color')}
-                          className="shrink-0 p-2 hover:bg-muted/30 rounded-lg transition-colors cursor-pointer"
-                          aria-expanded={expandedSections.color}
-                          aria-label={expandedSections.color ? 'Свернуть раздел Цвет' : 'Развернуть раздел Цвет'}
-                        >
-                          <ChevronRight
-                            className={`w-5 h-5 text-primary transition-transform duration-300 ease-out ${
-                              expandedSections.color ? 'rotate-90' : ''
-                            }`}
-                          />
-                        </button>
                       </div>
                       <AnimatePresence initial={false}>
                         {expandedSections.color && (
@@ -786,6 +821,10 @@ export function CatalogPage() {
                   product.subcategoryIds
                 )
                 const hasSubcats = subcatsLine !== '—'
+                const categoryLabel =
+                  catalogData?.categories.find((c) => c.id === product.category)?.name?.trim() ||
+                  product.category ||
+                  ''
 
                 return (
                 <div
@@ -810,6 +849,11 @@ export function CatalogPage() {
                     <h3 className="font-medium text-primary mb-2 line-clamp-2 min-h-[2.5rem]">
                       {product.name}
                     </h3>
+                    {categoryLabel ? (
+                      <p className="text-xs font-semibold uppercase tracking-wide text-primary/85 mb-1 line-clamp-1">
+                        {categoryLabel}
+                      </p>
+                    ) : null}
                     {hasSubcats ? (
                       <p
                         className="text-sm text-muted-foreground mb-1 line-clamp-2"

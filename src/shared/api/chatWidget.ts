@@ -23,7 +23,9 @@ export function normalizeChatWidgetData(raw: unknown): ChatWidgetData {
     phoneText:
       typeof r.phoneText === 'string' && r.phoneText.trim() ? r.phoneText.trim() : defaultChatWidgetData.phoneText,
     telegramUrl:
-      typeof r.telegramUrl === 'string' ? r.telegramUrl.trim() : defaultChatWidgetData.telegramUrl,
+      typeof r.telegramUrl === 'string' && r.telegramUrl.trim()
+        ? r.telegramUrl.trim()
+        : defaultChatWidgetData.telegramUrl,
     emailText:
       typeof r.emailText === 'string' && r.emailText.trim()
         ? r.emailText.trim()

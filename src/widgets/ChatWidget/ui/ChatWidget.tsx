@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useContext, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { Send, X, MessageCircle, AlertTriangle, Phone } from 'lucide-react'
 import { FiltersContext } from '@/App'
 import { sanitizeInput, validateRequired } from '@/shared/lib/validation'
@@ -20,7 +20,6 @@ import {
 } from '@/shared/api/chatWidget'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 import { useVpnDetection } from '@/shared/lib/vpnDetection'
-import telegramIcon from '@/assets/telegram.jpg'
 
 interface Message {
   id: number
@@ -66,34 +65,46 @@ function FabMailLogo({ className }: { className?: string }) {
   )
 }
 
-/** Каскад: от главной кнопке к внешним (DOM mail→tg→phone, row-reverse). */
-const fabContactsContainerVariants = {
-  hidden: {
-    transition: { staggerChildren: 0.05, staggerDirection: 1 },
-  },
+/** Вектор вместо jpg — тогда содержимое кружка синхронно с motion, без поздней декодировки. */
+function FabTelegramLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <path
+        fill="currentColor"
+        d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"
+      />
+    </svg>
+  )
+}
+
+/** Ряд кнопок: поочерёдный вылет от FAB; при закрытии — в обратном порядке */
+const fabContactsRowVariants: Variants = {
   visible: {
     transition: {
-      staggerChildren: 0.09,
-      delayChildren: 0.06,
-      staggerDirection: -1,
+      staggerChildren: 0.075,
+      delayChildren: 0.03,
+      staggerDirection: 1,
     },
   },
-} as const
+  hidden: {
+    transition: { staggerChildren: 0.055, staggerDirection: -1 },
+  },
+}
 
-const fabContactsItemVariants = {
+const fabContactChipVariants: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.48,
+    scale: 0.82,
     x: 44,
-    transition: { duration: 0.2, ease: [0.4, 0, 0.65, 1] },
+    transition: { duration: 0.16, ease: [0.4, 0, 0.65, 1] as const },
   },
   visible: {
     opacity: 1,
     scale: 1,
     x: 0,
-    transition: { type: 'spring', stiffness: 390, damping: 22, mass: 0.7 },
+    transition: { type: 'spring', damping: 24, stiffness: 380 },
   },
-} as const
+}
 
 export function ChatWidget() {
   const { isFiltersOpen, isChatWidgetHidden } = useContext(FiltersContext)
@@ -375,8 +386,9 @@ export function ChatWidget() {
   const phoneHref = telHrefFromPhoneText(fabSettings.phoneText)
   const mailHref = mailtoHrefFromChatEmail(fabSettings.emailText)
   const tgUrlRaw = fabSettings.telegramUrl.trim()
-  const telegramHref =
+  const telegramHrefBase =
     tgUrlRaw && !/^https?:\/\//i.test(tgUrlRaw) ? `https://${tgUrlRaw}` : tgUrlRaw
+  const telegramHref = telegramHrefBase || defaultChatWidgetData.telegramUrl
 
   return (
     <>
@@ -414,56 +426,55 @@ export function ChatWidget() {
                 <motion.div
                   key="fab-contacts-row"
                   className="flex flex-row-reverse items-center gap-3"
-                  variants={fabContactsContainerVariants}
+                  variants={fabContactsRowVariants}
                   initial="hidden"
                   animate="visible"
                   exit="hidden"
                 >
                   <motion.a
                     href={mailHref === '#' ? undefined : mailHref}
-                    variants={fabContactsItemVariants}
+                    variants={fabContactChipVariants}
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.92 }}
                     onClick={(e) => {
                       if (mailHref === '#') e.preventDefault()
                     }}
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-orange-600 text-white shadow-md hover:bg-orange-700 transition-colors"
+                    className="flex h-14 w-14 shrink-0 origin-right items-center justify-center rounded-full bg-orange-600 text-white shadow-md hover:bg-orange-700 transition-colors"
                     aria-label="Почта"
                     title="Почта"
                   >
                     <FabMailLogo className="h-[30px] w-[30px] shrink-0" />
                   </motion.a>
-                  <motion.button
-                    type="button"
-                    variants={fabContactsItemVariants}
-                    disabled={!telegramHref}
-                    onClick={() => {
-                      if (!telegramHref) return
-                      window.open(telegramHref, '_blank', 'noopener,noreferrer')
-                    }}
-                    className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full p-0 shadow-md ring-inset ring-2 ring-white/25 hover:brightness-95 transition-[filter] disabled:opacity-40 disabled:pointer-events-none"
-                    aria-label="Telegram"
-                    title="Telegram"
-                  >
-                    <img
-                      src={telegramIcon}
-                      alt=""
-                      width={112}
-                      height={112}
-                      draggable={false}
-                      className="absolute inset-0 h-full w-full object-cover select-none pointer-events-none"
-                    />
-                  </motion.button>
                   <motion.a
                     href={phoneHref === '#' ? undefined : phoneHref}
-                    variants={fabContactsItemVariants}
+                    variants={fabContactChipVariants}
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.92 }}
                     onClick={(e) => {
                       if (phoneHref === '#') e.preventDefault()
                     }}
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md hover:bg-emerald-700 transition-colors"
+                    className="flex h-14 w-14 shrink-0 origin-right items-center justify-center rounded-full bg-emerald-600 text-white shadow-md hover:bg-emerald-700 transition-colors"
                     aria-label="Телефон"
                     title="Телефон"
                   >
                     <Phone className="h-[30px] w-[30px] shrink-0" strokeWidth={2.25} />
                   </motion.a>
+                  <motion.button
+                    type="button"
+                    variants={fabContactChipVariants}
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.92 }}
+                    disabled={!telegramHref}
+                    onClick={() => {
+                      if (!telegramHref) return
+                      window.open(telegramHref, '_blank', 'noopener,noreferrer')
+                    }}
+                    className="flex h-14 w-14 shrink-0 origin-right items-center justify-center rounded-full bg-[#259bda] text-white shadow-md ring-inset ring-2 ring-white/25 hover:brightness-95 transition-[filter] disabled:pointer-events-none disabled:opacity-40"
+                    aria-label="Telegram"
+                    title="Telegram"
+                  >
+                    <FabTelegramLogo className="h-[26px] w-[26px] shrink-0" />
+                  </motion.button>
                 </motion.div>
               )}
             </AnimatePresence>
