@@ -39,6 +39,15 @@ function filterRowSelectedClass(active: boolean, extra?: string, opts?: { inFlex
 const filterDrawerResetLinkClass =
   'text-sm text-primary cursor-pointer bg-transparent underline-offset-4 decoration-primary/60 hover:underline'
 
+/** Показ категории в карточке: только первая буква заглавная, остальной текст не в капсе */
+function formatProductCategoryCaption(name: string): string {
+  const t = name.trim()
+  if (!t) return t
+  return (
+    t.charAt(0).toLocaleUpperCase('ru-RU') + t.slice(1).toLocaleLowerCase('ru-RU')
+  )
+}
+
 function normalizeFilterValue(value: string): string {
   return value
     .toLowerCase()
@@ -831,7 +840,7 @@ export function CatalogPage() {
                   key={product.id}
                   onClick={() => navigate(`/catalog/${product.slug}-${product.id}`)}
                   className={`group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer ${
-                    viewMode === 'list' ? 'flex' : ''
+                    viewMode === 'list' ? 'flex' : 'flex flex-col h-full'
                   }`}
                 >
                   <div className={`relative overflow-hidden bg-gray-100 ${
@@ -843,34 +852,34 @@ export function CatalogPage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
-                  <div className={`p-4 ${
-                    viewMode === 'list' ? 'flex-1 flex flex-col justify-center' : ''
-                  }`}>
-                    <h3 className="font-medium text-primary mb-2 line-clamp-2 min-h-[2.5rem]">
-                      {product.name}
-                    </h3>
-                    {categoryLabel ? (
-                      <p className="text-xs font-semibold uppercase tracking-wide text-primary/85 mb-1 line-clamp-1">
-                        {categoryLabel}
-                      </p>
-                    ) : null}
-                    {hasSubcats ? (
-                      <p
-                        className="text-sm text-muted-foreground mb-1 line-clamp-2"
-                        title={subcatsLine}
-                      >
-                        {subcatsLine}
-                      </p>
-                    ) : null}
-                    <p className="text-sm text-muted-foreground mb-4">
-                      <span>{product.material}</span>
-                      {product.color.trim() ? (
-                        <>
-                          <span className="mx-1.5 text-border">·</span>
-                          <span>{product.color}</span>
-                        </>
+                  <div className="p-4 flex flex-col flex-1 min-h-0">
+                    <div className="flex min-h-0 flex-1 flex-col">
+                      <h3 className="font-medium text-primary mb-2 line-clamp-2 min-h-[2.5rem]">
+                        {product.name}
+                      </h3>
+                      {categoryLabel ? (
+                        <p className="mb-1 line-clamp-1 text-xs text-muted-foreground">
+                          {formatProductCategoryCaption(categoryLabel)}
+                        </p>
                       ) : null}
-                    </p>
+                      {hasSubcats ? (
+                        <p
+                          className="text-sm text-muted-foreground mb-1 line-clamp-2"
+                          title={subcatsLine}
+                        >
+                          {subcatsLine}
+                        </p>
+                      ) : null}
+                      <p className="mb-4 text-sm text-muted-foreground">
+                        <span>{product.material}</span>
+                        {product.color.trim() ? (
+                          <>
+                            <span className="mx-1.5 text-border">·</span>
+                            <span>{product.color}</span>
+                          </>
+                        ) : null}
+                      </p>
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -881,7 +890,7 @@ export function CatalogPage() {
                         params.set('productUrl', `${window.location.origin}/catalog/${product.slug}-${product.id}`)
                         navigate(`?${params.toString()}`)
                       }}
-                      className="tap-click w-full py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+                      className="tap-click mt-auto w-full shrink-0 py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
                     >
                       Узнать цену
                     </button>
