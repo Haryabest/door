@@ -66,6 +66,46 @@ function FabMailLogo({ className }: { className?: string }) {
   )
 }
 
+/** Каскад FAB: при row-reverse первая к главной — chat (она последняя в DOM). */
+const fabSubmenuVariants = {
+  collapsed: {
+    transition: {
+      staggerChildren: 0.055,
+      staggerDirection: 1,
+    },
+  },
+  expanded: {
+    transition: {
+      staggerChildren: 0.09,
+      delayChildren: 0.05,
+      staggerDirection: -1,
+    },
+  },
+} as const
+
+const fabSubItemVariants = {
+  collapsed: {
+    opacity: 0,
+    scale: 0.45,
+    x: 40,
+    transition: {
+      duration: 0.2,
+      ease: [0.4, 0, 0.6, 1],
+    },
+  },
+  expanded: {
+    opacity: 1,
+    scale: 1,
+    x: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 400,
+      damping: 22,
+      mass: 0.72,
+    },
+  },
+} as const
+
 export function ChatWidget() {
   const { isFiltersOpen, isChatWidgetHidden } = useContext(FiltersContext)
   const location = useLocation()
@@ -394,14 +434,18 @@ export function ChatWidget() {
 
             <AnimatePresence initial={false}>
               {fabMenuOpen && !isOpen && (
-                <>
+                <motion.div
+                  key="fab-submenu"
+                  className="flex flex-row-reverse items-center gap-3"
+                  variants={fabSubmenuVariants}
+                  initial="collapsed"
+                  animate="expanded"
+                  exit="collapsed"
+                >
                   <motion.a
                     key="fab-mail"
+                    variants={fabSubItemVariants}
                     href={mailHref === '#' ? undefined : mailHref}
-                    initial={{ opacity: 0, x: 16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 16 }}
-                    transition={{ duration: 0.15, delay: 0.06 }}
                     onClick={(e) => {
                       if (mailHref === '#') e.preventDefault()
                       setFabMenuOpen(false)
@@ -415,10 +459,7 @@ export function ChatWidget() {
                   <motion.button
                     key="fab-tg"
                     type="button"
-                    initial={{ opacity: 0, x: 16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 16 }}
-                    transition={{ duration: 0.15, delay: 0.04 }}
+                    variants={fabSubItemVariants}
                     disabled={!telegramHref}
                     onClick={() => {
                       if (!telegramHref) return
@@ -440,11 +481,8 @@ export function ChatWidget() {
                   </motion.button>
                   <motion.a
                     key="fab-phone"
+                    variants={fabSubItemVariants}
                     href={phoneHref === '#' ? undefined : phoneHref}
-                    initial={{ opacity: 0, x: 16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 16 }}
-                    transition={{ duration: 0.15, delay: 0.02 }}
                     onClick={(e) => {
                       if (phoneHref === '#') e.preventDefault()
                       setFabMenuOpen(false)
@@ -458,10 +496,7 @@ export function ChatWidget() {
                   <motion.button
                     key="fab-chat"
                     type="button"
-                    initial={{ opacity: 0, x: 16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 16 }}
-                    transition={{ duration: 0.15 }}
+                    variants={fabSubItemVariants}
                     onClick={() => {
                       setIsOpen(true)
                       setFabMenuOpen(false)
@@ -472,7 +507,7 @@ export function ChatWidget() {
                   >
                     Чат
                   </motion.button>
-                </>
+                </motion.div>
               )}
             </AnimatePresence>
           </motion.div>
