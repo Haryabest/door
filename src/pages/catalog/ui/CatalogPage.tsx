@@ -828,6 +828,9 @@ export function CatalogPage() {
                   catalogData?.categories.find((c) => c.id === product.category)?.name?.trim() ||
                   product.category ||
                   ''
+                const descriptionText = product.description?.trim()
+                const featureList = product.features?.filter(Boolean) ?? []
+                const hasDescOrFeatures = Boolean(descriptionText) || featureList.length > 0
 
                 return (
                 <div
@@ -864,7 +867,11 @@ export function CatalogPage() {
                           {subcatsLine}
                         </p>
                       ) : null}
-                      <p className="mb-4 text-sm text-muted-foreground">
+                      <p
+                        className={`text-sm text-muted-foreground ${
+                          hasDescOrFeatures ? 'mb-2' : 'mb-4'
+                        }`}
+                      >
                         <span>{product.material}</span>
                         {product.color.trim() ? (
                           <>
@@ -873,6 +880,38 @@ export function CatalogPage() {
                           </>
                         ) : null}
                       </p>
+                      {descriptionText ? (
+                        <p
+                          className={`text-sm leading-snug text-muted-foreground line-clamp-3 ${
+                            featureList.length > 0 ? 'mb-2' : 'mb-4'
+                          }`}
+                          title={descriptionText}
+                        >
+                          {descriptionText}
+                        </p>
+                      ) : null}
+                      {featureList.length > 0 ? (
+                        <div className="mb-4 min-w-0">
+                          <p className="mb-1 text-xs font-semibold text-primary">Характеристики</p>
+                          <ul className="space-y-1">
+                            {featureList.slice(0, 4).map((feature, fi) => (
+                              <li
+                                key={`${product.id}-f-${fi}`}
+                                className="flex gap-2 text-xs text-muted-foreground"
+                              >
+                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
+                                <span className="min-w-0 line-clamp-2">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          {featureList.length > 4 ? (
+                            <p className="mt-1.5 text-xs text-muted-foreground">
+                              Ещё {featureList.length - 4}{'…'}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+
                     </div>
                     <button
                       onClick={(e) => {
