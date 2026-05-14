@@ -13,7 +13,10 @@ import { productsApi } from "@/shared/api/products"
 import type { Product } from "@/shared/api/products"
 import { getCatalogPage, type CatalogPageData } from "@/shared/api/catalog"
 import { generateProductSlug } from "@/shared/lib/slug"
-import { formatProductSubcategoriesLine } from '@/shared/lib/formatProductCatalogLabels'
+import {
+  formatProductCategoryCaption,
+  formatProductSubcategoriesLine,
+} from '@/shared/lib/formatProductCatalogLabels'
 import { cn } from '@/shared/lib/utils'
 
 const iconMap: Record<string, any> = {
@@ -38,15 +41,6 @@ function filterRowSelectedClass(active: boolean, extra?: string, opts?: { inFlex
 /** Кнопки «Сбросить» в панели: подчёркивание при наведении, без заливки */
 const filterDrawerResetLinkClass =
   'text-sm text-primary cursor-pointer bg-transparent underline-offset-4 decoration-primary/60 hover:underline'
-
-/** Показ категории в карточке: только первая буква заглавная, остальной текст не в капсе */
-function formatProductCategoryCaption(name: string): string {
-  const t = name.trim()
-  if (!t) return t
-  return (
-    t.charAt(0).toLocaleUpperCase('ru-RU') + t.slice(1).toLocaleLowerCase('ru-RU')
-  )
-}
 
 function normalizeFilterValue(value: string): string {
   return value
@@ -858,7 +852,7 @@ export function CatalogPage() {
                         {product.name}
                       </h3>
                       {categoryLabel ? (
-                        <p className="mb-1 line-clamp-1 text-xs text-muted-foreground">
+                        <p className="mb-1 line-clamp-1 text-sm text-muted-foreground">
                           {formatProductCategoryCaption(categoryLabel)}
                         </p>
                       ) : null}

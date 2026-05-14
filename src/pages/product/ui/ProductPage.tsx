@@ -9,17 +9,28 @@ import { ChevronLeft, Share2, Truck, Shield, Award, Copy } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProductById } from "@/shared/api/products"
 import type { Product } from "@/shared/api/products"
+import { getCatalogPage } from '@/shared/api/catalog'
+import type { CatalogPageData } from '@/shared/api/catalog'
 import { extractIdFromSlug } from "@/shared/lib/slug"
+import {
+  formatProductCategoryCaption,
+  formatProductSubcategoriesLine,
+} from '@/shared/lib/formatProductCatalogLabels'
 
 export function ProductPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [product, setProduct] = useState<Product | null>(null)
+  const [catalogData, setCatalogData] = useState<CatalogPageData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
   const productId = extractIdFromSlug(slug || '')
+
+  useEffect(() => {
+    void getCatalogPage().then(setCatalogData)
+  }, [])
 
   useEffect(() => {
     setIsLoading(true)
@@ -141,6 +152,23 @@ export function ProductPage() {
     setShowShareMenu(false)
   }
 
+  const categoryResolved =
+    catalogData?.categories.find((c) => c.id === product.category)?.name?.trim() ||
+    product.category?.trim() ||
+    ''
+  const categoryCaption =
+    categoryResolved ? formatProductCategoryCaption(categoryResolved) : ''
+  const subcatsLine = formatProductSubcategoriesLine(
+    catalogData,
+    product.category,
+    product.subcategoryIds
+  )
+  const showSubcats = subcatsLine !== '—'
+  const seoExtraBits = [
+    categoryCaption,
+    ...(showSubcats ? [subcatsLine] : []),
+  ].filter(Boolean)
+
   return (
     <div className="flex flex-col min-h-screen">
       <SEO
@@ -148,7 +176,7 @@ export function ProductPage() {
         description={`${product.name}. ${product.description ?? ''} Уточните условия у менеджера.`}
         canonicalUrl={`/catalog/${slug || ''}`}
         image={product.image}
-        keywords={`${product.name}, ${product.material}, ${product.color}, купить дверь, двери Нижний Новгород`}
+        keywords={`${[product.name, product.material, product.color, ...seoExtraBits].join(', ')}, купить дверь, двери Нижний Новгород`}
         type="product"
         structuredData={{
           '@context': 'https://schema.org',
@@ -203,7 +231,15 @@ export function ProductPage() {
             >
               <div>
                 <h1 className="text-3xl font-bold text-primary mb-2">{product.name}</h1>
-                <p className="text-muted-foreground">{product.description}</p>
+                {categoryCaption ? (
+                  <p className="mb-2 text-sm text-muted-foreground">{categoryCaption}</p>
+                ) : null}
+                {showSubcats ? (
+                  <p className="mb-3 text-sm text-muted-foreground">{subcatsLine}</p>
+                ) : null}
+                {product.description?.trim() ? (
+                  <p className="text-muted-foreground">{product.description}</p>
+                ) : null}
               </div>
 
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -217,17 +253,19 @@ export function ProductPage() {
                 </div>
               </div>
 
-              <div>
-                <h3 className="font-semibold text-primary mb-2 sm:mb-3 text-sm sm:text-base">Характеристики:</h3>
-                <ul className="space-y-1 sm:space-y-2">
-                  {(product.features || []).map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {(product.features?.length ?? 0) > 0 ? (
+                <div>
+                  <h3 className="font-semibold text-primary mb-2 sm:mb-3 text-sm sm:text-base">Характеристики:</h3>
+                  <ul className="space-y-1 sm:space-y-2">
+                    {(product.features ?? []).map((feature, index) => (
+                      <li key={index} className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
               <div className="relative">
                 <div className="flex gap-3 sm:gap-4">
