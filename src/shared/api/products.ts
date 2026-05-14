@@ -33,6 +33,38 @@ async function parseJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T
 }
 
+/** Совместимость с ответами API: `features` иногда строка или null */
+function coerceProductFeatures(raw: unknown): string[] {
+  if (raw == null) return []
+  if (Array.isArray(raw))
+    return raw.map((item) => String(item).trim()).filter(Boolean)
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      return Array.isArray(parsed)
+        ? parsed.map((item) => String(item).trim()).filter(Boolean)
+        : raw.trim()
+          ? [raw.trim()]
+          : []
+    } catch {
+      return raw.trim() ? [raw.trim()] : []
+    }
+  }
+  return []
+}
+
+function normalizePublicProduct(raw: Product): Product {
+  const safe = raw as Product & { features?: unknown }
+  return {
+    ...raw,
+    description:
+      typeof safe.description === 'string' && safe.description.trim()
+        ? safe.description.trim()
+        : undefined,
+    features: coerceProductFeatures(safe.features),
+  }
+}
+
 export const productsApi = {
   getProducts: async (params?: ProductListParams): Promise<Product[]> => {
     const searchParams = new URLSearchParams()
@@ -64,7 +96,8 @@ export const productsApi = {
 export async function getProductById(id: number): Promise<Product | null> {
   const response = await apiFetch(`/api/products/${id}`)
   if (!response.ok) return null
-  return parseJson<Product>(response)
+  const p = await parseJson<Product>(response)
+  return normalizePublicProduct(p)
 }
 
 export type ProductCreateResult =

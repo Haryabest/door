@@ -74,7 +74,14 @@ export function ProductPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="h-5 w-32 skeleton rounded mb-2 sm:mb-3" />
+                  <div className="h-5 w-28 skeleton rounded mb-2 sm:mb-3" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-full skeleton rounded" />
+                    <div className="h-4 w-[92%] skeleton rounded" />
+                  </div>
+                </div>
+                <div>
+                  <div className="h-5 w-36 skeleton rounded mb-2 sm:mb-3" />
                   <div className="space-y-2">
                     <div className="h-4 w-full skeleton rounded" />
                     <div className="h-4 w-5/6 skeleton rounded" />
@@ -168,12 +175,14 @@ export function ProductPage() {
     categoryCaption,
     ...(showSubcats ? [subcatsLine] : []),
   ].filter(Boolean)
+  const descriptionTrimmed = product.description?.trim() ?? ''
+  const featureList = (product.features ?? []).filter(Boolean)
 
   return (
     <div className="flex flex-col min-h-screen">
       <SEO
         title={product.name}
-        description={`${product.name}. ${product.description ?? ''} Уточните условия у менеджера.`}
+        description={`${product.name}. ${descriptionTrimmed ? `${descriptionTrimmed} ` : ''}Уточните условия у менеджера.`}
         canonicalUrl={`/catalog/${slug || ''}`}
         image={product.image}
         keywords={`${[product.name, product.material, product.color, ...seoExtraBits].join(', ')}, купить дверь, двери Нижний Новгород`}
@@ -183,7 +192,7 @@ export function ProductPage() {
           '@type': 'Product',
           name: product.name,
           image: product.image,
-          description: product.description,
+          description: descriptionTrimmed || undefined,
           sku: String(product.id),
           brand: {
             '@type': 'Brand',
@@ -235,10 +244,7 @@ export function ProductPage() {
                   <p className="mb-2 text-sm text-muted-foreground">{categoryCaption}</p>
                 ) : null}
                 {showSubcats ? (
-                  <p className="mb-3 text-sm text-muted-foreground">{subcatsLine}</p>
-                ) : null}
-                {product.description?.trim() ? (
-                  <p className="text-muted-foreground">{product.description}</p>
+                  <p className="text-sm text-muted-foreground">{subcatsLine}</p>
                 ) : null}
               </div>
 
@@ -253,11 +259,24 @@ export function ProductPage() {
                 </div>
               </div>
 
-              {(product.features?.length ?? 0) > 0 ? (
+              {descriptionTrimmed ? (
                 <div>
-                  <h3 className="font-semibold text-primary mb-2 sm:mb-3 text-sm sm:text-base">Характеристики:</h3>
+                  <h2 className="font-semibold text-primary mb-2 sm:mb-3 text-sm sm:text-base">
+                    Описание
+                  </h2>
+                  <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line">
+                    {descriptionTrimmed}
+                  </p>
+                </div>
+              ) : null}
+
+              {featureList.length > 0 ? (
+                <div>
+                  <h2 className="font-semibold text-primary mb-2 sm:mb-3 text-sm sm:text-base">
+                    Характеристики
+                  </h2>
                   <ul className="space-y-1 sm:space-y-2">
-                    {(product.features ?? []).map((feature, index) => (
+                    {featureList.map((feature, index) => (
                       <li key={index} className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
                         {feature}
