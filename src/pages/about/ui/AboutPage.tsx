@@ -8,6 +8,7 @@ import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
 import { useNavigate } from 'react-router-dom'
 import { getAboutPage, type AboutPageData } from '@/shared/api/about'
+import { SITE_URL } from '@/shared/config/siteUrl'
 
 const iconMap: Record<string, any> = {
   'Star': Star,
@@ -132,7 +133,7 @@ export function AboutPage() {
           '@context': 'https://schema.org',
           '@type': 'AboutPage',
           name: 'О компании От А до Я',
-          url: 'https://otadoya.ru/about',
+          url: `${SITE_URL}/about`,
           description: 'Информация о компании От А до Я, опыте работы и преимуществах',
         }}
       />

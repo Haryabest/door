@@ -8,6 +8,7 @@ import { SEO } from "@/shared/ui/SEO"
 import { sanitizeInput, validateRequired, validateEmail, validatePhone, validateLength, formatPhoneInput } from "@/shared/lib/validation"
 import { submitContactLead } from "@/shared/api/contactLeads"
 import { getContactsPage, type ContactsPageData, type LocationItem } from "@/shared/api/contacts"
+import { SITE_URL } from '@/shared/config/siteUrl'
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
@@ -223,7 +224,7 @@ export function ContactsPage() {
           "@context": "https://schema.org",
           "@type": "ContactPage",
           name: "Контакты От А до Я",
-          url: "https://otadoya.ru/contacts",
+          url: `${SITE_URL}/contacts`,
           description: "Контакты, адреса салонов и телефоны компании От А до Я",
         }}
       />

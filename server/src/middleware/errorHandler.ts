@@ -3,6 +3,7 @@ import multer from 'multer'
 import { mapPgError } from '../lib/pgErrors.js'
 import { HttpError } from '../lib/httpError.js'
 import { logger } from '../lib/logger.js'
+import { notifyErrorAlertWebhook } from '../lib/errorAlertWebhook.js'
 
 export const notFoundApi: RequestHandler = (req, res, next) => {
   if (req.path.startsWith('/api')) {
@@ -34,6 +35,9 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
 
   if (err instanceof HttpError) {
     logger.warn({ requestId, status: err.status }, err.message)
+    if (err.status >= 500) {
+      notifyErrorAlertWebhook(req, err.status, err.message)
+    }
     res.status(err.status).json({
       error: err.message,
       ...(err.code && { code: err.code }),
@@ -46,6 +50,9 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   if (mapped) {
     if (mapped.logDetail) {
       logger.error({ requestId, pg: mapped.code }, mapped.logDetail)
+    }
+    if (mapped.status >= 500) {
+      notifyErrorAlertWebhook(req, mapped.status, mapped.logDetail ?? mapped.message)
     }
     res.status(mapped.status).json({
       error: mapped.message,
@@ -68,6 +75,9 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   logger.error({ requestId, err }, message)
 
   const code = status >= 400 && status < 600 ? status : 500
+  if (code >= 500) {
+    notifyErrorAlertWebhook(req, code, message)
+  }
   const body: Record<string, unknown> = {
     requestId,
     error:

@@ -6,6 +6,7 @@ import { SEO } from "@/shared/ui/SEO"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { getPortfolioPage, type PortfolioPageData } from "@/shared/api/portfolio"
 import { FiltersContext } from "@/App"
+import { SITE_URL } from '@/shared/config/siteUrl'
 
 export function PortfolioPage() {
   const { setIsChatWidgetHidden } = useContext(FiltersContext)
@@ -94,7 +95,7 @@ export function PortfolioPage() {
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
           name: 'Портфолио От А до Я',
-          url: 'https://otadoya.ru/portfolio',
+          url: `${SITE_URL}/portfolio`,
           description: 'Примеры установленных дверей и выполненных проектов компании От А до Я',
         }}
       />

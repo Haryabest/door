@@ -16,6 +16,7 @@ import {
   formatProductCategoryCaption,
   formatProductSubcategoriesLine,
 } from '@/shared/lib/formatProductCatalogLabels'
+import { SITE_URL } from '@/shared/config/siteUrl'
 
 export function ProductPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -201,7 +202,7 @@ export function ProductPage() {
           offers: {
             '@type': 'Offer',
             availability: 'https://schema.org/InStock',
-            url: `https://otadoya.ru/catalog/${slug || ''}`,
+            url: slug ? `${SITE_URL}/catalog/${slug}` : `${SITE_URL}/catalog`,
           },
         }}
       />

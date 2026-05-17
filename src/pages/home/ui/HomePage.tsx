@@ -6,6 +6,7 @@ import { SEO } from "@/shared/ui/SEO"
 import { Image } from "@/shared/ui/Image"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { getHomePage, type HomePageData } from "@/shared/api/home"
+import { SITE_URL } from '@/shared/config/siteUrl'
 import { HeroSection } from "./HeroSection"
 
 const iconMap: Record<string, any> = {
@@ -113,8 +114,8 @@ export function HomePage() {
           '@context': 'https://schema.org',
           '@type': 'LocalBusiness',
           name: 'От А до Я',
-          url: 'https://otadoya.ru/',
-          image: 'https://otadoya.ru/logo.png',
+          url: `${SITE_URL}/`,
+          image: `${SITE_URL}/logo.png`,
           telephone: '+7 (960) 166-30-30',
           address: {
             '@type': 'PostalAddress',

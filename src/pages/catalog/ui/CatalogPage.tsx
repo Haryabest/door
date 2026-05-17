@@ -28,6 +28,7 @@ import {
   formatProductSubcategoriesLine,
 } from '@/shared/lib/formatProductCatalogLabels'
 import { cn } from '@/shared/lib/utils'
+import { SITE_URL } from '@/shared/config/siteUrl'
 
 const iconMap: Record<string, any> = {
   'DoorOpen': DoorOpen,
@@ -372,7 +373,7 @@ export function CatalogPage() {
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
           name: 'Каталог дверей',
-          url: 'https://otadoya.ru/catalog',
+          url: `${SITE_URL}/catalog`,
           description: 'Каталог межкомнатных и входных дверей в Нижнем Новгороде',
         }}
       />

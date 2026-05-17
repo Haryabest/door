@@ -11,10 +11,19 @@ import { correlationId } from '../middleware/correlationId.js'
 export function setupMiddleware(app: Express) {
   app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1))
 
+  const production = process.env.NODE_ENV === 'production'
+  /** HSTS только на HTTPS за прокси; при проблемах: DISABLE_HSTS=true */
+  const hstsDisabled = process.env.DISABLE_HSTS === 'true'
+
   app.use(
     helmet({
       contentSecurityPolicy: false,
       crossOriginResourcePolicy: { policy: 'cross-origin' },
+      frameguard: { action: 'deny' },
+      hsts:
+        production && !hstsDisabled
+          ? { maxAge: 31_536_000, includeSubDomains: true, preload: false }
+          : false,
     })
   )
   app.use(compression())

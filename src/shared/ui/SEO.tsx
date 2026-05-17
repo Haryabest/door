@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async'
+import { SITE_URL } from '@/shared/config/siteUrl'
 
 interface SEOProps {
   title: string
@@ -21,7 +22,7 @@ export function SEO({
   type = 'website',
   structuredData,
 }: SEOProps) {
-  const siteUrl = 'https://otadoya.ru'
+  const siteUrl = SITE_URL
   const defaultImage = `${siteUrl}/logo.png`
   const normalizedCanonical = canonicalUrl
     ? canonicalUrl.startsWith('http')
