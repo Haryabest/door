@@ -1,6 +1,15 @@
+import { resolveMediaUrl } from '@/shared/lib/resolveMediaUrl'
+
 /** Фоновая прогрузка в кэш браузера; ошибка по одному URL не блокирует остальные. */
 export function preloadImages(urls: readonly string[]): Promise<void> {
-  const unique = [...new Set(urls.filter((u) => typeof u === 'string' && u.trim() !== ''))]
+  const unique = [
+    ...new Set(
+      urls
+        .filter((u) => typeof u === 'string' && u.trim() !== '')
+        .map((u) => resolveMediaUrl(u))
+        .filter(Boolean)
+    ),
+  ]
   if (unique.length === 0) return Promise.resolve()
 
   return Promise.all(

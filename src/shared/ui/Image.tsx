@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { resolveMediaUrl } from '@/shared/lib/resolveMediaUrl'
 
 interface ImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallback?: string
@@ -13,13 +14,13 @@ export function Image({
   onError,
   ...props
 }: ImageProps) {
-  const [src, setSrc] = useState(props.src ?? '')
+  const [src, setSrc] = useState(() => resolveMediaUrl(props.src))
   const [isRetrying, setIsRetrying] = useState(false)
   const retryCountRef = useRef(0)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const newSrc = props.src ?? ''
+    const newSrc = resolveMediaUrl(props.src)
     if (newSrc !== src && !isRetrying) {
       retryCountRef.current = 0
       setSrc(newSrc)

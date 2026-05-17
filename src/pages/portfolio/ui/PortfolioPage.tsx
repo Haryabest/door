@@ -7,6 +7,7 @@ import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { getPortfolioPage, type PortfolioPageData } from "@/shared/api/portfolio"
 import { FiltersContext } from "@/App"
 import { SITE_URL } from '@/shared/config/siteUrl'
+import { resolveMediaUrl } from '@/shared/lib/resolveMediaUrl'
 
 export function PortfolioPage() {
   const { setIsChatWidgetHidden } = useContext(FiltersContext)
@@ -117,7 +118,7 @@ export function PortfolioPage() {
               >
                 <div className="relative overflow-hidden">
                   <img
-                    src={item.image}
+                    src={resolveMediaUrl(item.image)}
                     alt={item.title}
                     className="w-full h-auto group-hover:scale-110 transition-transform duration-500"
                   />
@@ -159,7 +160,7 @@ export function PortfolioPage() {
               <div className="h-full grid grid-cols-1 md:grid-cols-[1.2fr_1fr]">
                 <div className="bg-black/5 flex items-center justify-center p-4 md:p-6 min-h-[280px]">
                   <img
-                    src={pageData.items.find(i => i.id === selectedImage)?.image}
+                    src={resolveMediaUrl(pageData.items.find(i => i.id === selectedImage)?.image)}
                     alt="Portfolio"
                     className="w-full h-full object-contain"
                   />

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { productsApi } from "@/shared/api/products"
 import { defaultHeaderData, getHeader, type HeaderData } from '@/shared/api/header'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
+import { resolveMediaUrl } from '@/shared/lib/resolveMediaUrl'
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -167,7 +168,7 @@ export function Header() {
                       }}
                       className="flex items-center gap-3 px-4 py-3 hover:bg-secondary cursor-pointer"
                     >
-                      <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded" />
+                      <img src={resolveMediaUrl(item.image)} alt={item.name} className="w-12 h-12 object-cover rounded" />
                       <div className="flex-1">
                         <p className="font-medium text-primary">{item.name}</p>
                       </div>

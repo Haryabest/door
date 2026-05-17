@@ -1,4 +1,5 @@
 import type { QueryResultRow } from 'pg'
+import { resolveMediaUrl } from './lib/resolveMediaUrl.js'
 
 export function mapProduct(row: QueryResultRow) {
   const subRaw = row.subcategory_ids as string[] | null | undefined
@@ -9,7 +10,7 @@ export function mapProduct(row: QueryResultRow) {
     features: (row.features as string[] | null) ?? [],
     material: row.material as string,
     color: row.color as string,
-    image: row.image as string,
+    image: resolveMediaUrl(row.image as string),
     category: row.category as string,
     slug: row.slug as string,
     subcategoryIds: Array.isArray(subRaw) ? subRaw : [],
@@ -19,7 +20,7 @@ export function mapProduct(row: QueryResultRow) {
 export function mapPortfolioItem(row: QueryResultRow) {
   return {
     id: row.id as number,
-    image: row.image as string,
+    image: resolveMediaUrl(row.image as string),
     title: row.title as string,
     description: row.description as string,
   }
