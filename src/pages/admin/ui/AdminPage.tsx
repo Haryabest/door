@@ -6,7 +6,7 @@ import {
   MessageCircle,
 } from 'lucide-react'
 import { updateProduct, deleteProduct, productsApi, createProduct, uploadImage } from '@/shared/api/products'
-import { sendMessage, getChats, markChatAsRead } from '@/shared/api/chats'
+import { sendMessage, getChats, markChatAsRead, deleteChat } from '@/shared/api/chats'
 import { getAboutPage, updateAboutPage, type AboutPageData, type StatItem, type AdvantageItem } from '@/shared/api/about'
 import { getContactsPage, updateContactsPage, type ContactsPageData, type LocationItem } from '@/shared/api/contacts'
 import { getPortfolioPage, updatePortfolioPage, type PortfolioPageData, type PortfolioItem } from '@/shared/api/portfolio'
@@ -86,13 +86,13 @@ function sortChatsByRecentActivity(list: ChatLocal[]): ChatLocal[] {
   })
 }
 
-/** Новые сообщения первыми (сверху в колонке) */
-function sortMessagesNewestFirst(messages: MessageLocal[]): MessageLocal[] {
+/** Хронология как в мессенджерах: старые сверху, новые снизу */
+function sortMessagesChronological(messages: MessageLocal[]): MessageLocal[] {
   return [...messages].sort((a, b) => {
-    const tb = new Date(b.timestamp).getTime()
     const ta = new Date(a.timestamp).getTime()
-    if (tb !== ta) return tb - ta
-    return b.id - a.id
+    const tb = new Date(b.timestamp).getTime()
+    if (ta !== tb) return ta - tb
+    return a.id - b.id
   })
 }
 
@@ -174,6 +174,7 @@ export function AdminPage() {
   const [products, setProducts] = useState<ProductLocal[]>([])
   const [chats, setChats] = useState<ChatLocal[]>([])
   const [selectedChat, setSelectedChat] = useState<number | null>(null)
+  const [deleteChatConfirmId, setDeleteChatConfirmId] = useState<number | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -314,6 +315,14 @@ export function AdminPage() {
     const len = chat?.messages.length ?? 0
     const snap = chatMessagesSnapshotRef.current
 
+    const scrollMessagesToBottom = () => {
+      requestAnimationFrame(() => {
+        const el = messagesScrollRef.current
+        if (!el) return
+        el.scrollTop = el.scrollHeight
+      })
+    }
+
     if (selectedChat == null) {
       chatMessagesSnapshotRef.current = { chatId: null, len: 0 }
       return
@@ -321,12 +330,12 @@ export function AdminPage() {
 
     if (snap.chatId !== selectedChat) {
       chatMessagesSnapshotRef.current = { chatId: selectedChat, len }
-      messagesScrollRef.current?.scrollTo({ top: 0 })
+      scrollMessagesToBottom()
       return
     }
 
-    if (len > snap.len) {
-      messagesScrollRef.current?.scrollTo({ top: 0 })
+    if (len !== snap.len) {
+      scrollMessagesToBottom()
     }
     chatMessagesSnapshotRef.current = { chatId: selectedChat, len }
   }, [chats, selectedChat])
@@ -1375,6 +1384,19 @@ export function AdminPage() {
     setProductForm(emptyProductForm())
   }
 
+  const handleConfirmDeleteChat = async () => {
+    const id = deleteChatConfirmId
+    if (id == null) return
+    const ok = await deleteChat(id)
+    if (ok) {
+      setChats((prev) => prev.filter((c) => c.id !== id))
+      setSelectedChat((prev) => (prev === id ? null : prev))
+      setDeleteChatConfirmId(null)
+    } else {
+      alert('Не удалось удалить чат')
+    }
+  }
+
   // Отправка сообщения
   const handleSendMessage = async (chatId: number, text: string) => {
     const newMessage = await sendMessage(chatId, text)
@@ -1815,26 +1837,41 @@ export function AdminPage() {
               </div>
               <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
                 {chatsForSidebar.map((chat) => (
-                  <button
+                  <div
                     key={chat.id}
-                    type="button"
-                    onClick={() => handleSelectChat(chat.id)}
-                    className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
+                    className={`group relative flex items-stretch ${
                       selectedChat === chat.id ? 'bg-gray-50' : ''
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-foreground">{chat.userName}</p>
-                        <p className="text-sm text-gray-500 truncate">{chat.lastMessage}</p>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectChat(chat.id)}
+                      className="min-w-0 flex-1 p-4 text-left transition-colors hover:bg-gray-50"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground">{chat.userName}</p>
+                          <p className="text-sm text-gray-500 truncate">{chat.lastMessage}</p>
+                        </div>
+                        {chat.unread > 0 && (
+                          <span className="w-5 h-5 shrink-0 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                            {chat.unread}
+                          </span>
+                        )}
                       </div>
-                      {chat.unread > 0 && (
-                        <span className="w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                          {chat.unread}
-                        </span>
-                      )}
-                    </div>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Удалить чат"
+                      className="shrink-0 self-stretch px-2 flex items-center text-gray-400 opacity-100 sm:opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 sm:group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDeleteChatConfirmId(chat.id)
+                      }}
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -1852,7 +1889,7 @@ export function AdminPage() {
                     ref={messagesScrollRef}
                     className="flex-1 p-4 overflow-y-auto space-y-4 max-h-[400px]"
                   >
-                    {sortMessagesNewestFirst(chats.find((c) => c.id === selectedChat)?.messages ?? []).map(
+                    {sortMessagesChronological(chats.find((c) => c.id === selectedChat)?.messages ?? []).map(
                       (msg) => (
                       <div
                         key={msg.id}
@@ -1953,6 +1990,48 @@ export function AdminPage() {
                 }}
                 onSubmit={productForm.id ? handleUpdateProduct : handleAddProduct}
               />
+            </div>
+          </div>
+        </>
+      )}
+
+      {deleteChatConfirmId != null && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/50"
+            onClick={() => setDeleteChatConfirmId(null)}
+            role="presentation"
+          />
+          <div className="fixed inset-0 z-[51] flex items-center justify-center p-4 pointer-events-none">
+            <div
+              className="pointer-events-auto w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-chat-title"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="delete-chat-title" className="mb-4 text-lg font-bold text-primary">
+                Точно надо удалить чат?
+              </h2>
+              <p className="mb-6 text-sm text-muted-foreground">
+                Диалог будет удалён у вас и у посетителя. Это действие необратимо.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  className="rounded-lg border border-border px-4 py-2 text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => setDeleteChatConfirmId(null)}
+                >
+                  Нет
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 transition-colors cursor-pointer"
+                  onClick={() => void handleConfirmDeleteChat()}
+                >
+                  Да
+                </button>
+              </div>
             </div>
           </div>
         </>

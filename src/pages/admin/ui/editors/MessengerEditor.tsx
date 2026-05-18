@@ -85,24 +85,25 @@ export function MessengerEditor({
             <div className="flex-1 p-4 overflow-y-auto space-y-4 max-h-[400px]">
               {(chats.find((c) => c.id === selectedChat)?.messages ?? [])
                 .slice()
-                .reverse()
+                .sort((a, b) => {
+                  const ta = new Date(a.timestamp).getTime()
+                  const tb = new Date(b.timestamp).getTime()
+                  if (ta !== tb) return ta - tb
+                  return a.id - b.id
+                })
                 .map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex ${!msg.isUser ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${msg.isUser ? 'justify-start' : 'justify-end'}`}
                 >
                   <div
                     className={`max-w-[70%] px-4 py-2 rounded-lg ${
-                      !msg.isUser
-                        ? 'bg-primary text-background'
-                        : 'bg-gray-100 text-foreground'
+                      msg.isUser
+                        ? 'bg-gray-100 text-foreground'
+                        : 'bg-primary text-background'
                     }`}
                   >
-                    <p className="text-sm font-medium mb-1">{!msg.isUser ? 'Вы' : 'Клиент'}</p>
                     <p className="text-sm">{msg.text}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
                   </div>
                 </div>
               ))}

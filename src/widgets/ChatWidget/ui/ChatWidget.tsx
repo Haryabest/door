@@ -159,6 +159,11 @@ export function ChatWidget() {
       return
     }
     const list = await fetchPublicChatMessages(session.chatId, session.clientToken)
+    if (list === null) {
+      setMessages([{ ...GREETING, timestamp: new Date() }])
+      setHistoryReady(true)
+      return
+    }
     const mapped: Message[] = list.map((m) => ({
       id: m.id,
       text: m.text,

@@ -73,6 +73,11 @@ export async function markChatAsRead(id: number): Promise<boolean> {
   return response.ok
 }
 
+export async function deleteChat(id: number): Promise<boolean> {
+  const response = await apiFetch(`/api/chats/${id}`, { method: 'DELETE' })
+  return response.ok
+}
+
 const CHAT_ID_KEY = 'door_public_chat_id'
 const CHAT_TOKEN_KEY = 'door_public_chat_token'
 
@@ -90,6 +95,12 @@ export function setStoredChatSession(chatId: number, clientToken: string): void 
   if (typeof localStorage === 'undefined') return
   localStorage.setItem(CHAT_ID_KEY, String(chatId))
   localStorage.setItem(CHAT_TOKEN_KEY, clientToken)
+}
+
+export function clearStoredChatSession(): void {
+  if (typeof localStorage === 'undefined') return
+  localStorage.removeItem(CHAT_ID_KEY)
+  localStorage.removeItem(CHAT_TOKEN_KEY)
 }
 
 /** Сообщение с сайта (без админ-сессии) */
@@ -128,6 +139,10 @@ export async function postPublicChatMessage(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
+  if (response.status === 404) {
+    clearStoredChatSession()
+    return null
+  }
   if (!response.ok) return null
   const data = (await response.json()) as {
     chatId: number
@@ -151,10 +166,14 @@ export async function postPublicChatMessage(
 export async function fetchPublicChatMessages(
   chatId: number,
   clientToken: string
-): Promise<Message[]> {
+): Promise<Message[] | null> {
   const response = await publicApiFetch(
     `/api/chats/public/${chatId}/messages?token=${encodeURIComponent(clientToken)}`
   )
+  if (response.status === 404) {
+    clearStoredChatSession()
+    return null
+  }
   if (!response.ok) return []
   const data = (await response.json()) as { messages: Record<string, unknown>[] }
   return (data.messages ?? []).map((m) => ({

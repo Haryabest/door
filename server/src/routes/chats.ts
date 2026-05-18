@@ -6,6 +6,7 @@ import { mapMessage } from '../mapRow.js'
 import { requireAdminToken } from '../middleware/authMutations.js'
 import { validateBody } from '../middleware/validateBody.js'
 import { sendVkNotification } from '../lib/vkNotify.js'
+import { generateUniqueVisitorDisplayName } from '../lib/visitorDisplayName.js'
 import { chatMessageSchema, chatPublicMessageSchema } from '../validation/schemas.js'
 
 export const chatsRouter = Router()
@@ -73,7 +74,7 @@ chatsRouter.post(
       return
     }
 
-    const userName = `Посетитель ${Math.random().toString(36).slice(2, 8)}`
+    const userName = await generateUniqueVisitorDisplayName(pool)
     const { rows: ins } = await pool.query<{ id: number; client_token: string }>(
       `INSERT INTO chats (user_name, unread_count, client_token)
        VALUES ($1, 1, gen_random_uuid()::text)
@@ -180,4 +181,19 @@ chatsRouter.put('/chats/:id', requireAdminToken, async (req, res) => {
   const id = Number(req.params.id)
   await pool.query('UPDATE chats SET unread_count = 0 WHERE id = $1', [id])
   res.json({ ok: true })
+})
+
+/** Удаление чата: сообщения каскадом из БД; у посетителя сессия перестанет работать (404 при запросах) */
+chatsRouter.delete('/chats/:id', requireAdminToken, async (req, res) => {
+  const id = Number(req.params.id)
+  if (Number.isNaN(id)) {
+    res.status(400).json({ error: 'Invalid id', code: 'bad_request' })
+    return
+  }
+  const { rowCount } = await pool.query('DELETE FROM chats WHERE id = $1', [id])
+  if (!rowCount) {
+    res.status(404).json({ error: 'Not found', code: 'not_found' })
+    return
+  }
+  res.status(204).send()
 })
