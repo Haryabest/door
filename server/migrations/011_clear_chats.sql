@@ -1,0 +1,5 @@
+BEGIN;
+
+TRUNCATE TABLE chat_messages, chats RESTART IDENTITY CASCADE;
+
+COMMIT;
