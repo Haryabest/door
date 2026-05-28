@@ -1,6 +1,11 @@
 import { useCallback, useState } from 'react'
 import { Save, Plus, Trash2, MapPin } from 'lucide-react'
-import type { ContactsPageData, LocationItem } from '@/shared/api/contacts'
+import type {
+  ContactFormBlock,
+  ContactsPageData,
+  GeneralInfoBlock,
+  LocationItem,
+} from '@/shared/api/contacts'
 import { geocodeAddress } from '@/shared/api/geocode'
 
 interface ContactsPageEditorProps {
@@ -8,7 +13,12 @@ interface ContactsPageEditorProps {
   isLoading: boolean
   isSaving: boolean
   onSave: () => void
-  onUpdateGeneral: (field: 'phone' | 'email' | 'workHours' | 'address', value: string) => void
+  onUpdateAddress: (value: string) => void
+  onUpdateContactForm: <K extends keyof ContactFormBlock>(field: K, value: ContactFormBlock[K]) => void
+  onUpdateGeneralInfo: <K extends keyof GeneralInfoBlock>(field: K, value: GeneralInfoBlock[K]) => void
+  onAddGeneralInfoPhone: () => void
+  onUpdateGeneralInfoPhone: (id: number, field: 'label' | 'value', value: string) => void
+  onDeleteGeneralInfoPhone: (id: number) => void
   onAddLocation: () => void
   onUpdateLocation: (id: number, field: keyof LocationItem, value: string) => void
   onUpdateLocationCoords: (id: number, coordIndex: 0 | 1, value: string) => void
@@ -21,7 +31,12 @@ export function ContactsPageEditor({
   isLoading,
   isSaving,
   onSave,
-  onUpdateGeneral,
+  onUpdateAddress,
+  onUpdateContactForm,
+  onUpdateGeneralInfo,
+  onAddGeneralInfoPhone,
+  onUpdateGeneralInfoPhone,
+  onDeleteGeneralInfoPhone,
   onAddLocation,
   onUpdateLocation,
   onUpdateLocationCoords,
@@ -45,7 +60,7 @@ export function ContactsPageEditor({
       if (!location) return
       const q = buildGeocodeQuery(location)
       if (q.length < 4) {
-        setGeocodeHint((h) => ({ ...h, [locationId]: 'Заполните город (выше) и адрес магазина' }))
+        setGeocodeHint((h) => ({ ...h, [locationId]: 'Заполните город (ниже) и адрес магазина' }))
         return
       }
       setGeocodeHint((h) => {
@@ -91,44 +106,242 @@ export function ContactsPageEditor({
         </button>
       </div>
 
-      {/* Общая информация */}
+      {/* Блок «Свяжитесь с нами» */}
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+        <h3 className="text-lg font-bold text-primary">Свяжитесь с нами</h3>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Телефон</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Заголовок блока</label>
           <input
             type="text"
-            value={data.phone}
-            onChange={(e) => onUpdateGeneral('phone', e.target.value)}
+            value={data.contactForm.title}
+            onChange={(e) => onUpdateContactForm('title', e.target.value)}
             autoComplete="off"
             className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Email</label>
-          <input
-            type="email"
-            value={data.email}
-            onChange={(e) => onUpdateGeneral('email', e.target.value)}
-            autoComplete="off"
-            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подпись поля «Имя»</label>
+            <input
+              type="text"
+              value={data.contactForm.nameLabel}
+              onChange={(e) => onUpdateContactForm('nameLabel', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подсказка в поле «Имя»</label>
+            <input
+              type="text"
+              value={data.contactForm.namePlaceholder}
+              onChange={(e) => onUpdateContactForm('namePlaceholder', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подпись поля «Телефон»</label>
+            <input
+              type="text"
+              value={data.contactForm.phoneLabel}
+              onChange={(e) => onUpdateContactForm('phoneLabel', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подсказка в поле «Телефон»</label>
+            <input
+              type="text"
+              value={data.contactForm.phonePlaceholder}
+              onChange={(e) => onUpdateContactForm('phonePlaceholder', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подпись поля «Email»</label>
+            <input
+              type="text"
+              value={data.contactForm.emailLabel}
+              onChange={(e) => onUpdateContactForm('emailLabel', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подсказка в поле «Email»</label>
+            <input
+              type="text"
+              value={data.contactForm.emailPlaceholder}
+              onChange={(e) => onUpdateContactForm('emailPlaceholder', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подпись поля «Сообщение»</label>
+            <input
+              type="text"
+              value={data.contactForm.messageLabel}
+              onChange={(e) => onUpdateContactForm('messageLabel', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подсказка в поле «Сообщение»</label>
+            <input
+              type="text"
+              value={data.contactForm.messagePlaceholder}
+              onChange={(e) => onUpdateContactForm('messagePlaceholder', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Текст кнопки отправки</label>
+            <input
+              type="text"
+              value={data.contactForm.submitButton}
+              onChange={(e) => onUpdateContactForm('submitButton', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Текст кнопки при отправке</label>
+            <input
+              type="text"
+              value={data.contactForm.submittingButton}
+              onChange={(e) => onUpdateContactForm('submittingButton', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Режим работы</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Сообщение об успешной отправке</label>
+          <textarea
+            value={data.contactForm.successMessage}
+            onChange={(e) => onUpdateContactForm('successMessage', e.target.value)}
+            rows={2}
+            className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground resize-none"
+          />
+        </div>
+      </div>
+
+      {/* Блок «Общая информация» */}
+      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+        <h3 className="text-lg font-bold text-primary">Общая информация</h3>
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">Заголовок блока</label>
           <input
             type="text"
-            value={data.workHours}
-            onChange={(e) => onUpdateGeneral('workHours', e.target.value)}
+            value={data.generalInfo.title}
+            onChange={(e) => onUpdateGeneralInfo('title', e.target.value)}
             autoComplete="off"
             className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
           />
         </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-sm font-medium text-foreground">Телефоны</label>
+            <button
+              type="button"
+              onClick={onAddGeneralInfoPhone}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-4 h-4" />
+              Добавить
+            </button>
+          </div>
+          <div className="space-y-3">
+            {data.generalInfo.phones.map((phone) => (
+              <div key={phone.id} className="flex items-start gap-3 p-3 border-2 border-border rounded-lg">
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={phone.label}
+                    onChange={(e) => onUpdateGeneralInfoPhone(phone.id, 'label', e.target.value)}
+                    placeholder="Подпись"
+                    className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+                  />
+                  <input
+                    type="text"
+                    value={phone.value}
+                    onChange={(e) => onUpdateGeneralInfoPhone(phone.id, 'value', e.target.value)}
+                    placeholder="+7 (___) ___-__-__"
+                    className="w-full px-3 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onDeleteGeneralInfoPhone(phone.id)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Ссылка tel: подставляется из номера автоматически.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подпись Email</label>
+            <input
+              type="text"
+              value={data.generalInfo.emailLabel}
+              onChange={(e) => onUpdateGeneralInfo('emailLabel', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Email</label>
+            <input
+              type="email"
+              value={data.generalInfo.email}
+              onChange={(e) => onUpdateGeneralInfo('email', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Подпись режима работы</label>
+            <input
+              type="text"
+              value={data.generalInfo.workHoursLabel}
+              onChange={(e) => onUpdateGeneralInfo('workHoursLabel', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Режим работы</label>
+            <input
+              type="text"
+              value={data.generalInfo.workHours}
+              onChange={(e) => onUpdateGeneralInfo('workHours', e.target.value)}
+              autoComplete="off"
+              className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Город для геокодирования */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">Город</label>
           <input
             type="text"
             value={data.address}
-            onChange={(e) => onUpdateGeneral('address', e.target.value)}
+            onChange={(e) => onUpdateAddress(e.target.value)}
             autoComplete="off"
             className="w-full px-4 py-2 border-2 border-border rounded-lg focus:outline-none focus:border-primary bg-white text-foreground"
           />

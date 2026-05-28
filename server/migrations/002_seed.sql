@@ -45,10 +45,33 @@ INSERT INTO site_content (key, data) VALUES
 (
   'contacts',
   '{
-    "phone": "+7 (960) 166 30-30",
-    "email": "otadoya.m@mail.ru",
-    "workHours": "Ежедневно с 9:00 до 20:00",
     "address": "г. Нижний Новгород",
+    "contactForm": {
+      "title": "Свяжитесь с нами",
+      "nameLabel": "Ваше имя",
+      "namePlaceholder": "Иван Иванов",
+      "phoneLabel": "Телефон",
+      "phonePlaceholder": "+7 (___) ___-__-__",
+      "emailLabel": "Email",
+      "emailPlaceholder": "email@example.com",
+      "messageLabel": "Сообщение",
+      "messagePlaceholder": "Расскажите, что вас интересует...",
+      "submitButton": "Отправить заявку",
+      "submittingButton": "Отправка…",
+      "successMessage": "Спасибо! Заявка отправлена. Мы свяжемся с вами в ближайшее время."
+    },
+    "generalInfo": {
+      "title": "Общая информация",
+      "phones": [
+        {"id": 1, "label": "Телефон", "value": "+7 (960) 166 30-30"},
+        {"id": 2, "label": "Телефон", "value": "+7 (831) 200-00-02"},
+        {"id": 3, "label": "Телефон", "value": "+7 (831) 200-00-03"}
+      ],
+      "emailLabel": "Email",
+      "email": "otadoya.m@mail.ru",
+      "workHoursLabel": "Режим работы",
+      "workHours": "Ежедневно с 9:00 до 20:00"
+    },
     "locations": [
       {"id": 1, "name": "СЦ Бекетов", "address": "СЦ Бекетов, ул. Бекетова, д. 13а", "phone": "+7 (831) 200-00-01", "hours": "Ежедневно с 10:00 до 20:00", "coords": [56.2906, 44.0024]},
       {"id": 2, "name": "Салон на ул. Родионова", "address": "ул. Литвинова, 74Б", "phone": "+7 (831) 200-00-02", "hours": "Ежедневно с 09:00 до 17:00", "coords": [56.2755, 43.9803]},

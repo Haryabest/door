@@ -8,7 +8,14 @@ import {
 import { updateProduct, deleteProduct, productsApi, createProduct, uploadImage } from '@/shared/api/products'
 import { sendMessage, getChats, markChatAsRead, deleteChat } from '@/shared/api/chats'
 import { getAboutPage, updateAboutPage, type AboutPageData, type StatItem, type AdvantageItem } from '@/shared/api/about'
-import { getContactsPage, updateContactsPage, type ContactsPageData, type LocationItem } from '@/shared/api/contacts'
+import {
+  getContactsPage,
+  updateContactsPage,
+  type ContactFormBlock,
+  type ContactsPageData,
+  type GeneralInfoBlock,
+  type LocationItem,
+} from '@/shared/api/contacts'
 import { getPortfolioPage, updatePortfolioPage, type PortfolioPageData, type PortfolioItem } from '@/shared/api/portfolio'
 import {
   getHomePage,
@@ -557,13 +564,94 @@ export function AdminPage() {
     })
   }
 
-  const handleUpdateContactsGeneral = (
-    field: 'phone' | 'email' | 'workHours' | 'address',
-    value: string
+  const handleUpdateContactsAddress = (value: string) => {
+    setContactsPage((prev) => {
+      if (!prev.data) return prev
+      return { ...prev, data: { ...prev.data, address: value } }
+    })
+  }
+
+  const handleUpdateContactForm = <K extends keyof ContactFormBlock>(
+    field: K,
+    value: ContactFormBlock[K]
   ) => {
     setContactsPage((prev) => {
       if (!prev.data) return prev
-      return { ...prev, data: { ...prev.data, [field]: value } }
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          contactForm: { ...prev.data.contactForm, [field]: value },
+        },
+      }
+    })
+  }
+
+  const handleUpdateGeneralInfo = <K extends keyof GeneralInfoBlock>(
+    field: K,
+    value: GeneralInfoBlock[K]
+  ) => {
+    setContactsPage((prev) => {
+      if (!prev.data) return prev
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          generalInfo: { ...prev.data.generalInfo, [field]: value },
+        },
+      }
+    })
+  }
+
+  const handleAddGeneralInfoPhone = () => {
+    setContactsPage((prev) => {
+      if (!prev.data) return prev
+      const ids = prev.data.generalInfo.phones.map((p) => p.id)
+      const nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          generalInfo: {
+            ...prev.data.generalInfo,
+            phones: [...prev.data.generalInfo.phones, { id: nextId, label: 'Телефон', value: '' }],
+          },
+        },
+      }
+    })
+  }
+
+  const handleUpdateGeneralInfoPhone = (id: number, field: 'label' | 'value', value: string) => {
+    setContactsPage((prev) => {
+      if (!prev.data) return prev
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          generalInfo: {
+            ...prev.data.generalInfo,
+            phones: prev.data.generalInfo.phones.map((p) =>
+              p.id === id ? { ...p, [field]: value } : p
+            ),
+          },
+        },
+      }
+    })
+  }
+
+  const handleDeleteGeneralInfoPhone = (id: number) => {
+    setContactsPage((prev) => {
+      if (!prev.data) return prev
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          generalInfo: {
+            ...prev.data.generalInfo,
+            phones: prev.data.generalInfo.phones.filter((p) => p.id !== id),
+          },
+        },
+      }
     })
   }
 
@@ -1773,7 +1861,12 @@ export function AdminPage() {
                 isLoading={contactsPage.isLoading}
                 isSaving={contactsPage.isSaving}
                 onSave={handleSaveContactsPage}
-                onUpdateGeneral={handleUpdateContactsGeneral}
+                onUpdateAddress={handleUpdateContactsAddress}
+                onUpdateContactForm={handleUpdateContactForm}
+                onUpdateGeneralInfo={handleUpdateGeneralInfo}
+                onAddGeneralInfoPhone={handleAddGeneralInfoPhone}
+                onUpdateGeneralInfoPhone={handleUpdateGeneralInfoPhone}
+                onDeleteGeneralInfoPhone={handleDeleteGeneralInfoPhone}
                 onAddLocation={handleAddLocation}
                 onUpdateLocation={handleUpdateLocation}
                 onUpdateLocationCoords={handleUpdateLocationCoords}

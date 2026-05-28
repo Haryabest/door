@@ -7,7 +7,8 @@ import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
 import { sanitizeInput, validateRequired, validateEmail, validatePhone, validateLength, formatPhoneInput } from "@/shared/lib/validation"
 import { submitContactLead } from "@/shared/api/contactLeads"
-import { getContactsPage, type ContactsPageData, type LocationItem } from "@/shared/api/contacts"
+import { getContactsPage, defaultContactForm, defaultGeneralInfo, type ContactsPageData, type LocationItem } from "@/shared/api/contacts"
+import { telHrefFromPhoneText } from "@/shared/lib/telHref"
 import { SITE_URL } from '@/shared/config/siteUrl'
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet"
 import L from "leaflet"
@@ -202,6 +203,18 @@ export function ContactsPage() {
     }
   }
 
+  const contactForm = contactsPageData?.contactForm ?? defaultContactForm
+  const generalInfo = contactsPageData?.generalInfo ?? defaultGeneralInfo
+
+  const formFields = useMemo(
+    () => [
+      { id: "name" as const, icon: User, label: contactForm.nameLabel, placeholder: contactForm.namePlaceholder, type: "text" },
+      { id: "phone" as const, icon: Phone, label: contactForm.phoneLabel, placeholder: contactForm.phonePlaceholder, type: "tel" },
+      { id: "email" as const, icon: Mail, label: contactForm.emailLabel, placeholder: contactForm.emailPlaceholder, type: "email" },
+    ],
+    [contactForm]
+  )
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     const nextValue = name === "phone" ? formatPhoneInput(value) : value
@@ -247,14 +260,10 @@ export function ContactsPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                Свяжитесь с нами
+                {contactForm.title}
               </motion.h2>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {[
-                  { id: "name", icon: User, label: "Ваше имя", placeholder: "Иван Иванов", type: "text" },
-                  { id: "phone", icon: Phone, label: "Телефон", placeholder: "+7 (___) ___-__-__", type: "tel" },
-                  { id: "email", icon: Mail, label: "Email", placeholder: "email@example.com", type: "email" },
-                ].map((field, index) => (
+                {formFields.map((field, index) => (
                   <motion.div
                     key={field.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -291,7 +300,7 @@ export function ContactsPage() {
                 >
                   <label htmlFor="message" className="block text-sm mb-2 flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" />
-                    Сообщение
+                    {contactForm.messageLabel}
                   </label>
                   <textarea
                     id="message"
@@ -300,7 +309,7 @@ export function ContactsPage() {
                     onChange={handleChange}
                     rows={4}
                     className={`w-full px-4 py-3 bg-background border rounded-lg focus:outline-none focus:ring-2 text-foreground resize-none ${errors.message ? "border-red-500 focus:ring-red-500" : "border-primary/30 focus:ring-primary"}`}
-                    placeholder="Расскажите, что вас интересует..."
+                    placeholder={contactForm.messagePlaceholder}
                   />
                   {errors.message && <p className="mt-1 text-sm text-red-500">{errors.message}</p>}
                 </motion.div>
@@ -312,7 +321,7 @@ export function ContactsPage() {
                 )}
                 {submitSuccess && (
                   <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-lg px-4 py-3" role="status">
-                    Спасибо! Заявка отправлена. Мы свяжемся с вами в ближайшее время.
+                    {contactForm.successMessage}
                   </p>
                 )}
 
@@ -323,7 +332,7 @@ export function ContactsPage() {
                   style={{ animation: "fadeInUp 0.5s ease-out 0.5s forwards" }}
                 >
                   <Send className="w-5 h-5" />
-                  {submitting ? "Отправка…" : "Отправить заявку"}
+                  {submitting ? contactForm.submittingButton : contactForm.submitButton}
                 </button>
               </form>
             </motion.div>
@@ -349,28 +358,23 @@ export function ContactsPage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: 0.3 }}
                 >
-                  Общая информация
+                  {generalInfo.title}
                 </motion.h2>
                 <div className="space-y-4">
-                  {[
-                    { icon: Phone, title: "Телефон", content: "+7 (960) 166 30-30", href: "tel:+79601663030" },
-                    { icon: Phone, title: "Телефон", content: "+7 (831) 200-00-02", href: "tel:+78312000002" },
-                    { icon: Phone, title: "Телефон", content: "+7 (831) 200-00-03", href: "tel:+78312000003" },
-                    { icon: Mail, title: "Email", content: "otadoya.m@mail.ru", href: "mailto:otadoya.m@mail.ru" },
-                  ].map((item, index) => (
+                  {generalInfo.phones.map((phone, index) => (
                     <motion.div
-                      key={`${item.title}-${item.content}`}
+                      key={phone.id}
                       className="flex items-start space-x-4"
                       initial={{ opacity: 0, x: -20 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
                     >
-                      <item.icon className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                      <Phone className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                       <div>
-                        <div className="font-semibold mb-1">{item.title}</div>
-                        <a href={item.href} className="text-primary hover:underline">
-                          {item.content}
+                        <div className="font-semibold mb-1">{phone.label}</div>
+                        <a href={telHrefFromPhoneText(phone.value)} className="text-primary hover:underline">
+                          {phone.value}
                         </a>
                       </div>
                     </motion.div>
@@ -381,15 +385,31 @@ export function ContactsPage() {
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.6 }}
+                    transition={{ duration: 0.5, delay: 0.4 + generalInfo.phones.length * 0.1 }}
+                  >
+                    <Mail className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <div className="font-semibold mb-1">{generalInfo.emailLabel}</div>
+                      <a href={`mailto:${generalInfo.email}`} className="text-primary hover:underline">
+                        {generalInfo.email}
+                      </a>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    className="flex items-start space-x-4"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.6 + generalInfo.phones.length * 0.1 }}
                   >
                     <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                     <div>
                       <div className="font-semibold mb-1 flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        Режим работы
+                        {generalInfo.workHoursLabel}
                       </div>
-                      <div className="text-muted-foreground">Ежедневно с 9:00 до 20:00</div>
+                      <div className="text-muted-foreground">{generalInfo.workHours}</div>
                     </div>
                   </motion.div>
                 </div>
