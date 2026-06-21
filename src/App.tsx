@@ -69,7 +69,9 @@ export function App() {
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
-          <DeferredChatWidget />
+          <ErrorBoundary fallback="silent">
+            <DeferredChatWidget />
+          </ErrorBoundary>
         </BrowserRouter>
       </ErrorBoundary>
     </FiltersContext.Provider>
