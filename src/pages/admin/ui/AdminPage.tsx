@@ -665,6 +665,16 @@ export function AdminPage() {
 
   const handleSavePortfolioPage = async () => {
     if (!portfolioPage.data) return
+    const hasBlobImage = portfolioPage.data.items.some((item) => item.image.startsWith('blob:'))
+    if (hasBlobImage) {
+      alert('Есть временные ссылки на фото (blob:). Загрузите изображения заново через кнопку «Загрузить».')
+      return
+    }
+    const itemsMissingImage = portfolioPage.data.items.filter((item) => !item.image.trim())
+    if (itemsMissingImage.length > 0) {
+      alert('У каждого проекта должно быть изображение (URL или загрузка файла).')
+      return
+    }
     setPortfolioPage({ ...portfolioPage, isSaving: true })
     const updated = await updatePortfolioPage(portfolioPage.data)
     if (updated) {
@@ -701,11 +711,13 @@ export function AdminPage() {
     setPortfolioPage({ ...portfolioPage, data: updatedData })
   }
 
-  const handleUploadImagePortfolio = (id: number, imageUrl: string) => {
-    if (!portfolioPage.data) return
-    const updatedItems = portfolioPage.data.items.map(i => i.id === id ? { ...i, image: imageUrl } : i)
-    const updatedData = { ...portfolioPage.data, items: updatedItems }
-    setPortfolioPage({ ...portfolioPage, data: updatedData })
+  const handleUploadImagePortfolio = async (id: number, file: File) => {
+    const url = await uploadImage(file)
+    if (!url) {
+      alert('Не удалось загрузить изображение')
+      return
+    }
+    handleUpdatePortfolioItem(id, 'image', url)
   }
 
   const loadHomePage = async () => {

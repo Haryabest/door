@@ -3,6 +3,11 @@ import { z } from 'zod'
 const str = (max: number) => z.string().max(max).trim()
 const urlOrPath = z.string().max(2000)
 
+/** URL/путь для сохранения в БД — не blob: из браузера */
+const storedImageUrl = urlOrPath.refine((u) => !u.trim().toLowerCase().startsWith('blob:'), {
+  message: 'Временные blob: ссылки нельзя сохранять — загрузите файл на сервер',
+})
+
 /** Произвольный JSON-документ страницы (разумный предел размера) */
 export const jsonPageDocument = z
   .unknown()
@@ -31,7 +36,7 @@ export const portfolioPutSchema = z.object({
     .array(
       z.object({
         id: z.number().int().optional(),
-        image: urlOrPath,
+        image: storedImageUrl,
         title: str(500),
         description: str(5000),
       })
@@ -40,14 +45,14 @@ export const portfolioPutSchema = z.object({
 })
 
 export const portfolioItemCreateSchema = z.object({
-  image: urlOrPath,
+  image: storedImageUrl,
   title: str(500),
   description: str(5000),
 })
 
 export const portfolioItemPatchSchema = z
   .object({
-    image: urlOrPath.optional(),
+    image: storedImageUrl.optional(),
     title: str(500).optional(),
     description: str(5000).optional(),
   })

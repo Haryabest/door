@@ -9,7 +9,7 @@ interface PortfolioPageEditorProps {
   onAddItem: () => void
   onUpdateItem: (id: number, field: keyof PortfolioItem, value: string) => void
   onDeleteItem: (id: number) => void
-  onUploadImage: (id: number, imageUrl: string) => void
+  onUploadImage: (id: number, file: File) => void
 }
 
 export function PortfolioPageEditor({
@@ -97,10 +97,8 @@ export function PortfolioPageEditor({
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0]
-                        if (file) {
-                          const imageUrl = URL.createObjectURL(file)
-                          onUploadImage(item.id, imageUrl)
-                        }
+                        if (file) onUploadImage(item.id, file)
+                        e.target.value = ''
                       }}
                       className="hidden"
                     />
