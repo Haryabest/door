@@ -83,6 +83,7 @@ export function CatalogPage() {
   const { setIsFiltersOpen } = useContext(FiltersContext)
   const [showFilters, setShowFilters] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [catalogData, setCatalogData] = useState<CatalogPageData | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -126,9 +127,13 @@ export function CatalogPage() {
   }, [debouncedSearchQuery, selectedCategories, selectedSubcategories, selectedMaterials, selectedColors])
 
   const loadCatalogData = async () => {
-    const data = await getCatalogPage()
-    if (data) {
-      setCatalogData(data)
+    try {
+      const data = await getCatalogPage()
+      if (data) {
+        setCatalogData(data)
+      }
+    } catch {
+      // Фильтры останутся пустыми; товары грузятся отдельно
     }
   }
 
@@ -140,12 +145,19 @@ export function CatalogPage() {
     colors?: string[]
   }) => {
     setIsLoading(true)
-    const data = await productsApi.getProducts(params)
-    setProducts((data ?? []).map((product: any) => ({
-      ...product,
-      slug: generateProductSlug(product.name, product.material, product.color, product.id)
-    })))
-    setIsLoading(false)
+    setLoadError(null)
+    try {
+      const data = await productsApi.getProducts(params)
+      setProducts((data ?? []).map((product: Product) => ({
+        ...product,
+        slug: generateProductSlug(product.name, product.material, product.color, product.id),
+      })))
+    } catch {
+      setLoadError('Не удалось загрузить каталог. Проверьте соединение и попробуйте снова.')
+      setProducts([])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const categoriesList = catalogData?.categories ?? []
@@ -884,6 +896,27 @@ export function CatalogPage() {
               Array.from({ length: 8 }).map((_, index) => (
                 <ProductSkeleton key={index} />
               ))
+            ) : loadError ? (
+              <div className="col-span-full flex items-center justify-center min-h-[400px]">
+                <div className="text-center max-w-md">
+                  <p className="text-xl text-muted-foreground mb-4">{loadError}</p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void loadProducts({
+                        q: debouncedSearchQuery,
+                        categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+                        subcategories: selectedSubcategories.length > 0 ? selectedSubcategories : undefined,
+                        materials: selectedMaterials.length > 0 ? selectedMaterials : undefined,
+                        colors: selectedColors.length > 0 ? selectedColors : undefined,
+                      })
+                    }
+                    className="px-6 py-2 bg-primary text-background rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+                  >
+                    Повторить
+                  </button>
+                </div>
+              </div>
             ) : paginatedProducts.length > 0 ? (
               paginatedProducts.map((product) => {
                 const subcatsLine = formatProductSubcategoriesLine(

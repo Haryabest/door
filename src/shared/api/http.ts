@@ -19,16 +19,28 @@ export function apiUrl(path: string): string {
   return `${ORIGIN}${p}`
 }
 
+const REQUEST_TIMEOUT_MS = 25_000
+
+function withTimeoutSignal(init?: RequestInit): AbortSignal | undefined {
+  if (init?.signal) return init.signal
+  if (typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  }
+  return undefined
+}
+
 export function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers)
   const token = getAdminBearerToken()
   if (token) {
     headers.set('Authorization', `Bearer ${token}`)
   }
+  const signal = withTimeoutSignal(init)
   return fetch(apiUrl(path), {
     ...init,
     headers,
     credentials: 'include',
+    ...(signal ? { signal } : {}),
   })
 }
 

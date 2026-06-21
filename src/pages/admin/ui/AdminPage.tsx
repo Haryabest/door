@@ -278,9 +278,10 @@ export function AdminPage() {
   }, [authChecked])
 
   const loadProducts = async () => {
-    const list = await productsApi.getProducts()
-    setProducts(
-      list.map((p) => ({
+    try {
+      const list = await productsApi.getProducts()
+      setProducts(
+        list.map((p) => ({
         id: p.id,
         name: p.name,
         description: p.description ?? '',
@@ -293,6 +294,9 @@ export function AdminPage() {
         subcategoryIds: p.subcategoryIds ?? [],
       }))
     )
+    } catch (error) {
+      console.error('Failed to load products:', error)
+    }
   }
 
   const loadChats = async () => {

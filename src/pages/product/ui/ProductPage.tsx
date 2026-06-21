@@ -25,22 +25,39 @@ export function ProductPage() {
   const [product, setProduct] = useState<Product | null>(null)
   const [catalogData, setCatalogData] = useState<CatalogPageData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [notFound, setNotFound] = useState(false)
 
   const productId = extractIdFromSlug(slug || '')
 
   useEffect(() => {
-    void getCatalogPage().then(setCatalogData)
+    void getCatalogPage().then(setCatalogData).catch(() => {})
   }, [])
 
   useEffect(() => {
+    let cancelled = false
     setIsLoading(true)
     setNotFound(false)
-    getProductById(productId).then((p) => {
-      setProduct(p)
-      setNotFound(!p)
-      setIsLoading(false)
-    })
+    setLoadError(false)
+
+    getProductById(productId)
+      .then((p) => {
+        if (cancelled) return
+        setProduct(p)
+        setNotFound(!p)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setLoadError(true)
+        setProduct(null)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [productId])
 
   if (isLoading) {
@@ -95,6 +112,28 @@ export function ProductPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <h1 className="text-2xl font-bold text-primary mb-4">Не удалось загрузить товар</h1>
+            <p className="text-muted-foreground mb-6">Проверьте соединение и попробуйте снова.</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-primary text-background rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              Повторить
+            </button>
           </div>
         </main>
         <Footer />

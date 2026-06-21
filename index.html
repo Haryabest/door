@@ -5,8 +5,14 @@
     <link rel="icon" type="image/x-icon" href="/logo.ico" />
 <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- img-src: https: + http: — иначе ссылки вида http://IP/uploads/... из БД блокируются (blocked:csp) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https: http: blob:; connect-src 'self' https:; frame-ancestors 'none';" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600;700&display=swap"
+    />
+    <!-- CSP для dev (Vite). На проде дублируется в nginx с frame-ancestors. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https: http: blob:; connect-src 'self' https:;" />
     <title>От А до Я</title>
     
   </head>

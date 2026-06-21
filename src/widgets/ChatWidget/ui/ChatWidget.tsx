@@ -110,7 +110,7 @@ export function ChatWidget() {
   const { isFiltersOpen, isChatWidgetHidden } = useContext(FiltersContext)
   const location = useLocation()
   const navigate = useNavigate()
-  const { isVpn } = useVpnDetection()
+  const { isVpn } = useVpnDetection(isOpen)
   const [isOpen, setIsOpen] = useState(false)
   const [fabSettings, setFabSettings] = useState<ChatWidgetData>(defaultChatWidgetData)
   const [message, setMessage] = useState('')
@@ -181,8 +181,9 @@ export function ChatWidget() {
   }, [])
 
   useEffect(() => {
+    if (!isOpen) return
     void loadHistory()
-  }, [loadHistory])
+  }, [isOpen, loadHistory])
 
   useEffect(() => {
     void getChatWidget().then(setFabSettings)

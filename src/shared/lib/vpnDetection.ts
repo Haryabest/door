@@ -150,24 +150,31 @@ export async function detectVpn(): Promise<VpnDetectionResult> {
 /**
  * Хук для React компонентов
  */
-export function useVpnDetection() {
+export function useVpnDetection(enabled = true) {
   const [isVpn, setIsVpn] = useState<boolean | null>(null)
-  const [isChecking, setIsChecking] = useState(true)
-  
+  const [isChecking, setIsChecking] = useState(enabled)
+
   useEffect(() => {
+    if (!enabled) {
+      setIsVpn(null)
+      setIsChecking(false)
+      return
+    }
+
     let mounted = true
-    
-    detectVpn().then(result => {
+    setIsChecking(true)
+
+    detectVpn().then((result) => {
       if (mounted) {
         setIsVpn(result.isVpn)
         setIsChecking(false)
       }
     })
-    
+
     return () => {
       mounted = false
     }
-  }, [])
+  }, [enabled])
   
   return { isVpn, isChecking }
 }

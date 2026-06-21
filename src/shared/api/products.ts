@@ -80,7 +80,9 @@ export const productsApi = {
 
     const query = searchParams.toString()
     const response = await apiFetch(`/api/products${query ? `?${query}` : ''}`)
-    if (!response.ok) return []
+    if (!response.ok) {
+      throw new Error(`Failed to load products (${response.status})`)
+    }
     return parseJson<Product[]>(response)
   },
 
@@ -95,7 +97,10 @@ export const productsApi = {
 
 export async function getProductById(id: number): Promise<Product | null> {
   const response = await apiFetch(`/api/products/${id}`)
-  if (!response.ok) return null
+  if (response.status === 404) return null
+  if (!response.ok) {
+    throw new Error(`Failed to load product (${response.status})`)
+  }
   const p = await parseJson<Product>(response)
   return normalizePublicProduct(p)
 }
