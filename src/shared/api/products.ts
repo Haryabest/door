@@ -81,6 +81,7 @@ export const productsApi = {
     const query = searchParams.toString()
     const response = await apiFetch(`/api/products${query ? `?${query}` : ''}`)
     if (!response.ok) {
+      if (response.status === 429) throw new Error('rate_limit')
       throw new Error(`Failed to load products (${response.status})`)
     }
     return parseJson<Product[]>(response)

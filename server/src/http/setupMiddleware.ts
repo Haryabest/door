@@ -48,17 +48,35 @@ export function setupMiddleware(app: Express) {
 
   const apiLimiter = rateLimit({
     windowMs: Number(process.env.API_RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000),
-    max: Number(process.env.API_RATE_LIMIT_MAX ?? 400),
+    max: Number(process.env.API_RATE_LIMIT_MAX ?? 120),
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
       if (req.method === 'OPTIONS') return true
+      const method = req.method.toUpperCase()
+      if (method === 'GET' || method === 'HEAD') return true
+      const path = (req.originalUrl ?? req.url ?? '').split('?')[0] ?? ''
+      return path === '/api/health' || path.endsWith('/api/health')
+    },
+    message: { error: 'Слишком много запросов, попробуйте позже', code: 'rate_limit' },
+  })
+
+  const readLimiter = rateLimit({
+    windowMs: Number(process.env.API_RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000),
+    max: Number(process.env.API_RATE_LIMIT_READ_MAX ?? 5000),
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+      if (req.method === 'OPTIONS') return true
+      const method = req.method.toUpperCase()
+      if (method !== 'GET' && method !== 'HEAD') return true
       const path = (req.originalUrl ?? req.url ?? '').split('?')[0] ?? ''
       return path === '/api/health' || path.endsWith('/api/health')
     },
     message: { error: 'Слишком много запросов, попробуйте позже', code: 'rate_limit' },
   })
   app.use('/api', apiLimiter)
+  app.use('/api', readLimiter)
 
   app.use(express.json({ limit: '10mb' }))
 }

@@ -1,6 +1,4 @@
 import { useState, useEffect, useContext } from "react"
-import { Header } from "@/widgets/Header"
-import { Footer } from "@/widgets/Footer"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
@@ -47,8 +45,7 @@ export function PortfolioPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
+      <>
         <main className="flex-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
@@ -64,28 +61,25 @@ export function PortfolioPage() {
             </div>
           </div>
         </main>
-        <Footer />
-      </div>
+      </>
     )
   }
 
   if (!pageData) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
+      <>
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-primary mb-4">Ошибка загрузки</h1>
             <button onClick={loadPageData} className="text-primary hover:underline">Попробовать снова</button>
           </div>
         </main>
-        <Footer />
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <SEO
         title="Портфолио"
         description="Наши работы - установленные двери в квартирах и домах. Реализованные проекты, фото готовых объектов."
@@ -99,9 +93,7 @@ export function PortfolioPage() {
           url: `${SITE_URL}/portfolio`,
           description: 'Примеры установленных дверей и выполненных проектов компании От А до Я',
         }}
-      />
-      <Header />
-      <main className="flex-1">
+      />      <main className="flex-1">
         <BackgroundPattern opacity={0.1} size={100} />
         {/* Portfolio Grid - Masonry layout */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
@@ -218,7 +210,6 @@ export function PortfolioPage() {
           </div>
         </div>
       </main>
-      <Footer />
-    </div>
+    </>
   )
 }

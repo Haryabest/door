@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from "react"
-import { Header } from "@/widgets/Header"
-import { Footer } from "@/widgets/Footer"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { Phone, Mail, Clock, Send, User, MessageSquare, Calendar } from "lucide-react"
 import { motion } from "framer-motion"
@@ -226,7 +224,7 @@ export function ContactsPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <SEO
         title="Контакты"
         description="Контакты компании От А до Я. Адреса салонов, телефоны, email. Режим работы: ежедневно с 9:00 до 20:00."
@@ -241,7 +239,6 @@ export function ContactsPage() {
           description: "Контакты, адреса салонов и телефоны компании От А до Я",
         }}
       />
-      <Header />
       <main className="flex-1">
         <BackgroundPattern opacity={0.1} size={100} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
@@ -564,7 +561,6 @@ export function ContactsPage() {
           </div>
         </motion.div>
       </main>
-      <Footer />
-    </div>
+    </>
   )
 }

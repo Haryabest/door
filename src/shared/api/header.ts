@@ -1,6 +1,9 @@
 // API шапки — GET/PUT /api/widgets/header
 
 import { apiFetch } from './http'
+import { getCached } from '@/shared/lib/apiCache'
+
+const LAYOUT_CACHE_MS = 5 * 60 * 1000
 
 export interface HeaderNavItem {
   label: string
@@ -55,11 +58,16 @@ export function normalizeHeaderData(raw: unknown): HeaderData {
  */
 export async function getHeader(): Promise<HeaderData | null> {
   try {
-    const response = await apiFetch('/api/widgets/header')
-    if (!response.ok) throw new Error('Failed to fetch header')
-    const raw = await response.json()
-    if (!raw || typeof raw !== 'object') return null
-    return normalizeHeaderData(raw)
+    return await getCached('widgets:header', LAYOUT_CACHE_MS, async () => {
+      const response = await apiFetch('/api/widgets/header')
+      if (!response.ok) {
+        if (response.status === 429) throw new Error('rate_limit')
+        throw new Error('Failed to fetch header')
+      }
+      const raw = await response.json()
+      if (!raw || typeof raw !== 'object') return null
+      return normalizeHeaderData(raw)
+    })
   } catch (error) {
     console.error('Error fetching header:', error)
     return null

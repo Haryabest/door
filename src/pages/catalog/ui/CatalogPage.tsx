@@ -1,8 +1,6 @@
 import { useState, useMemo, useEffect, useContext, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiltersContext } from '@/App'
-import { Header } from "@/widgets/Header"
-import { Footer } from "@/widgets/Footer"
 import { ProductSkeleton } from "@/shared/ui/product-skeleton"
 import { Image } from "@/shared/ui/Image"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
@@ -152,8 +150,13 @@ export function CatalogPage() {
         ...product,
         slug: generateProductSlug(product.name, product.material, product.color, product.id),
       })))
-    } catch {
-      setLoadError('Не удалось загрузить каталог. Проверьте соединение и попробуйте снова.')
+    } catch (error) {
+      const isRateLimit = error instanceof Error && error.message === 'rate_limit'
+      setLoadError(
+        isRateLimit
+          ? 'Слишком много запросов. Подождите минуту и нажмите «Повторить».'
+          : 'Не удалось загрузить каталог. Проверьте соединение и попробуйте снова.'
+      )
       setProducts([])
     } finally {
       setIsLoading(false)
@@ -374,7 +377,7 @@ export function CatalogPage() {
   }, [debouncedSearchQuery, selectedCategories, selectedSubcategories, selectedMaterials, selectedColors])
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <SEO
         title="Каталог дверей"
         description="Каталог межкомнатных и входных дверей в Нижнем Новгороде. Подберите двери по материалу, цвету, категории и системам открывания."
@@ -389,7 +392,6 @@ export function CatalogPage() {
           description: 'Каталог межкомнатных и входных дверей в Нижнем Новгороде',
         }}
       />
-      <Header />
       <main className="flex-1 bg-background">
         <BackgroundPattern opacity={0.1} size={100} />
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
@@ -1048,7 +1050,6 @@ export function CatalogPage() {
           )}
         </div>
       </main>
-      <Footer />
-    </div>
+    </>
   )
 }

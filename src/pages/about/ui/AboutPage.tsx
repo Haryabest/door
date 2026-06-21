@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Header } from "@/widgets/Header"
-import { Footer } from "@/widgets/Footer"
 import { Image } from "@/shared/ui/Image"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
 import { Award, Users, Clock, ThumbsUp, Star, Shield, Truck, Headphones, Lock } from "lucide-react"
@@ -61,8 +59,7 @@ export function AboutPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
+      <>
         <main className="flex-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
@@ -101,28 +98,25 @@ export function AboutPage() {
             </div>
           </div>
         </main>
-        <Footer />
-      </div>
+      </>
     )
   }
 
   if (!pageData) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
+      <>
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-primary mb-4">Ошибка загрузки</h1>
             <button onClick={loadPageData} className="text-primary hover:underline">Попробовать снова</button>
           </div>
         </main>
-        <Footer />
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <SEO
         title="О компании"
         description="О компании От А до Я - 10 лет на рынке, более 5000 довольных клиентов. Профессиональная установка дверей в Нижнем Новгороде."
@@ -136,9 +130,7 @@ export function AboutPage() {
           url: `${SITE_URL}/about`,
           description: 'Информация о компании От А до Я, опыте работы и преимуществах',
         }}
-      />
-      <Header />
-      <main className="flex-1">
+      />      <main className="flex-1">
         <BackgroundPattern opacity={0.1} size={100} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
@@ -266,7 +258,6 @@ export function AboutPage() {
           </button>
         </div>
       </main>
-      <Footer />
-    </div>
+    </>
   )
 }

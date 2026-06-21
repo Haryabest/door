@@ -1,4 +1,7 @@
 import { apiFetch } from './http'
+import { getCached } from '@/shared/lib/apiCache'
+
+const LAYOUT_CACHE_MS = 5 * 60 * 1000
 
 export interface FooterLinkItem {
   label: string
@@ -86,11 +89,16 @@ export function normalizeFooterData(raw: unknown): FooterData {
 
 export async function getFooter(): Promise<FooterData | null> {
   try {
-    const response = await apiFetch('/api/widgets/footer')
-    if (!response.ok) throw new Error('Failed to fetch footer')
-    const raw = await response.json()
-    if (!raw || typeof raw !== 'object') return null
-    return normalizeFooterData(raw)
+    return await getCached('widgets:footer', LAYOUT_CACHE_MS, async () => {
+      const response = await apiFetch('/api/widgets/footer')
+      if (!response.ok) {
+        if (response.status === 429) throw new Error('rate_limit')
+        throw new Error('Failed to fetch footer')
+      }
+      const raw = await response.json()
+      if (!raw || typeof raw !== 'object') return null
+      return normalizeFooterData(raw)
+    })
   } catch (error) {
     console.error('Error fetching footer:', error)
     return null

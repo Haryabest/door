@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react"
-import { Header } from "@/widgets/Header"
-import { Footer } from "@/widgets/Footer"
 import { motion } from "framer-motion"
 import { SEO } from "@/shared/ui/SEO"
 import { Image } from "@/shared/ui/Image"
@@ -34,8 +32,7 @@ export function HomePage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
+      <>
         <main className="flex-1">
           <div className="relative h-[100vh] w-full skeleton">
             <div className="relative h-full flex flex-col items-center justify-center px-4">
@@ -82,28 +79,25 @@ export function HomePage() {
             </div>
           </section>
         </main>
-        <Footer />
-      </div>
+      </>
     )
   }
 
   if (!pageData) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
+      <>
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-primary mb-4">Ошибка загрузки</h1>
             <button onClick={loadPageData} className="text-primary hover:underline">Попробовать снова</button>
           </div>
         </main>
-        <Footer />
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <SEO
         title="Купить двери в Нижнем Новгороде"
         description="От А до Я — магазин межкомнатных и входных дверей в Нижнем Новгороде. Большой выбор дверей и фурнитуры, консультация, замер, доставка и установка."
@@ -126,9 +120,7 @@ export function HomePage() {
           areaServed: 'Нижний Новгород',
           sameAs: [],
         }}
-      />
-      <Header />
-      <main>
+      />      <main>
         <BackgroundPattern opacity={0.1} size={100} />
         {/* Hero Section */}
         <HeroSection hero={pageData.hero} />
@@ -213,7 +205,6 @@ export function HomePage() {
           </div>
         </section>
       </main>
-      <Footer />
-    </div>
+    </>
   )
 }

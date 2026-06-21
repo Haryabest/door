@@ -17,8 +17,10 @@ export function Header() {
 
   useEffect(() => {
     if (searchQuery.trim()) {
-      productsApi.searchProducts(searchQuery).then(results => {
+      productsApi.searchProducts(searchQuery).then((results) => {
         setSearchResults(results.slice(0, 5))
+      }).catch(() => {
+        setSearchResults([])
       })
     } else {
       setSearchResults([])

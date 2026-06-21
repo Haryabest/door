@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ErrorBoundary } from '@/shared/ui/ErrorBoundary'
 import { lazyPage } from '@/shared/lib/lazyPage'
 import { useDeferMount } from '@/shared/lib/deferMount'
+import { SiteLayout } from '@/widgets/SiteLayout'
 
 const HomePage = lazyPage(() => import('@/pages/home'), 'HomePage')
 const CatalogPage = lazyPage(() => import('@/pages/catalog'), 'CatalogPage')
@@ -55,12 +56,14 @@ export function App() {
         <BrowserRouter>
           <Suspense fallback={<PageFallback />}>
             <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/catalog" element={<CatalogPage />} />
-              <Route path="/catalog/:slug" element={<ProductPage />} />
-              <Route path="/portfolio" element={<PortfolioPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contacts" element={<ContactsPage />} />
+              <Route element={<SiteLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/catalog" element={<CatalogPage />} />
+                <Route path="/catalog/:slug" element={<ProductPage />} />
+                <Route path="/portfolio" element={<PortfolioPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contacts" element={<ContactsPage />} />
+              </Route>
               <Route path="/admin-login" element={<AdminLoginPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="*" element={<NotFoundPage />} />

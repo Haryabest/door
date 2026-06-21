@@ -2,6 +2,9 @@
 
 import { formatAdminSaveFailureMessage, parseAdminApiFailure, type AdminApiFailure } from './adminApiFailure'
 import { apiFetch } from './http'
+import { getCached } from '@/shared/lib/apiCache'
+
+const CATALOG_CACHE_MS = 5 * 60 * 1000
 
 export interface CatalogPageData {
   categories: CatalogCategory[]
@@ -99,9 +102,14 @@ const defaultCatalogData: CatalogPageData = {
  */
 export async function getCatalogPage(): Promise<CatalogPageData | null> {
   try {
-    const response = await apiFetch('/api/pages/catalog')
-    if (!response.ok) throw new Error('Failed to fetch catalog page')
-    return await response.json()
+    return await getCached('pages:catalog', CATALOG_CACHE_MS, async () => {
+      const response = await apiFetch('/api/pages/catalog')
+      if (!response.ok) {
+        if (response.status === 429) throw new Error('rate_limit')
+        throw new Error('Failed to fetch catalog page')
+      }
+      return (await response.json()) as CatalogPageData
+    })
   } catch (error) {
     console.error('Error fetching catalog page:', error)
     return defaultCatalogData

@@ -29,19 +29,33 @@ function withTimeoutSignal(init?: RequestInit): AbortSignal | undefined {
   return undefined
 }
 
-export function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers)
   const token = getAdminBearerToken()
   if (token) {
     headers.set('Authorization', `Bearer ${token}`)
   }
-  const signal = withTimeoutSignal(init)
-  return fetch(apiUrl(path), {
-    ...init,
-    headers,
-    credentials: 'include',
-    ...(signal ? { signal } : {}),
-  })
+
+  const method = (init?.method ?? 'GET').toUpperCase()
+  const maxAttempts = method === 'GET' || method === 'HEAD' ? 3 : 1
+  let lastResponse: Response | undefined
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const signal = withTimeoutSignal(init)
+    const response = await fetch(apiUrl(path), {
+      ...init,
+      headers,
+      credentials: 'include',
+      ...(signal ? { signal } : {}),
+    })
+    lastResponse = response
+    if (response.status !== 429 || attempt === maxAttempts - 1) {
+      return response
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 700 * (attempt + 1)))
+  }
+
+  return lastResponse!
 }
 
 /**

@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Header } from "@/widgets/Header"
-import { Footer } from "@/widgets/Footer"
 import { SEO } from "@/shared/ui/SEO"
 import { Image } from "@/shared/ui/Image"
 import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
@@ -62,9 +60,7 @@ export function ProductPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-1 bg-background">
+      <main className="flex-1 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
               <div className="h-4 w-16 skeleton rounded" />
@@ -114,16 +110,12 @@ export function ProductPage() {
             </div>
           </div>
         </main>
-        <Footer />
-      </div>
     )
   }
 
   if (loadError) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-1 flex items-center justify-center px-4">
+      <main className="flex-1 flex items-center justify-center px-4">
           <div className="text-center max-w-md">
             <h1 className="text-2xl font-bold text-primary mb-4">Не удалось загрузить товар</h1>
             <p className="text-muted-foreground mb-6">Проверьте соединение и попробуйте снова.</p>
@@ -136,28 +128,24 @@ export function ProductPage() {
             </button>
           </div>
         </main>
-        <Footer />
-      </div>
     )
   }
 
   if (notFound || !product) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <>
         <SEO
           title="Товар не найден"
           description="Запрашиваемый товар не найден. Перейдите в каталог, чтобы выбрать другую дверь."
           noIndex
         />
-        <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-primary mb-4">Товар не найден</h1>
             <Link to="/catalog" className="text-primary underline">В каталог</Link>
           </div>
         </main>
-        <Footer />
-      </div>
+      </>
     )
   }
 
@@ -219,7 +207,7 @@ export function ProductPage() {
   const featureList = (product.features ?? []).filter(Boolean)
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <SEO
         title={product.name}
         description={`${product.name}. ${descriptionTrimmed ? `${descriptionTrimmed} ` : ''}Уточните условия у менеджера.`}
@@ -245,7 +233,6 @@ export function ProductPage() {
           },
         }}
       />
-      <Header />
       <main className="flex-1 bg-background">
         <BackgroundPattern opacity={0.1} size={100} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
@@ -405,7 +392,6 @@ export function ProductPage() {
           </div>
         </div>
       </main>
-      <Footer />
-    </div>
+    </>
   )
 }

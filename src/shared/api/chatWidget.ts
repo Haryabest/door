@@ -1,6 +1,9 @@
 // Плавающие кнопки связи — GET/PUT /api/widgets/chat-widget
 
 import { apiFetch } from './http'
+import { getCached } from '@/shared/lib/apiCache'
+
+const CHAT_WIDGET_CACHE_MS = 5 * 60 * 1000
 
 export interface ChatWidgetData {
   /** Номер для отображения и ссылки tel: */
@@ -55,10 +58,12 @@ export async function getChatWidgetEditable(): Promise<ChatWidgetData | null> {
  */
 export async function getChatWidget(): Promise<ChatWidgetData> {
   try {
-    const response = await apiFetch('/api/widgets/chat-widget')
-    if (!response.ok) return defaultChatWidgetData
-    const raw = await response.json()
-    return normalizeChatWidgetData(raw)
+    return await getCached('widgets:chat-widget', CHAT_WIDGET_CACHE_MS, async () => {
+      const response = await apiFetch('/api/widgets/chat-widget')
+      if (!response.ok) return defaultChatWidgetData
+      const raw = await response.json()
+      return normalizeChatWidgetData(raw)
+    })
   } catch {
     return defaultChatWidgetData
   }
