@@ -1,22 +1,35 @@
-import { lazy, Suspense, createContext, useState } from 'react'
+import { Suspense, createContext, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { ErrorBoundary } from '@/shared/ui/ErrorBoundary'
+import { lazyPage } from '@/shared/lib/lazyPage'
+import { useDeferMount } from '@/shared/lib/deferMount'
 
-const HomePage = lazy(() => import('@/pages/home').then((m) => ({ default: m.HomePage })))
-const CatalogPage = lazy(() => import('@/pages/catalog').then((m) => ({ default: m.CatalogPage })))
-const PortfolioPage = lazy(() => import('@/pages/portfolio').then((m) => ({ default: m.PortfolioPage })))
-const AboutPage = lazy(() => import('@/pages/about').then((m) => ({ default: m.AboutPage })))
-const ContactsPage = lazy(() => import('@/pages/contacts').then((m) => ({ default: m.ContactsPage })))
-const ProductPage = lazy(() => import('@/pages/product').then((m) => ({ default: m.ProductPage })))
-const AdminLoginPage = lazy(() => import('@/pages/admin-login').then((m) => ({ default: m.AdminLoginPage })))
-const AdminPage = lazy(() => import('@/pages/admin').then((m) => ({ default: m.AdminPage })))
-const NotFoundPage = lazy(() => import('@/pages/not-found').then((m) => ({ default: m.NotFoundPage })))
-const ChatWidget = lazy(() => import('@/widgets/ChatWidget').then((m) => ({ default: m.ChatWidget })))
+const HomePage = lazyPage(() => import('@/pages/home'), 'HomePage')
+const CatalogPage = lazyPage(() => import('@/pages/catalog'), 'CatalogPage')
+const PortfolioPage = lazyPage(() => import('@/pages/portfolio'), 'PortfolioPage')
+const AboutPage = lazyPage(() => import('@/pages/about'), 'AboutPage')
+const ContactsPage = lazyPage(() => import('@/pages/contacts'), 'ContactsPage')
+const ProductPage = lazyPage(() => import('@/pages/product'), 'ProductPage')
+const AdminLoginPage = lazyPage(() => import('@/pages/admin-login'), 'AdminLoginPage')
+const AdminPage = lazyPage(() => import('@/pages/admin'), 'AdminPage')
+const NotFoundPage = lazyPage(() => import('@/pages/not-found'), 'NotFoundPage')
+const ChatWidget = lazyPage(() => import('@/widgets/ChatWidget'), 'ChatWidget')
 
 function PageFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <p className="text-muted-foreground">Загрузка…</p>
     </div>
+  )
+}
+
+function DeferredChatWidget() {
+  const show = useDeferMount(2000)
+  if (!show) return null
+  return (
+    <Suspense fallback={null}>
+      <ChatWidget />
+    </Suspense>
   )
 }
 
@@ -38,22 +51,24 @@ export function App() {
 
   return (
     <FiltersContext.Provider value={{ isFiltersOpen, setIsFiltersOpen, isChatWidgetHidden, setIsChatWidgetHidden }}>
-      <BrowserRouter>
-        <Suspense fallback={<PageFallback />}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/catalog" element={<CatalogPage />} />
-            <Route path="/catalog/:slug" element={<ProductPage />} />
-            <Route path="/portfolio" element={<PortfolioPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contacts" element={<ContactsPage />} />
-            <Route path="/admin-login" element={<AdminLoginPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-          <ChatWidget />
-        </Suspense>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/catalog" element={<CatalogPage />} />
+              <Route path="/catalog/:slug" element={<ProductPage />} />
+              <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contacts" element={<ContactsPage />} />
+              <Route path="/admin-login" element={<AdminLoginPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+          <DeferredChatWidget />
+        </BrowserRouter>
+      </ErrorBoundary>
     </FiltersContext.Provider>
   )
 }
