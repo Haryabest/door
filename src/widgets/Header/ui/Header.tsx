@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import { productsApi } from "@/shared/api/products"
 import { defaultHeaderData, getHeader, type HeaderData } from '@/shared/api/header'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
@@ -135,14 +134,8 @@ export function Header() {
       </div>
 
       {/* Поиск */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="bg-background border-b overflow-hidden"
-          >
+      {isSearchOpen && (
+        <div className="header-dropdown bg-background border-b overflow-hidden">
             <div className="max-w-2xl mx-auto px-4 py-4">
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -179,21 +172,15 @@ export function Header() {
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Мобильное меню */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-              className="absolute top-20 left-0 right-0 z-30 bg-background border-b shadow-lg lg:hidden"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
+      {isMobileMenuOpen && (
+        <div
+          className="header-dropdown absolute top-20 left-0 right-0 z-30 bg-background border-b shadow-lg lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
               <nav className="flex flex-col p-4 space-y-2">
                 {headerData.navItems.map((item) => (
                   <Link
@@ -209,9 +196,8 @@ export function Header() {
                   </Link>
                 ))}
               </nav>
-            </motion.div>
+            </div>
         )}
-      </AnimatePresence>
     </header>
   )
 }

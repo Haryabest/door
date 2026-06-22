@@ -24,11 +24,11 @@ const lcpHref = lcpImage ? `/assets/${lcpImage}` : '/hero-lcp.avif'
 
 let html = readFileSync(INDEX, 'utf8')
 
-if (!/<title>[^<]+<\/title>/i.test(html)) {
-  html = html.replace(
-    '<head>',
-    '<head>\n    <title>От А до Я — Двери и фурнитура в Нижнем Новгороде</title>'
-  )
+const PAGE_TITLE = 'От А до Я — Двери и фурнитура в Нижнем Новгороде'
+if (/<title>[\s\S]*?<\/title>/i.test(html)) {
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${PAGE_TITLE}</title>`)
+} else {
+  html = html.replace('<head>', `<head>\n    <title>${PAGE_TITLE}</title>`)
 }
 
 const headHints = []
@@ -44,6 +44,11 @@ if (mainFont && !html.includes(mainFont)) {
 }
 if (mainJs && !html.includes(`modulepreload" href="/assets/${mainJs}`)) {
   headHints.push(`<link rel="modulepreload" href="/assets/${mainJs}" crossorigin />`)
+}
+// react-vendor грузится вместе с entry — подсказка браузеру
+const reactVendor = assetFiles.find((f) => /^react-vendor-.+\.js$/i.test(f))
+if (reactVendor && !html.includes(reactVendor)) {
+  headHints.push(`<link rel="modulepreload" href="/assets/${reactVendor}" crossorigin />`)
 }
 if (headHints.length > 0) {
   html = html.replace('</head>', `    ${headHints.join('\n    ')}\n  </head>`)

@@ -9,7 +9,8 @@ import sharp from 'sharp'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
 const OUT = path.join(ROOT, 'public', 'categories')
-const WIDTH = 856
+/** ~427px контейнер на десктопе; 480px достаточно для 1x без лишнего веса */
+const WIDTH = 480
 
 const SOURCES = [
   { out: 'interior.avif', src: 'src/assets/hero-slides/door2.avif' },

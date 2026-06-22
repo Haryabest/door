@@ -53,6 +53,21 @@ html {
   cursor: pointer;
 }
 
+.header-dropdown {
+  animation: header-dropdown-in 0.25s ease-out;
+}
+
+@keyframes header-dropdown-in {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 24rem;
+  }
+}
+
 .hero-slide-img--enter {
   animation: hero-slide-in 1s ease-in-out;
 }
