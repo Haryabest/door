@@ -2,7 +2,6 @@ import { Suspense, createContext, useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ErrorBoundary } from '@/shared/ui/ErrorBoundary'
 import { lazyPage } from '@/shared/lib/lazyPage'
-import { useDeferMount } from '@/shared/lib/deferMount'
 import { ensureDocumentTitle, DEFAULT_DOCUMENT_TITLE } from '@/shared/lib/ensureDocumentTitle'
 import { SiteLayout } from '@/widgets/SiteLayout'
 import { HomePage } from '@/pages/home/ui/HomePage'
@@ -40,7 +39,23 @@ function DocumentTitleGuard() {
 }
 
 function DeferredChatWidget() {
-  const show = useDeferMount(8000)
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    if (show) return
+
+    const reveal = () => setShow(true)
+    window.addEventListener('scroll', reveal, { once: true, passive: true })
+    window.addEventListener('pointerdown', reveal, { once: true })
+    const fallback = window.setTimeout(reveal, 15000)
+
+    return () => {
+      window.removeEventListener('scroll', reveal)
+      window.removeEventListener('pointerdown', reveal)
+      window.clearTimeout(fallback)
+    }
+  }, [show])
+
   if (!show) return null
   return (
     <Suspense fallback={null}>

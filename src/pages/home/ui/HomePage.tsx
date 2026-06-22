@@ -54,7 +54,7 @@ export function HomePage() {
       <main>
         <HeroSection hero={pageData.hero} />
 
-        <div className="relative isolate">
+        <div className="relative isolate bg-background">
           <BackgroundPattern variant="absolute" opacity={0.1} size={100} />
 
           <section className="relative z-10 py-20">

@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { HeroSection as HeroSectionType } from '@/shared/api/home'
 import { defaultHeaderData, getHeader } from '@/shared/api/header'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 import { HERO_SLIDE_ASSET_URLS } from '../heroSlideshowUrls'
 import {
   hasStaticHeroLcp,
-  removeStaticHeroLcp,
+  retireStaticHeroLcp,
   stripStaticHeroCopy,
 } from '@/shared/lib/hideStaticHeroLcp'
 
@@ -16,6 +16,8 @@ interface HeroSectionProps {
 const SLIDE_FADE_S = 1
 const SLIDE_HOLD_FULL_MS = 8000
 const SLIDE_CYCLE_MS = SLIDE_HOLD_FULL_MS + SLIDE_FADE_S * 1000
+/** Держим HTML-hero для LCP, затем отдаём React (до смены слайда). */
+const STATIC_HERO_MAX_MS = 4000
 
 function preloadSlideLater(urls: readonly string[], startIndex: number) {
   if (startIndex >= urls.length) return
@@ -37,6 +39,7 @@ function shouldUseReactSlideImage(index: number, staticHeroRetired: boolean) {
 }
 
 export function HeroSection({ hero }: HeroSectionProps) {
+  const heroRef = useRef<HTMLDivElement>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [staticHeroRetired, setStaticHeroRetired] = useState(
     () => typeof document === 'undefined' || !hasStaticHeroLcp()
@@ -45,6 +48,16 @@ export function HeroSection({ hero }: HeroSectionProps) {
 
   const slideshowImages = HERO_SLIDE_ASSET_URLS
 
+  const retiredRef = useRef(staticHeroRetired)
+  retiredRef.current = staticHeroRetired
+
+  const retireStatic = useCallback(() => {
+    if (retiredRef.current) return
+    retiredRef.current = true
+    setStaticHeroRetired(true)
+    retireStaticHeroLcp()
+  }, [])
+
   useEffect(() => {
     if (!hasStaticHeroLcp()) return
     const id = requestAnimationFrame(() => stripStaticHeroCopy())
@@ -52,15 +65,42 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [])
 
   useEffect(() => {
-    setCurrentSlide(0)
-    setStaticHeroRetired(!hasStaticHeroLcp())
-  }, [slideshowImages])
+    if (retiredRef.current || !hasStaticHeroLcp()) return
+
+    const onScroll = () => {
+      if (window.scrollY > 8) retireStatic()
+    }
+
+    const maxTimer = window.setTimeout(retireStatic, STATIC_HERO_MAX_MS)
+
+    const el = heroRef.current
+    const observer =
+      el &&
+      new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting || entry.intersectionRatio < 0.92) {
+            retireStatic()
+          }
+        },
+        { threshold: [0, 0.5, 0.92, 1] }
+      )
+
+    if (el && observer) observer.observe(el)
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.clearTimeout(maxTimer)
+      observer?.disconnect()
+    }
+  }, [retireStatic])
 
   useEffect(() => {
-    if (currentSlide === 0 || staticHeroRetired) return
-    setStaticHeroRetired(true)
-    removeStaticHeroLcp()
-  }, [currentSlide, staticHeroRetired])
+    setCurrentSlide(0)
+    const hasStatic = hasStaticHeroLcp()
+    retiredRef.current = !hasStatic
+    setStaticHeroRetired(!hasStatic)
+  }, [slideshowImages])
 
   useEffect(() => {
     if (slideshowImages.length <= 1) return
@@ -91,7 +131,9 @@ export function HeroSection({ hero }: HeroSectionProps) {
 
   return (
     <div
-      className={`relative isolate z-10 min-h-[calc(100svh-var(--site-header-h))] w-full overflow-hidden ${
+      ref={heroRef}
+      id="home-hero-section"
+      className={`relative isolate z-10 min-h-[calc(100svh-var(--site-header-h))] w-full shrink-0 overflow-hidden ${
         staticHeroRetired ? 'bg-primary' : ''
       }`}
     >
@@ -108,7 +150,7 @@ export function HeroSection({ hero }: HeroSectionProps) {
               aria-hidden
               role="presentation"
               decoding="async"
-              fetchPriority="low"
+              fetchPriority={index === 0 ? 'high' : 'low'}
               className={`pointer-events-none absolute inset-0 h-full w-full object-cover${
                 index > 0 ? ' hero-slide-img hero-slide-img--enter' : ''
               }`}

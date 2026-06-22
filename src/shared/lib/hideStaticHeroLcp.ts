@@ -12,5 +12,7 @@ export function stripStaticHeroCopy() {
   document.querySelector('#static-hero-lcp [data-static-hero-copy]')?.remove()
 }
 
-/** @deprecated используйте removeStaticHeroLcp */
-export const hideStaticHeroLcp = removeStaticHeroLcp
+/** Убирает статичный hero и передаёт отрисовку React-слою. */
+export function retireStaticHeroLcp() {
+  removeStaticHeroLcp()
+}
