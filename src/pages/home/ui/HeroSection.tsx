@@ -108,6 +108,11 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [slideshowImages])
 
   useEffect(() => {
+    if (currentSlide === 0) return
+    retireStatic()
+  }, [currentSlide, retireStatic])
+
+  useEffect(() => {
     if (slideshowImages.length <= 1) return
     const timer = window.setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slideshowImages.length)
