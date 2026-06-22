@@ -99,7 +99,7 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [])
 
   return (
-    <div className="relative z-0 min-h-[calc(100svh-var(--site-header-h))] w-full overflow-hidden">
+    <div className="relative isolate z-10 min-h-[calc(100svh-var(--site-header-h))] w-full overflow-hidden bg-primary">
       <div className="absolute inset-0 z-0">
         {slideshowImages.map((src, index) => {
           if (index !== currentSlide) return null
