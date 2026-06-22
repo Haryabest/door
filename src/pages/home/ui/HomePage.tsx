@@ -17,6 +17,36 @@ export function HomePage() {
   const [pageData, setPageData] = useState<HomePageData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const seo = (
+    <SEO
+      title="Купить двери в Нижнем Новгороде"
+      description="От А до Я — магазин межкомнатных и входных дверей в Нижнем Новгороде. Большой выбор дверей и фурнитуры, консультация, замер, доставка и установка."
+      canonicalUrl="/"
+      image="/logo.png"
+      keywords="купить двери Нижний Новгород, межкомнатные двери, входные двери, двери и фурнитура, установка дверей, магазин дверей"
+      structuredData={
+        pageData
+          ? {
+              '@context': 'https://schema.org',
+              '@type': 'LocalBusiness',
+              name: 'От А до Я',
+              url: `${SITE_URL}/`,
+              image: `${SITE_URL}/logo.png`,
+              telephone: '+7 (960) 166-30-30',
+              address: {
+                '@type': 'PostalAddress',
+                addressLocality: 'Нижний Новгород',
+                streetAddress: 'СЦ Бекетов, ул. Бекетова, д. 13а',
+                addressCountry: 'RU',
+              },
+              areaServed: 'Нижний Новгород',
+              sameAs: [],
+            }
+          : undefined
+      }
+    />
+  )
+
   useEffect(() => {
     loadPageData()
   }, [])
@@ -33,6 +63,7 @@ export function HomePage() {
   if (isLoading) {
     return (
       <>
+        {seo}
         <main className="flex-1">
           <div className="relative h-[100vh] w-full skeleton">
             <div className="relative h-full flex flex-col items-center justify-center px-4">
@@ -86,6 +117,7 @@ export function HomePage() {
   if (!pageData) {
     return (
       <>
+        {seo}
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-primary mb-4">Ошибка загрузки</h1>
@@ -98,31 +130,9 @@ export function HomePage() {
 
   return (
     <>
-      <SEO
-        title="Купить двери в Нижнем Новгороде"
-        description="От А до Я — магазин межкомнатных и входных дверей в Нижнем Новгороде. Большой выбор дверей и фурнитуры, консультация, замер, доставка и установка."
-        canonicalUrl="/"
-        image="/logo.png"
-        keywords="купить двери Нижний Новгород, межкомнатные двери, входные двери, двери и фурнитура, установка дверей, магазин дверей"
-        structuredData={{
-          '@context': 'https://schema.org',
-          '@type': 'LocalBusiness',
-          name: 'От А до Я',
-          url: `${SITE_URL}/`,
-          image: `${SITE_URL}/logo.png`,
-          telephone: '+7 (960) 166-30-30',
-          address: {
-            '@type': 'PostalAddress',
-            addressLocality: 'Нижний Новгород',
-            streetAddress: 'СЦ Бекетов, ул. Бекетова, д. 13а',
-            addressCountry: 'RU',
-          },
-          areaServed: 'Нижний Новгород',
-          sameAs: [],
-        }}
-      />      <main>
+      {seo}
+      <main>
         <BackgroundPattern opacity={0.1} size={100} />
-        {/* Hero Section */}
         <HeroSection hero={pageData.hero} />
 
         {/* Features */}

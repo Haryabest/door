@@ -13,7 +13,7 @@ if (rootEl) {
 }
 
 createRoot(rootEl!).render(
-  <HelmetProvider>
+  <HelmetProvider defaultTitle="От А до Я — Двери и фурнитура в Нижнем Новгороде">
     <App />
   </HelmetProvider>,
 )

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import type { HeroSection as HeroSectionType } from '@/shared/api/home'
 import { defaultHeaderData, getHeader } from '@/shared/api/header'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
@@ -13,7 +12,6 @@ const SLIDE_FADE_S = 1
 const SLIDE_HOLD_FULL_MS = 8000
 const SLIDE_CYCLE_MS = SLIDE_HOLD_FULL_MS + SLIDE_FADE_S * 1000
 
-/** Прогрузка остальных кадров после первого — не блокирует LCP. */
 function preloadSlideLater(urls: readonly string[], startIndex: number) {
   if (startIndex >= urls.length) return
   const run = () => {
@@ -34,18 +32,19 @@ export function HeroSection({ hero }: HeroSectionProps) {
   const [phoneHref, setPhoneHref] = useState(() => telHrefFromPhoneText(defaultHeaderData.phoneText))
 
   const slideshowImages = HERO_SLIDE_ASSET_URLS
+  const lcpSrc = slideshowImages[0]
 
   useEffect(() => {
     setCurrentSlide(0)
   }, [slideshowImages])
 
   useEffect(() => {
-    if (slideshowImages.length === 0) return
+    if (slideshowImages.length <= 1) return
     preloadSlideLater(slideshowImages, 1)
   }, [slideshowImages])
 
   useEffect(() => {
-    if (slideshowImages.length === 0) return
+    if (slideshowImages.length <= 1) return
     const timer = window.setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slideshowImages.length)
     }, SLIDE_CYCLE_MS)
@@ -67,72 +66,46 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [])
 
   return (
-    <div className="relative z-0 h-[100vh] w-full overflow-hidden">
+    <div className="relative z-0 h-screen w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
         {slideshowImages.map((src, index) => {
-          const isActive = index === currentSlide
-          const isNeighbor =
-            slideshowImages.length > 1 &&
-            (index === (currentSlide + 1) % slideshowImages.length ||
-              index === (currentSlide - 1 + slideshowImages.length) % slideshowImages.length)
+          if (index !== currentSlide) return null
 
-          if (!isActive && !isNeighbor) return null
+          const isLcp = index === 0 && src === lcpSrc
 
           return (
-            <motion.img
+            <img
               key={src}
               src={src}
               alt=""
-              aria-hidden={!isActive}
-              decoding="async"
-              fetchPriority={index === 0 ? 'high' : 'low'}
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isActive ? 1 : 0 }}
-              transition={{ duration: SLIDE_FADE_S, ease: 'easeInOut' }}
-              style={{ zIndex: isActive ? 2 : 1 }}
+              aria-hidden
+              role="presentation"
+              decoding={isLcp ? 'sync' : 'async'}
+              fetchPriority={isLcp ? 'high' : 'low'}
+              className="hero-slide-img pointer-events-none absolute inset-0 h-full w-full object-cover"
+              style={{ zIndex: 2 }}
             />
           )
         })}
       </div>
 
-      <div className="absolute inset-0 z-[1] bg-black/50" />
+      <div className="absolute inset-0 z-1 bg-black/50" />
 
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-4">
         <div className="text-center text-white max-w-4xl mx-auto">
-          <motion.h1
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-4 tracking-tight"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
+          <h1 className="hero-fade-up hero-fade-up-delay-1 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-4 tracking-tight">
             {hero.title}
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light mb-4 text-white/90"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
+          <p className="hero-fade-up hero-fade-up-delay-2 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light mb-4 text-white/90">
             {hero.subtitle}
-          </motion.p>
+          </p>
 
-          <motion.p
-            className="text-lg sm:text-xl md:text-2xl font-light mb-12 text-white/80"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-          >
+          <p className="hero-fade-up hero-fade-up-delay-3 text-lg sm:text-xl md:text-2xl font-light mb-12 text-white/80">
             {hero.city}
-          </motion.p>
+          </p>
 
-          <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-          >
+          <div className="hero-fade-up hero-fade-up-delay-4 flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="/catalog"
               className="tap-click inline-flex items-center gap-2 px-8 py-4 bg-primary text-background font-semibold rounded-lg hover:bg-primary/90 transition-colors cursor-pointer text-base sm:text-lg"
@@ -151,23 +124,15 @@ export function HeroSection({ hero }: HeroSectionProps) {
               </svg>
               Позвонить
             </a>
-          </motion.div>
+          </div>
         </div>
       </div>
 
-      <motion.div
-        className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          opacity: { duration: 0.6, delay: 1.2 },
-          y: { duration: 1.5, repeat: Infinity, repeatType: 'reverse' },
-        }}
-      >
+      <div className="hero-bounce pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
         <svg className="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
         </svg>
-      </motion.div>
+      </div>
     </div>
   )
 }

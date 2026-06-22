@@ -49,6 +49,34 @@ const defaultHomePageData: HomePageData = {
   ]
 }
 
+const LOCAL_CATEGORY_IMAGES: Record<string, string> = {
+  interior: '/home-photo.jpg',
+  entrance: '/home-photo.jpg',
+  hardware: '/home-photo.jpg',
+}
+
+function isLocalImageUrl(url: string): boolean {
+  if (url.startsWith('/')) return true
+  try {
+    const host = new URL(url).hostname
+    return host === 'dverinn52.ru' || host === 'www.dverinn52.ru' || host === 'localhost'
+  } catch {
+    return false
+  }
+}
+
+export function normalizeHomePageData(data: HomePageData): HomePageData {
+  return {
+    ...data,
+    categories: data.categories.map((item) => ({
+      ...item,
+      image: isLocalImageUrl(item.image)
+        ? item.image
+        : (LOCAL_CATEGORY_IMAGES[item.category] ?? '/home-photo.jpg'),
+    })),
+  }
+}
+
 /**
  * Получить данные главной страницы
  * GET /api/pages/home
@@ -57,10 +85,11 @@ export async function getHomePage(): Promise<HomePageData | null> {
   try {
     const response = await apiFetch('/api/pages/home')
     if (!response.ok) throw new Error('Failed to fetch home page')
-    return await response.json()
+    const data = (await response.json()) as HomePageData
+    return normalizeHomePageData(data)
   } catch (error) {
     console.error('Error fetching home page:', error)
-    return defaultHomePageData
+    return normalizeHomePageData(defaultHomePageData)
   }
 }
 
