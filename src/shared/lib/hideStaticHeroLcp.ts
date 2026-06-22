@@ -1,5 +1,7 @@
-/** Скрывает статичный hero из index.html после отрисовки React-версии. */
-export function hideStaticHeroLcp() {
-  const el = document.getElementById('static-hero-lcp')
-  if (el) el.style.visibility = 'hidden'
+/** Убирает статичный hero из index.html — иначе fixed-фон остаётся на каталоге и других страницах. */
+export function removeStaticHeroLcp() {
+  document.getElementById('static-hero-lcp')?.remove()
 }
+
+/** @deprecated используйте removeStaticHeroLcp */
+export const hideStaticHeroLcp = removeStaticHeroLcp

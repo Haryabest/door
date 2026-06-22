@@ -43,25 +43,36 @@ export const defaultHomePageData: HomePageData = {
     { id: 3, icon: 'Award', title: 'Профессионализм', description: 'Опытные консультанты помогут подобрать идеальное решение для вас' },
   ],
   categories: [
-    { id: 1, title: 'Межкомнатные двери', image: 'https://images.unsplash.com/photo-1765766599489-fd53df7f8724?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB3aGl0ZSUyMGludGVyaW9yJTIwZG9vcnxlbnwxfHx8fDE3NzQzNzU2Nzd8MA&ixlib=rb-4.1.0&q=80&w=1080', category: 'interior' },
-    { id: 2, title: 'Входные двери', image: 'https://images.unsplash.com/photo-1770786174932-293eaf17f919?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxibGFjayUyMGZyb250JTIwZG9vciUyMGV4dGVyaW9yfGVufDF8fHx8MTc3NDM3NTY3N3ww&ixlib=rb-4.1.0&q=80&w=1080', category: 'entrance' },
-    { id: 3, title: 'Фурнитура', image: 'https://images.unsplash.com/photo-1761353854322-96e6ab127da4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwZG9vciUyMGhhcmR3YXJlfGVufDF8fHx8MTc3NDM3NTY3OHww&ixlib=rb-4.1.0&q=80&w=1080', category: 'hardware' },
+    { id: 1, title: 'Межкомнатные двери', image: '/categories/interior.avif', category: 'interior' },
+    { id: 2, title: 'Входные двери', image: '/categories/entrance.avif', category: 'entrance' },
+    { id: 3, title: 'Фурнитура', image: '/categories/hardware.avif', category: 'hardware' },
   ]
 }
 
 const LOCAL_CATEGORY_IMAGES: Record<string, string> = {
-  interior: '/home-photo.webp',
-  entrance: '/home-photo.webp',
-  hardware: '/home-photo.webp',
+  interior: '/categories/interior.avif',
+  entrance: '/categories/entrance.avif',
+  hardware: '/categories/hardware.avif',
 }
 
-function isLocalImageUrl(url: string): boolean {
-  if (url.startsWith('/')) return true
+const TRUSTED_IMAGE_HOSTS = new Set([
+  'dverinn52.ru',
+  'www.dverinn52.ru',
+  'localhost',
+  'images.unsplash.com',
+])
+
+function shouldReplaceCategoryImage(url: string): boolean {
+  if (!url?.trim()) return true
+  if (url.startsWith('/categories/')) return false
+  if (url.startsWith('/')) {
+    return url === '/home-photo.jpg' || url === '/home-photo.webp'
+  }
   try {
     const host = new URL(url).hostname
-    return host === 'dverinn52.ru' || host === 'www.dverinn52.ru' || host === 'localhost'
+    return !TRUSTED_IMAGE_HOSTS.has(host)
   } catch {
-    return false
+    return true
   }
 }
 
@@ -70,9 +81,9 @@ export function normalizeHomePageData(data: HomePageData): HomePageData {
     ...data,
     categories: data.categories.map((item) => ({
       ...item,
-      image: isLocalImageUrl(item.image)
-        ? item.image
-        : (LOCAL_CATEGORY_IMAGES[item.category] ?? '/home-photo.jpg'),
+      image: shouldReplaceCategoryImage(item.image)
+        ? (LOCAL_CATEGORY_IMAGES[item.category] ?? item.image)
+        : item.image,
     })),
   }
 }
