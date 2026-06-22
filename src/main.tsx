@@ -12,8 +12,16 @@ if (rootEl) {
   if (placeholder) placeholder.remove()
 }
 
+function removeStaticHeroLcp() {
+  document.getElementById('static-hero-lcp')?.remove()
+}
+
 createRoot(rootEl!).render(
   <HelmetProvider>
     <App />
   </HelmetProvider>,
 )
+
+requestAnimationFrame(() => {
+  removeStaticHeroLcp()
+})

@@ -4,8 +4,8 @@ import { ErrorBoundary } from '@/shared/ui/ErrorBoundary'
 import { lazyPage } from '@/shared/lib/lazyPage'
 import { useDeferMount } from '@/shared/lib/deferMount'
 import { SiteLayout } from '@/widgets/SiteLayout'
+import { HomePage } from '@/pages/home/ui/HomePage'
 
-const HomePage = lazyPage(() => import('@/pages/home'), 'HomePage')
 const CatalogPage = lazyPage(() => import('@/pages/catalog'), 'CatalogPage')
 const PortfolioPage = lazyPage(() => import('@/pages/portfolio'), 'PortfolioPage')
 const AboutPage = lazyPage(() => import('@/pages/about'), 'AboutPage')

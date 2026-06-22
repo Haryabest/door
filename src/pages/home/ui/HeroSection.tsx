@@ -80,7 +80,7 @@ export function HeroSection({ hero }: HeroSectionProps) {
               alt=""
               aria-hidden
               role="presentation"
-              decoding={isLcp ? 'sync' : 'async'}
+              decoding="async"
               fetchPriority={isLcp ? 'high' : 'low'}
               className="hero-slide-img pointer-events-none absolute inset-0 h-full w-full object-cover"
               style={{ zIndex: 2 }}

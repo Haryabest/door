@@ -10,8 +10,21 @@
       name="description"
       content="Межкомнатные и входные двери, фурнитура. Консультация, замер, доставка и установка в Нижнем Новгороде."
     />
+    <link rel="preload" href="/hero-lcp.avif" as="image" type="image/avif" fetchpriority="high" />
   </head>
   <body>
+    <div id="static-hero-lcp" aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:#0f3c65">
+      <img
+        src="/hero-lcp.avif"
+        alt=""
+        width="1920"
+        height="1080"
+        fetchpriority="high"
+        decoding="async"
+        style="width:100%;height:100%;object-fit:cover"
+      />
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,.5)"></div>
+    </div>
     <div id="root">
       <div
         id="boot-placeholder"

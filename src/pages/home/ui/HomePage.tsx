@@ -1,21 +1,26 @@
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { SEO } from "@/shared/ui/SEO"
-import { Image } from "@/shared/ui/Image"
-import { BackgroundPattern } from "@/shared/ui/BackgroundPattern"
-import { getHomePage, type HomePageData } from "@/shared/api/home"
+import { useState, useEffect } from 'react'
+import { DoorOpen, Shield, Award } from 'lucide-react'
+import { SEO } from '@/shared/ui/SEO'
+import { Image } from '@/shared/ui/Image'
+import { BackgroundPattern } from '@/shared/ui/BackgroundPattern'
+import { getHomePage, defaultHomePageData, normalizeHomePageData, type HomePageData } from '@/shared/api/home'
 import { SITE_URL } from '@/shared/config/siteUrl'
-import { HeroSection } from "./HeroSection"
+import { HeroSection } from './HeroSection'
 
-const iconMap: Record<string, any> = {
-  'DoorOpen': (await import('lucide-react')).DoorOpen,
-  'Shield': (await import('lucide-react')).Shield,
-  'Award': (await import('lucide-react')).Award,
-}
+const iconMap = {
+  DoorOpen,
+  Shield,
+  Award,
+} as const
 
 export function HomePage() {
-  const [pageData, setPageData] = useState<HomePageData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [pageData, setPageData] = useState<HomePageData>(() => normalizeHomePageData(defaultHomePageData))
+
+  useEffect(() => {
+    getHomePage().then((data) => {
+      if (data) setPageData(data)
+    })
+  }, [])
 
   const seo = (
     <SEO
@@ -24,109 +29,24 @@ export function HomePage() {
       canonicalUrl="/"
       image="/logo.png"
       keywords="купить двери Нижний Новгород, межкомнатные двери, входные двери, двери и фурнитура, установка дверей, магазин дверей"
-      structuredData={
-        pageData
-          ? {
-              '@context': 'https://schema.org',
-              '@type': 'LocalBusiness',
-              name: 'От А до Я',
-              url: `${SITE_URL}/`,
-              image: `${SITE_URL}/logo.png`,
-              telephone: '+7 (960) 166-30-30',
-              address: {
-                '@type': 'PostalAddress',
-                addressLocality: 'Нижний Новгород',
-                streetAddress: 'СЦ Бекетов, ул. Бекетова, д. 13а',
-                addressCountry: 'RU',
-              },
-              areaServed: 'Нижний Новгород',
-              sameAs: [],
-            }
-          : undefined
-      }
+      structuredData={{
+        '@context': 'https://schema.org',
+        '@type': 'LocalBusiness',
+        name: 'От А до Я',
+        url: `${SITE_URL}/`,
+        image: `${SITE_URL}/logo.png`,
+        telephone: '+7 (960) 166-30-30',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Нижний Новгород',
+          streetAddress: 'СЦ Бекетов, ул. Бекетова, д. 13а',
+          addressCountry: 'RU',
+        },
+        areaServed: 'Нижний Новгород',
+        sameAs: [],
+      }}
     />
   )
-
-  useEffect(() => {
-    loadPageData()
-  }, [])
-
-  const loadPageData = async () => {
-    setIsLoading(true)
-    const data = await getHomePage()
-    if (data) {
-      setPageData(data)
-    }
-    setIsLoading(false)
-  }
-
-  if (isLoading) {
-    return (
-      <>
-        {seo}
-        <main className="flex-1">
-          <div className="relative h-[100vh] w-full skeleton">
-            <div className="relative h-full flex flex-col items-center justify-center px-4">
-              <div className="text-center text-white max-w-4xl mx-auto">
-                <div className="h-16 sm:h-20 md:h-24 lg:h-32 w-96 sm:w-[500px] lg:w-[600px] bg-white/20 rounded-lg mx-auto mb-4" />
-                <div className="h-10 sm:h-12 md:h-14 lg:h-16 w-64 sm:w-80 md:w-96 lg:w-[500px] bg-white/10 rounded-lg mx-auto mb-4" />
-                <div className="h-8 w-40 bg-white/10 rounded-lg mx-auto mb-12" />
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <div className="h-14 w-48 bg-white/20 rounded-lg" />
-                  <div className="h-14 w-36 bg-white/10 rounded-lg" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <section className="py-20 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-16">
-                <div className="h-10 w-64 skeleton rounded-lg mx-auto mb-4" />
-                <div className="h-6 w-96 skeleton rounded-lg mx-auto" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="text-center p-8 rounded-lg bg-gray-50">
-                    <div className="w-16 h-16 skeleton rounded-full mx-auto mb-4" />
-                    <div className="h-6 w-32 skeleton rounded-lg mx-auto mb-3" />
-                    <div className="h-4 w-48 skeleton rounded-lg mx-auto" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="py-20 bg-gray-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-16">
-                <div className="h-10 w-56 skeleton rounded-lg mx-auto" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="relative overflow-hidden rounded-lg aspect-[4/3] skeleton" />
-                ))}
-              </div>
-            </div>
-          </section>
-        </main>
-      </>
-    )
-  }
-
-  if (!pageData) {
-    return (
-      <>
-        {seo}
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-primary mb-4">Ошибка загрузки</h1>
-            <button onClick={loadPageData} className="text-primary hover:underline">Попробовать снова</button>
-          </div>
-        </main>
-      </>
-    )
-  }
 
   return (
     <>
@@ -135,7 +55,6 @@ export function HomePage() {
         <BackgroundPattern opacity={0.1} size={100} />
         <HeroSection hero={pageData.hero} />
 
-        {/* Features */}
         <section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -148,33 +67,25 @@ export function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {pageData.features.map((feature, index) => {
-                const IconComponent = iconMap[feature.icon]
+              {pageData.features.map((feature) => {
+                const IconComponent = iconMap[feature.icon as keyof typeof iconMap] ?? DoorOpen
                 return (
-                  <motion.div
+                  <div
                     key={feature.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    whileHover={{ y: -8, boxShadow: '0 20px 25px -5px rgb(15 60 101 / 0.1)' }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="text-center p-8 rounded-lg bg-secondary hover:bg-accent transition-colors"
+                    className="home-feature-card text-center p-8 rounded-lg bg-secondary hover:bg-accent transition-colors"
                   >
                     <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                       <IconComponent className="w-8 h-8 text-primary" />
                     </div>
                     <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                    <p className="text-muted-foreground">
-                      {feature.description}
-                    </p>
-                  </motion.div>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </div>
                 )
               })}
             </div>
           </div>
         </section>
 
-        {/* Categories */}
         <section className="py-20 bg-secondary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -184,15 +95,11 @@ export function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {pageData.categories.map((category, index) => (
-                <motion.a
+              {pageData.categories.map((category) => (
+                <a
                   key={category.id}
                   href={`/catalog#${category.category}`}
-                  className="group relative overflow-hidden rounded-lg aspect-[4/3] shadow-md hover:shadow-xl transition-shadow"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="home-category-card group relative overflow-hidden rounded-lg aspect-[4/3] shadow-md hover:shadow-xl transition-shadow"
                 >
                   <Image
                     src={category.image}
@@ -211,7 +118,7 @@ export function HomePage() {
                       </svg>
                     </div>
                   </div>
-                </motion.a>
+                </a>
               ))}
             </div>
           </div>

@@ -93,6 +93,19 @@ html {
   }
 }
 
+.home-feature-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.15s ease;
+}
+
+.home-feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgb(15 60 101 / 0.1);
+}
+
+.home-category-card {
+  display: block;
+}
+
 .hero-bounce {
   animation: hero-bounce-in 0.6s ease-out 1.2s both, hero-bounce-y 1.5s ease-in-out 1.8s infinite alternate;
 }

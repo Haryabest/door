@@ -30,7 +30,7 @@ export interface CategoryItem {
 }
 
 // Данные по умолчанию (если API не доступен)
-const defaultHomePageData: HomePageData = {
+export const defaultHomePageData: HomePageData = {
   hero: {
     title: 'От А до Я',
     subtitle: 'Премиум двери и фурнитура',
@@ -50,9 +50,9 @@ const defaultHomePageData: HomePageData = {
 }
 
 const LOCAL_CATEGORY_IMAGES: Record<string, string> = {
-  interior: '/home-photo.jpg',
-  entrance: '/home-photo.jpg',
-  hardware: '/home-photo.jpg',
+  interior: '/home-photo.webp',
+  entrance: '/home-photo.webp',
+  hardware: '/home-photo.webp',
 }
 
 function isLocalImageUrl(url: string): boolean {
