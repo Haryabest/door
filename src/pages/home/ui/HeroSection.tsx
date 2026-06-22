@@ -22,7 +22,7 @@ function preloadSlideLater(urls: readonly string[], startIndex: number) {
       img.src = urls[i]
     }
   }
-  if ('requestIdleCallback' in window) {
+  if (typeof window.requestIdleCallback === 'function') {
     window.requestIdleCallback(run, { timeout: 4000 })
   } else {
     window.setTimeout(run, 1500)
