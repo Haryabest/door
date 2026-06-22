@@ -49,7 +49,7 @@ html {
   cursor: pointer;
 }
 
-.hero-slide-img {
+.hero-slide-img--enter {
   animation: hero-slide-in 1s ease-in-out;
 }
 

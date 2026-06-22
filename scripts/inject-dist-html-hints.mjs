@@ -54,10 +54,10 @@ html = html.replace(
   `<link rel="preload" href="$1" as="style" onload="this.onload=null;this.rel='stylesheet'" />\n    <noscript><link rel="stylesheet" href="$1" /></noscript>`
 )
 
-const staticHeroBlock = `<div id="static-hero-lcp" aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:#0f3c65">
+const staticHeroBlock = `<div id="static-hero-lcp" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:#0f3c65">
       <img src="${lcpHref}" alt="" width="1920" height="1080" fetchpriority="high" decoding="sync" style="width:100%;height:100%;object-fit:cover" />
       <div style="position:absolute;inset:0;background:rgba(0,0,0,.5)"></div>
-      <div style="position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;color:#fff;font-family:system-ui,sans-serif">
+      <div data-static-hero-copy style="position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;color:#fff;font-family:system-ui,sans-serif">
         <div>
           <h1 style="margin:0 0 12px;font-size:clamp(2rem,10vw,4.5rem);font-weight:700;line-height:1.1">От А до Я</h1>
           <p style="margin:0 0 8px;font-size:clamp(1rem,4vw,1.75rem);opacity:.92">Премиум двери и фурнитура</p>

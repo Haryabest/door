@@ -3,7 +3,7 @@ import type { HeroSection as HeroSectionType } from '@/shared/api/home'
 import { defaultHeaderData, getHeader } from '@/shared/api/header'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 import { HERO_SLIDE_ASSET_URLS } from '../heroSlideshowUrls'
-import { hideStaticHeroLcp } from '@/shared/lib/hideStaticHeroLcp'
+import { removeStaticHeroLcp, stripStaticHeroCopy } from '@/shared/lib/hideStaticHeroLcp'
 
 interface HeroSectionProps {
   hero: HeroSectionType
@@ -30,13 +30,18 @@ function preloadSlideLater(urls: readonly string[], startIndex: number) {
 
 export function HeroSection({ hero }: HeroSectionProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [staticHeroRetired, setStaticHeroRetired] = useState(false)
   const [phoneHref, setPhoneHref] = useState(() => telHrefFromPhoneText(defaultHeaderData.phoneText))
 
   const slideshowImages = HERO_SLIDE_ASSET_URLS
-  const lcpSrc = slideshowImages[0]
+
+  useEffect(() => {
+    stripStaticHeroCopy()
+  }, [])
 
   useEffect(() => {
     setCurrentSlide(0)
+    setStaticHeroRetired(false)
   }, [slideshowImages])
 
   useEffect(() => {
@@ -54,6 +59,12 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [slideshowImages.length])
 
   useEffect(() => {
+    if (currentSlide === 0 || staticHeroRetired) return
+    setStaticHeroRetired(true)
+    removeStaticHeroLcp()
+  }, [currentSlide, staticHeroRetired])
+
+  useEffect(() => {
     let isMounted = true
 
     getHeader().then((data) => {
@@ -66,18 +77,13 @@ export function HeroSection({ hero }: HeroSectionProps) {
     }
   }, [])
 
-  useEffect(() => {
-    const fallback = window.setTimeout(hideStaticHeroLcp, 3000)
-    return () => window.clearTimeout(fallback)
-  }, [])
-
   return (
     <div className="relative z-0 h-screen w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
         {slideshowImages.map((src, index) => {
           if (index !== currentSlide) return null
-
-          const isLcp = index === 0 && src === lcpSrc
+          // Слайд 0 — картинка уже в HTML (LCP без ожидания JS).
+          if (index === 0 && !staticHeroRetired) return null
 
           return (
             <img
@@ -87,12 +93,9 @@ export function HeroSection({ hero }: HeroSectionProps) {
               aria-hidden
               role="presentation"
               decoding="async"
-              fetchPriority={isLcp ? 'high' : 'low'}
-              className="hero-slide-img pointer-events-none absolute inset-0 h-full w-full object-cover"
+              fetchPriority="low"
+              className="hero-slide-img hero-slide-img--enter pointer-events-none absolute inset-0 h-full w-full object-cover"
               style={{ zIndex: 2 }}
-              onLoad={() => {
-                if (isLcp) hideStaticHeroLcp()
-              }}
             />
           )
         })}
