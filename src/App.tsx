@@ -1,9 +1,9 @@
-import { Suspense, createContext, useState } from 'react'
+import { Suspense, createContext, useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { Helmet } from 'react-helmet-async'
 import { ErrorBoundary } from '@/shared/ui/ErrorBoundary'
 import { lazyPage } from '@/shared/lib/lazyPage'
 import { useDeferMount } from '@/shared/lib/deferMount'
+import { ensureDocumentTitle, DEFAULT_DOCUMENT_TITLE } from '@/shared/lib/ensureDocumentTitle'
 import { SiteLayout } from '@/widgets/SiteLayout'
 import { HomePage } from '@/pages/home/ui/HomePage'
 
@@ -25,8 +25,22 @@ function PageFallback() {
   )
 }
 
+function DocumentTitleGuard() {
+  useEffect(() => {
+    ensureDocumentTitle(DEFAULT_DOCUMENT_TITLE)
+    const observer = new MutationObserver(() => {
+      if (!document.querySelector('title')) {
+        ensureDocumentTitle(DEFAULT_DOCUMENT_TITLE)
+      }
+    })
+    observer.observe(document.head, { childList: true })
+    return () => observer.disconnect()
+  }, [])
+  return null
+}
+
 function DeferredChatWidget() {
-  const show = useDeferMount(2000)
+  const show = useDeferMount(8000)
   if (!show) return null
   return (
     <Suspense fallback={null}>
@@ -53,9 +67,7 @@ export function App() {
 
   return (
     <FiltersContext.Provider value={{ isFiltersOpen, setIsFiltersOpen, isChatWidgetHidden, setIsChatWidgetHidden }}>
-      <Helmet>
-        <title>От А до Я — Двери и фурнитура в Нижнем Новгороде</title>
-      </Helmet>
+      <DocumentTitleGuard />
       <ErrorBoundary>
         <BrowserRouter>
           <Suspense fallback={<PageFallback />}>

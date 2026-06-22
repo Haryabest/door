@@ -46,30 +46,21 @@ export function HeroSection({ hero }: HeroSectionProps) {
   const slideshowImages = HERO_SLIDE_ASSET_URLS
 
   useEffect(() => {
-    if (!hasStaticHeroLcp()) {
-      setStaticHeroRetired(true)
-      return
-    }
-
-    let raf2 = 0
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        stripStaticHeroCopy()
-        setStaticHeroRetired(true)
-        requestAnimationFrame(() => removeStaticHeroLcp())
-      })
-    })
-
-    return () => {
-      cancelAnimationFrame(raf1)
-      cancelAnimationFrame(raf2)
-    }
+    if (!hasStaticHeroLcp()) return
+    const id = requestAnimationFrame(() => stripStaticHeroCopy())
+    return () => cancelAnimationFrame(id)
   }, [])
 
   useEffect(() => {
     setCurrentSlide(0)
     setStaticHeroRetired(!hasStaticHeroLcp())
   }, [slideshowImages])
+
+  useEffect(() => {
+    if (currentSlide === 0 || staticHeroRetired) return
+    setStaticHeroRetired(true)
+    removeStaticHeroLcp()
+  }, [currentSlide, staticHeroRetired])
 
   useEffect(() => {
     if (slideshowImages.length <= 1) return
@@ -99,7 +90,11 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [])
 
   return (
-    <div className="relative isolate z-10 min-h-[calc(100svh-var(--site-header-h))] w-full overflow-hidden bg-primary">
+    <div
+      className={`relative isolate z-10 min-h-[calc(100svh-var(--site-header-h))] w-full overflow-hidden ${
+        staticHeroRetired ? 'bg-primary' : ''
+      }`}
+    >
       <div className="absolute inset-0 z-0">
         {slideshowImages.map((src, index) => {
           if (index !== currentSlide) return null
@@ -113,7 +108,7 @@ export function HeroSection({ hero }: HeroSectionProps) {
               aria-hidden
               role="presentation"
               decoding="async"
-              fetchPriority={index === 0 ? 'high' : 'low'}
+              fetchPriority="low"
               className={`pointer-events-none absolute inset-0 h-full w-full object-cover${
                 index > 0 ? ' hero-slide-img hero-slide-img--enter' : ''
               }`}

@@ -3,8 +3,9 @@ import { HelmetProvider } from 'react-helmet-async'
 import './index.css'
 import { App } from './App.tsx'
 import { installRuntimeGuards } from '@/shared/lib/runtimeGuards'
+import { ensureDocumentTitle, DEFAULT_DOCUMENT_TITLE } from '@/shared/lib/ensureDocumentTitle'
 
-document.title = 'От А до Я — Двери и фурнитура в Нижнем Новгороде'
+ensureDocumentTitle(DEFAULT_DOCUMENT_TITLE)
 
 installRuntimeGuards()
 

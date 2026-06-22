@@ -25,10 +25,10 @@ const lcpHref = lcpImage ? `/assets/${lcpImage}` : '/hero-lcp.avif'
 let html = readFileSync(INDEX, 'utf8')
 
 const PAGE_TITLE = 'От А до Я — Двери и фурнитура в Нижнем Новгороде'
-if (/<title>[\s\S]*?<\/title>/i.test(html)) {
-  html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${PAGE_TITLE}</title>`)
+if (/<title[\s\S]*?<\/title>/i.test(html)) {
+  html = html.replace(/<title[\s\S]*?<\/title>/i, `<title id="document-title">${PAGE_TITLE}</title>`)
 } else {
-  html = html.replace('<head>', `<head>\n    <title>${PAGE_TITLE}</title>`)
+  html = html.replace('<head>', `<head>\n    <title id="document-title">${PAGE_TITLE}</title>`)
 }
 
 const headHints = []

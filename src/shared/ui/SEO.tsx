@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { SITE_URL } from '@/shared/config/siteUrl'
+import { formatPageTitle, setDocumentTitle, DEFAULT_DOCUMENT_TITLE } from '@/shared/lib/ensureDocumentTitle'
 
 interface SEOProps {
   title: string
@@ -70,10 +72,16 @@ export function SEO({
     ? [...baseStructuredData, ...(Array.isArray(structuredData) ? structuredData : [structuredData])]
     : baseStructuredData
 
+  const resolvedTitle = formatPageTitle(title)
+
+  useEffect(() => {
+    setDocumentTitle(resolvedTitle)
+    return () => setDocumentTitle(DEFAULT_DOCUMENT_TITLE)
+  }, [resolvedTitle])
+
   return (
     <Helmet>
-      {/* Основные мета-теги */}
-      <title>{title} | От А до Я - Двери и Фурнитура</title>
+      {/* title — только через document.title, Helmet удалял тег при гидрации */}
       <meta name="description" content={description} />
       <meta name="keywords" content={resolvedKeywords} />
       <meta name="author" content="От А до Я" />
@@ -102,9 +110,8 @@ export function SEO({
       <meta name="robots" content={robotsContent} />
       <meta name="googlebot" content={robotsContent} />
 
-      {/* Язык и кодировка */}
+      {/* Язык */}
       <meta httpEquiv="Content-Language" content="ru" />
-      <meta charSet="utf-8" />
       <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
     </Helmet>
   )

@@ -53,9 +53,11 @@ export function HomePage() {
       {seo}
       <main>
         <HeroSection hero={pageData.hero} />
-        <BackgroundPattern opacity={0.1} size={100} />
 
-        <section className="relative z-10 py-20">
+        <div className="relative isolate">
+          <BackgroundPattern variant="absolute" opacity={0.1} size={100} />
+
+          <section className="relative z-10 py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
@@ -125,6 +127,7 @@ export function HomePage() {
             </div>
           </div>
         </section>
+        </div>
       </main>
     </>
   )
