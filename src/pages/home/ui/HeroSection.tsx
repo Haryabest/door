@@ -3,6 +3,7 @@ import type { HeroSection as HeroSectionType } from '@/shared/api/home'
 import { defaultHeaderData, getHeader } from '@/shared/api/header'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 import { HERO_SLIDE_ASSET_URLS } from '../heroSlideshowUrls'
+import { hideStaticHeroLcp } from '@/shared/lib/hideStaticHeroLcp'
 
 interface HeroSectionProps {
   hero: HeroSectionType
@@ -65,6 +66,11 @@ export function HeroSection({ hero }: HeroSectionProps) {
     }
   }, [])
 
+  useEffect(() => {
+    const fallback = window.setTimeout(hideStaticHeroLcp, 3000)
+    return () => window.clearTimeout(fallback)
+  }, [])
+
   return (
     <div className="relative z-0 h-screen w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
@@ -84,6 +90,9 @@ export function HeroSection({ hero }: HeroSectionProps) {
               fetchPriority={isLcp ? 'high' : 'low'}
               className="hero-slide-img pointer-events-none absolute inset-0 h-full w-full object-cover"
               style={{ zIndex: 2 }}
+              onLoad={() => {
+                if (isLcp) hideStaticHeroLcp()
+              }}
             />
           )
         })}

@@ -19,6 +19,7 @@ if (!existsSync(INDEX)) {
 const assetFiles = existsSync(ASSETS) ? readdirSync(ASSETS) : []
 const lcpImage = assetFiles.find((f) => /^door1-.+\.avif$/i.test(f))
 const mainFont = assetFiles.find((f) => /^dm-sans-latin-wght-normal-.+\.woff2$/i.test(f))
+const mainJs = assetFiles.find((f) => /^index-.+\.js$/i.test(f))
 const lcpHref = lcpImage ? `/assets/${lcpImage}` : '/hero-lcp.avif'
 
 let html = readFileSync(INDEX, 'utf8')
@@ -31,7 +32,7 @@ if (!/<title>[^<]+<\/title>/i.test(html)) {
 }
 
 const headHints = []
-if (!html.includes('rel="preload"') || !html.includes('as="image"')) {
+if (!html.includes(lcpHref)) {
   headHints.push(
     `<link rel="preload" href="${lcpHref}" as="image" type="image/avif" fetchpriority="high" />`
   )
@@ -40,6 +41,9 @@ if (mainFont && !html.includes(mainFont)) {
   headHints.push(
     `<link rel="preload" href="/assets/${mainFont}" as="font" type="font/woff2" crossorigin />`
   )
+}
+if (mainJs && !html.includes(`modulepreload" href="/assets/${mainJs}`)) {
+  headHints.push(`<link rel="modulepreload" href="/assets/${mainJs}" crossorigin />`)
 }
 if (headHints.length > 0) {
   html = html.replace('</head>', `    ${headHints.join('\n    ')}\n  </head>`)
@@ -50,15 +54,25 @@ html = html.replace(
   `<link rel="preload" href="$1" as="style" onload="this.onload=null;this.rel='stylesheet'" />\n    <noscript><link rel="stylesheet" href="$1" /></noscript>`
 )
 
-if (!html.includes('id="static-hero-lcp"')) {
-  const staticHero = `<div id="static-hero-lcp" aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:#0f3c65">
-      <img src="${lcpHref}" alt="" width="1920" height="1080" fetchpriority="high" decoding="async" style="width:100%;height:100%;object-fit:cover" />
+const staticHeroBlock = `<div id="static-hero-lcp" aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:#0f3c65">
+      <img src="${lcpHref}" alt="" width="1920" height="1080" fetchpriority="high" decoding="sync" style="width:100%;height:100%;object-fit:cover" />
       <div style="position:absolute;inset:0;background:rgba(0,0,0,.5)"></div>
+      <div style="position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;color:#fff;font-family:system-ui,sans-serif">
+        <div>
+          <h1 style="margin:0 0 12px;font-size:clamp(2rem,10vw,4.5rem);font-weight:700;line-height:1.1">От А до Я</h1>
+          <p style="margin:0 0 8px;font-size:clamp(1rem,4vw,1.75rem);opacity:.92">Премиум двери и фурнитура</p>
+          <p style="margin:0;font-size:clamp(.9rem,3vw,1.25rem);opacity:.8">Нижний Новгород</p>
+        </div>
+      </div>
     </div>`
-  html = html.replace('<div id="root">', `${staticHero}\n    <div id="root">`)
+
+if (!html.includes('id="static-hero-lcp"')) {
+  html = html.replace('<div id="root">', `${staticHeroBlock}\n    <div id="root">`)
+} else {
+  html = html.replace(/src="[^"]*door1[^"]*\.avif"/, `src="${lcpHref}"`)
 }
 
 html = html.replace(/src="\/hero-lcp\.avif"/g, `src="${lcpHref}"`)
 
 writeFileSync(INDEX, html, 'utf8')
-console.log('[inject-dist-html-hints] lcp=%s css=async', lcpHref)
+console.log('[inject-dist-html-hints] lcp=%s js=%s', lcpHref, mainJs ?? '—')

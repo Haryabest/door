@@ -4,6 +4,8 @@ import './index.css'
 import { App } from './App.tsx'
 import { installRuntimeGuards } from '@/shared/lib/runtimeGuards'
 
+document.title = 'От А до Я — Двери и фурнитура в Нижнем Новгороде'
+
 installRuntimeGuards()
 
 const rootEl = document.getElementById('root')
@@ -12,16 +14,8 @@ if (rootEl) {
   if (placeholder) placeholder.remove()
 }
 
-function removeStaticHeroLcp() {
-  document.getElementById('static-hero-lcp')?.remove()
-}
-
 createRoot(rootEl!).render(
   <HelmetProvider>
     <App />
   </HelmetProvider>,
 )
-
-requestAnimationFrame(() => {
-  removeStaticHeroLcp()
-})

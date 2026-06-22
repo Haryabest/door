@@ -1,5 +1,6 @@
 import { Suspense, createContext, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { ErrorBoundary } from '@/shared/ui/ErrorBoundary'
 import { lazyPage } from '@/shared/lib/lazyPage'
 import { useDeferMount } from '@/shared/lib/deferMount'
@@ -52,6 +53,9 @@ export function App() {
 
   return (
     <FiltersContext.Provider value={{ isFiltersOpen, setIsFiltersOpen, isChatWidgetHidden, setIsChatWidgetHidden }}>
+      <Helmet>
+        <title>От А до Я — Двери и фурнитура в Нижнем Новгороде</title>
+      </Helmet>
       <ErrorBoundary>
         <BrowserRouter>
           <Suspense fallback={<PageFallback />}>
