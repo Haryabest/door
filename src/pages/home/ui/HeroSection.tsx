@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { HeroSection as HeroSectionType } from '@/shared/api/home'
 import { defaultHeaderData, getHeader } from '@/shared/api/header'
-import { preloadImages } from '@/shared/lib/preloadImages'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 import { HERO_SLIDE_ASSET_URLS } from '../heroSlideshowUrls'
 
@@ -11,16 +10,29 @@ interface HeroSectionProps {
 }
 
 const SLIDE_FADE_S = 1
-/** После затухания 1 с — 8 с в полной непрозрачности, затем кроссфейд 1 с (без паузы между картинками) */
 const SLIDE_HOLD_FULL_MS = 8000
-/** Интервал с начала активного момента слайда: 1 с появление + 8 с показ */
 const SLIDE_CYCLE_MS = SLIDE_HOLD_FULL_MS + SLIDE_FADE_S * 1000
+
+/** Прогрузка остальных кадров после первого — не блокирует LCP. */
+function preloadSlideLater(urls: readonly string[], startIndex: number) {
+  if (startIndex >= urls.length) return
+  const run = () => {
+    for (let i = startIndex; i < urls.length; i += 1) {
+      const img = new Image()
+      img.src = urls[i]
+    }
+  }
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(run, { timeout: 4000 })
+  } else {
+    window.setTimeout(run, 1500)
+  }
+}
 
 export function HeroSection({ hero }: HeroSectionProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [phoneHref, setPhoneHref] = useState(() => telHrefFromPhoneText(defaultHeaderData.phoneText))
 
-  /** Только локальные файлы из `src/assets/hero-slides/`, без URL из админки и без внешних ссылок. */
   const slideshowImages = HERO_SLIDE_ASSET_URLS
 
   useEffect(() => {
@@ -28,7 +40,8 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [slideshowImages])
 
   useEffect(() => {
-    void preloadImages(slideshowImages)
+    if (slideshowImages.length === 0) return
+    preloadSlideLater(slideshowImages, 1)
   }, [slideshowImages])
 
   useEffect(() => {
@@ -56,31 +69,35 @@ export function HeroSection({ hero }: HeroSectionProps) {
   return (
     <div className="relative z-0 h-[100vh] w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
-        {slideshowImages.map((src, index) => (
-          <motion.div
-            key={`${src}-${index}`}
-            aria-hidden={index !== currentSlide}
-            className="pointer-events-none absolute inset-0 bg-cover bg-center"
-            initial={{ opacity: 0 }}
-            animate={{
-              opacity: index === currentSlide ? 1 : 0,
-            }}
-            transition={{
-              duration: SLIDE_FADE_S,
-              ease: 'easeInOut',
-            }}
-            style={{
-              backgroundImage: `url('${src}')`,
-              zIndex: index === currentSlide ? 2 : 1,
-            }}
-          />
-        ))}
+        {slideshowImages.map((src, index) => {
+          const isActive = index === currentSlide
+          const isNeighbor =
+            slideshowImages.length > 1 &&
+            (index === (currentSlide + 1) % slideshowImages.length ||
+              index === (currentSlide - 1 + slideshowImages.length) % slideshowImages.length)
+
+          if (!isActive && !isNeighbor) return null
+
+          return (
+            <motion.img
+              key={src}
+              src={src}
+              alt=""
+              aria-hidden={!isActive}
+              decoding="async"
+              fetchPriority={index === 0 ? 'high' : 'low'}
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isActive ? 1 : 0 }}
+              transition={{ duration: SLIDE_FADE_S, ease: 'easeInOut' }}
+              style={{ zIndex: isActive ? 2 : 1 }}
+            />
+          )
+        })}
       </div>
 
-      {/* Затемнение — между фоном и текстом */}
       <div className="absolute inset-0 z-[1] bg-black/50" />
 
-      {/* Контент: заголовки и кнопки не анимируются со слайдами */}
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-4">
         <div className="text-center text-white max-w-4xl mx-auto">
           <motion.h1
@@ -138,28 +155,17 @@ export function HeroSection({ hero }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Стрелка вниз */}
       <motion.div
         className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
           opacity: { duration: 0.6, delay: 1.2 },
-          y: { duration: 1.5, repeat: Infinity, repeatType: 'reverse' }
+          y: { duration: 1.5, repeat: Infinity, repeatType: 'reverse' },
         }}
       >
-        <svg
-          className="w-6 h-6 text-white/60"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 14l-7 7m0 0l-7-7m7 7V3"
-          />
+        <svg className="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
         </svg>
       </motion.div>
     </div>

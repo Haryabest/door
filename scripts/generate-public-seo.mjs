@@ -88,4 +88,24 @@ Sitemap: ${origin}/sitemap.xml
 
 writeFileSync(path.join(ROOT, 'public', 'robots.txt'), robotsTxt, 'utf8')
 writeFileSync(path.join(ROOT, 'public', 'sitemap.xml'), sitemapXml, 'utf8')
+
+const llmsTxt = `# От А до Я — двери и фурнитура в Нижнем Новгороде
+
+Официальный сайт компании «От А до Я»: межкомнатные и входные двери, фурнитура, консультация, замер, доставка и установка.
+
+## Основные разделы
+
+- [Главная](${origin}/)
+- [Каталог продукции](${origin}/catalog)
+- [Портфолио работ](${origin}/portfolio)
+- [О компании](${origin}/about)
+- [Контакты и адреса салонов](${origin}/contacts)
+
+## Контакты
+
+Телефон: +7 (960) 166-30-30
+Город: Нижний Новгород
+`
+
+writeFileSync(path.join(ROOT, 'public', 'llms.txt'), llmsTxt, 'utf8')
 console.log('[generate-public-seo] origin=%s', origin)

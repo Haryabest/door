@@ -18,7 +18,13 @@ export function createApp() {
 
   setupMiddleware(app)
 
-  app.use('/uploads', express.static(uploadDirPath))
+  app.use(
+    '/uploads',
+    express.static(uploadDirPath, {
+      maxAge: '30d',
+      etag: true,
+    })
+  )
 
   app.use('/api', authRouter)
   app.use('/api', healthRouter)
