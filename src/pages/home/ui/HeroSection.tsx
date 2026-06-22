@@ -54,14 +54,9 @@ export function HeroSection({ hero }: HeroSectionProps) {
   const retireStatic = useCallback(() => {
     if (retiredRef.current) return
     retiredRef.current = true
+    stripStaticHeroCopy()
     setStaticHeroRetired(true)
     retireStaticHeroLcp()
-  }, [])
-
-  useEffect(() => {
-    if (!hasStaticHeroLcp()) return
-    const id = requestAnimationFrame(() => stripStaticHeroCopy())
-    return () => cancelAnimationFrame(id)
   }, [])
 
   useEffect(() => {
