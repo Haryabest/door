@@ -1,4 +1,8 @@
 /** Убирает статичный hero из index.html — иначе fixed-фон остаётся на каталоге и других страницах. */
+export function hasStaticHeroLcp() {
+  return Boolean(document.getElementById('static-hero-lcp'))
+}
+
 export function removeStaticHeroLcp() {
   document.getElementById('static-hero-lcp')?.remove()
 }

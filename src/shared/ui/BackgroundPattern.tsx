@@ -5,6 +5,8 @@ interface BackgroundPatternProps {
   size?: number
   color?: string
   className?: string
+  /** fixed — на весь экран; absolute — только внутри relative-контейнера */
+  variant?: 'fixed' | 'absolute'
 }
 
 const generatePattern = (color: string, size: number) => {
@@ -134,14 +136,17 @@ export const BackgroundPattern = memo(({
   size = 120,
   color = '#0f3c65',
   className = '',
+  variant = 'fixed',
 }: BackgroundPatternProps) => {
   const patternUrl = useMemo(() => {
     return `url("${generatePattern(color, size)}")`
   }, [opacity, size, color])
 
+  const positionClass = variant === 'fixed' ? 'fixed inset-0' : 'absolute inset-0'
+
   return (
     <div
-      className={`fixed inset-0 pointer-events-none z-0 ${className}`}
+      className={`${positionClass} pointer-events-none z-0 ${className}`}
       style={{
         backgroundImage: patternUrl,
         backgroundSize: `${size * 4}px ${size * 4}px`,

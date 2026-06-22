@@ -37,6 +37,10 @@ body {
   overflow-y: scroll; /* Всегда показывать скролл */
 }
 
+:root {
+  --site-header-h: 5rem; /* h-20 в Header */
+}
+
 html {
   scroll-behavior: smooth;
 }

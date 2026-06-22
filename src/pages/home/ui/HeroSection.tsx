@@ -3,7 +3,11 @@ import type { HeroSection as HeroSectionType } from '@/shared/api/home'
 import { defaultHeaderData, getHeader } from '@/shared/api/header'
 import { telHrefFromPhoneText } from '@/shared/lib/telHref'
 import { HERO_SLIDE_ASSET_URLS } from '../heroSlideshowUrls'
-import { removeStaticHeroLcp, stripStaticHeroCopy } from '@/shared/lib/hideStaticHeroLcp'
+import {
+  hasStaticHeroLcp,
+  removeStaticHeroLcp,
+  stripStaticHeroCopy,
+} from '@/shared/lib/hideStaticHeroLcp'
 
 interface HeroSectionProps {
   hero: HeroSectionType
@@ -28,20 +32,43 @@ function preloadSlideLater(urls: readonly string[], startIndex: number) {
   }
 }
 
+function shouldUseReactSlideImage(index: number, staticHeroRetired: boolean) {
+  return staticHeroRetired || index !== 0
+}
+
 export function HeroSection({ hero }: HeroSectionProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [staticHeroRetired, setStaticHeroRetired] = useState(false)
+  const [staticHeroRetired, setStaticHeroRetired] = useState(
+    () => typeof document === 'undefined' || !hasStaticHeroLcp()
+  )
   const [phoneHref, setPhoneHref] = useState(() => telHrefFromPhoneText(defaultHeaderData.phoneText))
 
   const slideshowImages = HERO_SLIDE_ASSET_URLS
 
   useEffect(() => {
-    stripStaticHeroCopy()
+    if (!hasStaticHeroLcp()) {
+      setStaticHeroRetired(true)
+      return
+    }
+
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        stripStaticHeroCopy()
+        setStaticHeroRetired(true)
+        requestAnimationFrame(() => removeStaticHeroLcp())
+      })
+    })
+
+    return () => {
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+    }
   }, [])
 
   useEffect(() => {
     setCurrentSlide(0)
-    setStaticHeroRetired(false)
+    setStaticHeroRetired(!hasStaticHeroLcp())
   }, [slideshowImages])
 
   useEffect(() => {
@@ -59,12 +86,6 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [slideshowImages.length])
 
   useEffect(() => {
-    if (currentSlide === 0 || staticHeroRetired) return
-    setStaticHeroRetired(true)
-    removeStaticHeroLcp()
-  }, [currentSlide, staticHeroRetired])
-
-  useEffect(() => {
     let isMounted = true
 
     getHeader().then((data) => {
@@ -78,12 +99,11 @@ export function HeroSection({ hero }: HeroSectionProps) {
   }, [])
 
   return (
-    <div className="relative z-0 h-screen w-full overflow-hidden">
+    <div className="relative z-0 min-h-[calc(100svh-var(--site-header-h))] w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
         {slideshowImages.map((src, index) => {
           if (index !== currentSlide) return null
-          // Слайд 0 — картинка уже в HTML (LCP без ожидания JS).
-          if (index === 0 && !staticHeroRetired) return null
+          if (!shouldUseReactSlideImage(index, staticHeroRetired)) return null
 
           return (
             <img
@@ -93,8 +113,10 @@ export function HeroSection({ hero }: HeroSectionProps) {
               aria-hidden
               role="presentation"
               decoding="async"
-              fetchPriority="low"
-              className="hero-slide-img hero-slide-img--enter pointer-events-none absolute inset-0 h-full w-full object-cover"
+              fetchPriority={index === 0 ? 'high' : 'low'}
+              className={`pointer-events-none absolute inset-0 h-full w-full object-cover${
+                index > 0 ? ' hero-slide-img hero-slide-img--enter' : ''
+              }`}
               style={{ zIndex: 2 }}
             />
           )
@@ -103,21 +125,21 @@ export function HeroSection({ hero }: HeroSectionProps) {
 
       <div className="absolute inset-0 z-1 bg-black/50" />
 
-      <div className="relative z-10 flex h-full flex-col items-center justify-center px-4">
+      <div className="relative z-10 flex h-full min-h-[inherit] flex-col items-center justify-center px-4">
         <div className="text-center text-white max-w-4xl mx-auto">
-          <h1 className="hero-fade-up hero-fade-up-delay-1 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-4 tracking-tight">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-4 tracking-tight">
             {hero.title}
           </h1>
 
-          <p className="hero-fade-up hero-fade-up-delay-2 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light mb-4 text-white/90">
+          <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light mb-4 text-white/90">
             {hero.subtitle}
           </p>
 
-          <p className="hero-fade-up hero-fade-up-delay-3 text-lg sm:text-xl md:text-2xl font-light mb-12 text-white/80">
+          <p className="text-lg sm:text-xl md:text-2xl font-light mb-12 text-white/80">
             {hero.city}
           </p>
 
-          <div className="hero-fade-up hero-fade-up-delay-4 flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="/catalog"
               className="tap-click inline-flex items-center gap-2 px-8 py-4 bg-primary text-background font-semibold rounded-lg hover:bg-primary/90 transition-colors cursor-pointer text-base sm:text-lg"
